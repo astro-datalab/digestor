@@ -1,6 +1,9 @@
-#!/usr/bin/env python
+# Licensed under a MIT style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
 """
+digestor.sdss
+=============
+
 Convert SDSS SQL (MS SQL Server) table definitions to Data Lab SQL (PostgreSQL).
 """
 import json
@@ -158,7 +161,3 @@ def main():
     with open(options.output_json, 'w') as JSON:
         json.dump(metadata, JSON, indent=4)
     return 0
-
-
-if __name__ == '__main__':
-    sys.exit(main())
