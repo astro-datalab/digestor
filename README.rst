@@ -34,9 +34,9 @@ Input Table Formats
 - Other (SExtractor files, custom table formats, etc)
 - NOTE:
 
-    * Tables may not have coherent schema or descriptions
-    * Tables may not be uniform
-    * Tools may not exist to read data into DB
+  * Tables may not have coherent schema or descriptions
+  * Tables may not be uniform
+  * Tools may not exist to read data into DB
 
 A Reasonable "Standard" Schema
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,7 +124,7 @@ Method used depends on data source.
 
     % rsync -avzR --files-from=<flist> <user>@<host>:/ . 2>&1 >> _out
 
-- To "mine" data from a remote TAP service (*e.g.* Skinny PanSTARRS):
+- To "mine" data from a remote TAP service (*e.g.* Skinny PanSTARRS)::
 
     % stilts tapquery tapurl="..." adql="..." out=file001.fits
 
@@ -151,18 +151,18 @@ a new output table format.
 
 For example, a command file (called '_cmd_all') such as::
 
-        explodeall;
-        addcol htm9 "(int)htmIndex(9,ra,dec)";
-        addcol pix256 "(int)healpixRingIndex(8,ra,dec)";
-        addcol pix4096 "(int)healpixNestIndex(12,ra,dec)";
-        addskycoords -inunit deg -outunit deg icrs galactic ra dec glon glat;
-        addskycoords -inunit deg -outunit deg icrs ecliptic ra dec elon elat;
+    explodeall;
+    addcol htm9 "(int)htmIndex(9,ra,dec)";
+    addcol pix256 "(int)healpixRingIndex(8,ra,dec)";
+    addcol pix4096 "(int)healpixNestIndex(12,ra,dec)";
+    addskycoords -inunit deg -outunit deg icrs galactic ra dec glon glat;
+    addskycoords -inunit deg -outunit deg icrs ecliptic ra dec elon elat;
 
 Can be used to add standard Data Lab columns to a FITS table using the
 command::
 
     % stilts tpipe in=indata.fits \
-    cmd='@_cmd_all' ofmt='fits-basic' out=outdata.fits
+        cmd='@_cmd_all' ofmt='fits-basic' out=outdata.fits
 
 Scripts can be written to loop over lists of files/directories to process
 and those lists can be split to run parallel instances to transform the
@@ -175,14 +175,14 @@ day if parallelized).
 Before a table can be loaded in the database, it must be created in SQL.
 Creating a table from a transformed file ensures we don't waste time
 rewritng a loaded table in the DB later on (*e.g.* to add an ID column to
-a 1 TB table)
+a 1 TB table).
 
 - FITS/VOTable files contain needed type information for columns
 - other formats (*e.g.* CSV) require type to be inferred lexically
 
-    - variable-length columns (*e.g.* strings)
-    - NaN / Inf values
-    - wrong type inference issues.
+  - variable-length columns (*e.g.* strings)
+  - NaN / Inf values
+  - wrong type inference issues.
 
 By generating a "CREATE TABLE" statement at this stage we can accomplish
 several things at once:
@@ -233,6 +233,7 @@ FITS2DB - Create/Load DB tables from FITS binary tables
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ::
+
     % fits2db --sql=postgres --create --noload -t <table> <file> | psql tapdb datalab
 
 Pluses:
@@ -269,16 +270,16 @@ The method used to load the data depends entirely on:
 
 - the format of the input data files
 
-    - format may constrain the available tool options
+  - format may constrain the available tool options
 
 - the number of files to be ingested that make up a single DB table
 
-    - can ingest be parallelized?
-    - is concatenating files before ingest more efficient?
+  - can ingest be parallelized?
+  - is concatenating files before ingest more efficient?
 
 - the size of individual files to be ingested
 
-    - want efficient bulk ingestion of row data
+  - want efficient bulk ingestion of row data
 
 FITS2DB
 +++++++
