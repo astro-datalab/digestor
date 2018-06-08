@@ -156,7 +156,7 @@ def main():
         POST.write(create_table)
     if options.output_json is None:
         options.output_json = os.path.join(os.path.dirname(options.sql),
-                                          "%s.%s.json" % (options.schema, options.table))
+                                           "%s.%s.json" % (options.schema, options.table))
     log.debug("options.output_json = '%s'", options.output_json)
     with open(options.output_json, 'w') as JSON:
         json.dump(metadata, JSON, indent=4)

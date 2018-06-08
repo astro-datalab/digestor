@@ -1,0 +1,28 @@
+[run]
+source = digestor
+omit =
+   digestor/_version.py
+   digestor/conftest*
+   digestor/cython_version*
+   digestor/setup_package*
+   digestor/*/setup_package*
+   digestor/*/*/setup_package*
+   digestor/sphinx/*
+   digestor/test/*
+   digestor/*/test/*
+   digestor/*/*/test/*
+
+[report]
+exclude_lines =
+   # Have to re-enable the standard pragma
+   pragma: no cover
+
+   # Don't complain about packages we have installed
+   except ImportError
+
+   # Don't complain if tests don't hit assertions
+   raise AssertionError
+   raise NotImplementedError
+
+   # Don't complain about script hooks
+   def main\(.*\):

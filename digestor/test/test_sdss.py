@@ -1,20 +1,18 @@
 # Licensed under a MIT style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
-"""Test top-level digestor functions.
+"""Test digestor.sdss.
 """
 import unittest
-import re
-from .. import __version__ as theVersion
+from ..sdss import parse_column_metadata
 
 
-class TestTopLevel(unittest.TestCase):
-    """Test top-level digestor functions.
+class TestSDSS(unittest.TestCase):
+    """Test digestor.sdss.
     """
 
     @classmethod
     def setUpClass(cls):
-        cls.versionre = re.compile(
-                r'([0-9]+!)?([0-9]+)(\.[0-9]+)*((a|b|rc|\.post|\.dev)[0-9]+)?')
+        pass
 
     @classmethod
     def tearDownClass(cls):
@@ -25,11 +23,6 @@ class TestTopLevel(unittest.TestCase):
 
     def tearDown(self):
         pass
-
-    def test_version(self):
-        """Ensure the version conforms to PEP386/PEP440.
-        """
-        self.assertRegex(theVersion, self.versionre)
 
 
 def test_suite():
