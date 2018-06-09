@@ -14,6 +14,65 @@ import logging
 from argparse import ArgumentParser
 
 
+_SQLre = {'create': re.compile(r'\s*CREATE\s+TABLE\s+.*\s+\('),
+          'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
+          'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$'),
+          'finish': re.compile(r'\s*\);?')}
+
+_server2post = {'float': 'double precision', 'int': 'integer'}
+
+
+def parse_line(line, options, metadata):
+    """Parse a single line from a SQL file.
+
+    Parameters
+    ----------
+    line : :class:`str`
+        A single line from a SQL file.
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+
+    Returns
+    -------
+    :class:`str`
+        A PostgreSQL-compatible string, or ``None`` if only metadata is detected.
+    """
+    log = logging.getLogger(__name__+'.parse_line')
+    l = line.strip()
+    for r in _SQLre:
+        m = _SQLre[r].match(l)
+        if m is not None:
+            if r == 'create':
+                log.debug(r"CREATE TABLE %s.%s (", options.schema, options.table)
+                return r"CREATE TABLE %s.%s (" % (options.schema, options.table)
+            elif r == 'comment':
+                g = m.groups()
+                if g[0] == 'H':
+                    log.debug("metadata['short_description'] += '%s'", g[1])
+                    metadata['short_description'] += g[1]
+                if g[0] == 'T':
+                    log.debug("metadata['description'] += '%s'", g[1])
+                    metadata['description'] += g[1]+'\n'
+                return None
+            elif r == 'column':
+                g = m.groups()
+                typ = g[1].strip('[]').lower()
+                try:
+                    post_type = _server2post[typ]
+                except KeyError:
+                    post_type = typ
+                log.debug("    %s %s %s,", g[0].lower(), post_type, g[2])
+                log.debug("metadata = '%s'", g[3])
+                metadata['columns'][g[0].lower()] = parse_column_metadata(g[0].lower(), g[3])
+                return "    %s %s %s," % (g[0].lower(), post_type, g[2])
+            elif r == 'finish':
+                log.debug(");")
+                return ');'
+    return None
+
+
 def parse_column_metadata(column, data):
     """Parse the metadata for an individual column.
 
@@ -65,13 +124,13 @@ def parse_column_metadata(column, data):
     return p
 
 
-def main():
-    """Entry-point for command-line script.
+def get_options():
+    """Parse command-line options.
 
     Returns
     -------
-    :class:`int`
-        An integer suitable for passing to :func:`sys.exit`.
+    :class:`argparse.Namespace`
+        The parsed options.
     """
     parser = ArgumentParser(description=__doc__,
                             prog=os.path.basename(sys.argv[0]))
@@ -87,7 +146,18 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Print extra information.')
     parser.add_argument('sql', help='SQL file to convert.')
-    options = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    """Entry-point for command-line script.
+
+    Returns
+    -------
+    :class:`int`
+        An integer suitable for passing to :func:`sys.exit`.
+    """
+    options = get_options()
     ch = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter('%(levelname)s:%(lineno)s: %(message)s')
     ch.setFormatter(formatter)
@@ -106,47 +176,11 @@ def main():
     metadata['short_description'] = ""
     metadata['description'] = ""
     metadata['columns'] = dict()
-    server2post = {'float': 'double precision', 'int': 'integer'}
-    create = re.compile(r'\s*CREATE\s+TABLE\s+.*\s+\(')
-    comment = re.compile(r'\s*--/(H|T)\s+(.*)$')
-    column = re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')
-    finish = re.compile(r'\s*\);?')
     with open(options.sql) as SQL:
         for line in SQL:
-            l = line.strip()
-            m = create.match(l)
-            if m is not None:
-                log.debug("CREATE TABLE %s.%s (", options.schema, options.table)
-                output.append("CREATE TABLE %s.%s (" % (options.schema, options.table))
-                continue
-            m = comment.match(l)
-            if m is not None:
-                g = m.groups()
-                if g[0] == 'H':
-                    log.debug("metadata['short_description'] += '%s'", g[1])
-                    metadata['short_description'] += g[1]
-                if g[0] == 'T':
-                    log.debug("metadata['description'] += '%s'", g[1])
-                    metadata['description'] += g[1]+'\n'
-                continue
-            m = column.match(l)
-            if m is not None:
-                g = m.groups()
-                typ = g[1].strip('[]').lower()
-                try:
-                    post_type = server2post[typ]
-                except KeyError:
-                    post_type = typ
-                log.debug("    %s %s %s,", g[0].lower(), post_type, g[2])
-                log.debug("metadata = '%s'", g[3])
-                output.append("    %s %s %s," % (g[0].lower(), post_type, g[2]))
-                metadata['columns'][g[0].lower()] = parse_column_metadata(g[0].lower(), g[3])
-                continue
-            m = finish.match(l)
-            if m is not None:
-                log.debug(");")
-                output.append(');')
-                continue
+            out = parse_line(line, options, metadata)
+            if out is not None:
+                output.append(out)
     create_table = '\n'.join(output) + '\n'
     if options.output_sql is None:
         options.output_sql = os.path.join(os.path.dirname(options.sql),
