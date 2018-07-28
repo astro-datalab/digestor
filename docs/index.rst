@@ -12,6 +12,24 @@ Welcome to Digestor's documentation!
 
    api
 
+Data Lab Database Loading Notes
+===============================
+
+* ``/net/dl1/users/datalab/ingest_party/Tutorial.txt``.
+* Use ``gp02`` as the staging database::
+
+    psql tapdb datalab
+
+* Use ``/dl2/data`` for scratch space as needed.
+* There are several columns that Data Lab will add to all tables, including
+  HTM and HEALPix columns.
+* The :command:`stilts` ``explodeall`` command converts array-valued columns
+  into scalar columns. The columns can be renamed as needed at a later stage.
+* :command:`stilts` can load the database directly, but slowly.
+* Look for scripts called ``zz*`` or ``_zz*`` in ``/dl2/data``.
+* `fits2db <https://github.com/noao-datalab/fits2db>`_.
+* `TapSchema <http://gitlab.noao.edu/weaver/TapSchema>`_ has the Data Lab
+  table definitions.
 
 Indices and tables
 ==================
