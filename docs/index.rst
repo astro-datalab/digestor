@@ -31,6 +31,14 @@ Data Lab Database Loading Notes
 * `TapSchema <http://gitlab.noao.edu/weaver/TapSchema>`_ has the Data Lab
   table definitions.
 
+TO DO
+=====
+
+* Link to STILTS: http://www.star.bris.ac.uk/~mbt/stilts/sun256/sun256.html
+* Make metadata mergeable with another metadata file with the *same schema*.
+* Output a :command:`stilts` script, including column renaming.
+* SQL functions for ``specObjID``, etc.
+
 Indices and tables
 ==================
 
