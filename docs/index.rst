@@ -23,8 +23,10 @@ Data Lab Database Loading Notes
 * Use ``/dl2/data`` for scratch space as needed.
 * There are several columns that Data Lab will add to all tables, including
   HTM and HEALPix columns.
+* `STILTS <http://www.star.bris.ac.uk/~mbt/stilts/sun256/sun256.html>`_
 * The :command:`stilts` ``explodeall`` command converts array-valued columns
   into scalar columns. The columns can be renamed as needed at a later stage.
+  ``explodeall`` creates 1-based columns, not 0-based columns.
 * :command:`stilts` can load the database directly, but slowly.
 * Look for scripts called ``zz*`` or ``_zz*`` in ``/dl2/data``.
 * `fits2db <https://github.com/noao-datalab/fits2db>`_.
@@ -34,8 +36,6 @@ Data Lab Database Loading Notes
 TO DO
 =====
 
-* Link to STILTS: http://www.star.bris.ac.uk/~mbt/stilts/sun256/sun256.html
-* Output a :command:`stilts` script, including column renaming.
 * SQL functions for ``specObjID``, etc.
 
 Indices and tables
