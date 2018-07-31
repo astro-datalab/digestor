@@ -34,21 +34,34 @@ def init_metadata(options):
     -------
     :class:`dict`
         A dictionary compatible with TapSchema.
+
+    Raises
+    ------
+    :exc:`ValueError`
+        When merging, if the schema names don't match, or if the table is
+        already loaded.
     """
-    metadata = dict()
-    metadata['schemas'] = [{'schema_name': options.schema,
-                            'description': options.description,
-                            'utype': ''},]
-    metadata['tables'] = [{'schema_name': options.schema,
-                           'table_name': options.table,
-                           'table_type': 'table',
-                           'utype': '',
-                           'description': ''},]
-    metadata['columns'] = list()
-    metadata['keys'] = list()
-    metadata['key_columns'] = list()
-    # metadata['short_description'] = ""
-    # metadata['description'] = ""
+    if options.merge_json is None:
+        metadata = dict()
+        metadata['schemas'] = [{'schema_name': options.schema,
+                                'description': options.description,
+                                'utype': ''},]
+        metadata['tables'] = [{'schema_name': options.schema,
+                               'table_name': options.table,
+                               'table_type': 'table',
+                               'utype': '',
+                               'description': ''},]
+        metadata['columns'] = list()
+        metadata['keys'] = list()
+        metadata['key_columns'] = list()
+    else:
+        with open(options.merge_json) as f:
+            metadata = json.load(f)
+        if metadata['schemas'][0]['schema_name'] != options.schema:
+            raise ValueError("You are attempting to merge schema={0} into schema={1}!".format(options.schema, metadata['schemas'][0]['schema_name']))
+        for t in metadata['tables']:
+            if t['table_name'] == options.table:
+                raise ValueError("Table {0} is already defined!".format(options.table))
     return metadata
 
 
@@ -202,6 +215,8 @@ def get_options():
                         help='Short description of the schema.')
     parser.add_argument('-j', '--output-json', dest='output_json', metavar='FILE',
                         help='Write table metadata to FILE.')
+    parser.add_argument('-m', '--merge', dest='merge_json', metavar='FILE',
+                        help='Merge metadata in FILE into final metadata output.')
     parser.add_argument('-o', '--output-sql', dest='output_sql', metavar='FILE',
                         help='Write table definition to FILE.')
     parser.add_argument('-s', '--schema', metavar='SCHEMA',

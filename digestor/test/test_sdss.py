@@ -4,6 +4,8 @@
 """
 import unittest
 import unittest.mock as mock
+import json
+from tempfile import NamedTemporaryFile
 from ..sdss import init_metadata, get_options, parse_line, parse_column_metadata
 
 
@@ -16,6 +18,7 @@ class TestSDSS(unittest.TestCase):
         cls.schema = 'sdss_dr14'
         cls.table =  'specobjall'
         cls.description = 'Sloan Digital Sky Survey Data Relase 14'
+        cls.merge_json = None
 
     @classmethod
     def tearDownClass(cls):
@@ -37,6 +40,24 @@ class TestSDSS(unittest.TestCase):
         self.assertEqual(meta['schemas'][0]['description'], options.description)
         self.assertEqual(meta['tables'][0]['schema_name'], options.schema)
         self.assertEqual(meta['tables'][0]['table_name'], options.table)
+        with NamedTemporaryFile('w+') as f:
+            json.dump({'schemas': [{'schema_name': 'sdss_dr13'}]}, f)
+            f.seek(0)
+            with mock.patch('sys.argv', ['sdss2idl', '-m', f.name, '-t', 'specobjall', 'specobjall.sql']):
+                options = get_options()
+            with self.assertRaises(ValueError) as e:
+                meta = init_metadata(options)
+            self.assertEqual(str(e.exception),
+                             "You are attempting to merge schema=sdss_dr14 into schema=sdss_dr13!")
+        with NamedTemporaryFile('w+') as f:
+            json.dump({'schemas': [{'schema_name': 'sdss_dr14'}], 'tables': [{'table_name': 'specobjall'}]}, f)
+            f.seek(0)
+            with mock.patch('sys.argv', ['sdss2idl', '-m', f.name, '-t', 'specobjall', 'specobjall.sql']):
+                options = get_options()
+            with self.assertRaises(ValueError) as e:
+                meta = init_metadata(options)
+            self.assertEqual(str(e.exception),
+                             "Table specobjall is already defined!")
 
     def test_get_options(self):
         """Test command-line arguments.
@@ -49,6 +70,7 @@ class TestSDSS(unittest.TestCase):
         self.assertEqual(options.schema, 'sdss_dr14')
         self.assertIsNone(options.output_sql)
         self.assertIsNone(options.output_json)
+        self.assertIsNone(options.merge_json)
 
     def test_parse_column_metadata(self):
         """Test parsing metadata of individual columns.
