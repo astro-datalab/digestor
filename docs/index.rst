@@ -32,11 +32,17 @@ Data Lab Database Loading Notes
 * `fits2db <https://github.com/noao-datalab/fits2db>`_.
 * `TapSchema <http://gitlab.noao.edu/weaver/TapSchema>`_ has the Data Lab
   table definitions.
+* Treat ``varchar(N)`` columns the same as ``text`` when ordering.
 
 TO DO
 =====
 
 * SQL functions for ``specObjID``, etc.
+* How important is the ordering?  Is it more valuable to do the ordering,
+  or to keep related columns together, even if they have different types?
+* String to bigint conversions.
+* Some primary keys are in the range where a signed 64-bit integer would be
+  negative, *i.e.* :math:`2^63 < k < 2^64 - 1`.
 
 Indices and tables
 ==================

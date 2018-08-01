@@ -1,0 +1,38 @@
+sdss_dr14:
+    drop:
+        - MARVELS_TARGET1
+        - MARVELS_TARGET2
+    expand:
+        TCOLUMN: DEFAULT
+        THETA: DEFAULT
+        SNMEDIAN: UGRIZ
+        FRACNSIGMA: DEFAULT+1
+        FRACNSIGHI: DEFAULT+1
+        FRACNSIGLO: DEFAULT,
+        SPECTROFLUX: UGRIZ
+        SPECTROSYNFLUX: UGRIZ
+        SPECTROFLUXIVAR: UGRIZ
+        SPECTROSYNFLUXIVAR: UGRIZ
+        SPECTROSKYFLUX: UGRIZ
+    rename:
+        SPECPRIMARY: scienceprimary
+        SPECSDSS: sdssprimary
+        SPECLEGACY: legacyprimary
+        SPECSEGUE: segueprimary
+        SPECSEGUE1: segue1primary
+        SPECSEGUE2: segue2primary
+        SPECBOSS: bossprimary
+        PLUG_RA: ra
+        PLUG_DEC: dec
+        SN_MEDIAN_ALL: snmedian
+        SPEC1_G: sn1_g
+        SPEC1_R: sn1_r
+        SPEC1_I: sn1_i
+        SPEC2_G: sn2_g
+        SPEC2_R: sn2_r
+        SPEC2_I: sn2_i
+    convert:
+        SPECOBJID: bigint
+        BESTOBJID: bigint
+        FLUXOBJID: bigint
+        TARGETOBJID: bigint

@@ -101,8 +101,8 @@ class TestSDSS(unittest.TestCase):
         """
         with mock.patch('sys.argv', ['sdss2dl', '-s', 'foo', '-t', 'bar', 'specobjall.sql']):
             options = get_options()
-        out, st = parse_line(r'CREATE TABLE specObjAll  (  ', options, self.metadata)
-        self.assertEqual(out, r'CREATE TABLE foo.bar (')
+        out, st = parse_line(r'CREATE TABLE IF NOT EXISTS specObjAll  (  ', options, self.metadata)
+        self.assertEqual(out, r'CREATE TABLE IF NOT EXISTS foo.bar (')
         self.assertEqual(st, 'explodeall;')
         out, st = parse_line('--', options, self.metadata)
         self.assertIsNone(out)
@@ -167,7 +167,7 @@ class TestSDSS(unittest.TestCase):
                                    "    glat double precision NOT NULL,",
                                    "    elon double precision NOT NULL,",
                                    "    elat double precision NOT NULL",
-                                   ");"])
+                                   ") WITH (fillfactor=100);"])
 
 def test_suite():
     """Allows testing of only this module with the command::

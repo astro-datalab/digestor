@@ -100,12 +100,6 @@ def parse_line(line, options, metadata):
     metadata : :class:`dict`
         A pre-initialized dictionary containing metadata.
 
-    Returns
-    -------
-    :func:`tuple`
-        A PostgreSQL-compatible string, or ``None`` if only metadata is detected;
-        A STILTS-compatible string, or ``None`` if this is not relevant.
-
     Notes
     -----
     * Currently, the long description (``--/T``) is thrown out.
@@ -116,8 +110,8 @@ def parse_line(line, options, metadata):
         m = _SQLre[r].match(l)
         if m is not None:
             if r == 'create':
-                log.debug(r"CREATE TABLE %s.%s (", options.schema, options.table)
-                return (r"CREATE TABLE %s.%s (" % (options.schema, options.table),
+                log.debug(r"CREATE TABLE IF NOT EXISTS %s.%s (", options.schema, options.table)
+                return (r"CREATE TABLE IF NOT EXISTS %s.%s (" % (options.schema, options.table),
                         'explodeall;')
             elif r == 'comment':
                 g = m.groups()
@@ -357,7 +351,7 @@ def finish_table(options, metadata):
         if n != 'elat':
             s += ','
         sql.append(s)
-    sql.append(');')
+    sql.append(') WITH (fillfactor=100);')
     return sql
 
 
