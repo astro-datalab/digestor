@@ -393,6 +393,15 @@ def map_columns(options, metadata, t):
                                   fc, col)
                         metadata['mapping'][col] = fc
                         break
+                if col not in metadata['mapping']:
+                    for fc in t.colnames:
+                        for sc in fits_names(fc):
+                            if sc == col:
+                                log.debug("FITS: %s -> SQL: %s",
+                                          sc, col)
+                                metadata['mapping'][col] = sc
+                        if col in metadata['mapping']:
+                            break
             if col not in metadata['mapping']:
                 msg = "Could not find a FITS column corresponding to %s!"
                 log.error(msg, col)
