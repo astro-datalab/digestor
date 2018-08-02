@@ -240,7 +240,6 @@ def parse_column_metadata(column, data):
                     log.warning("Column %s is not defined in the corresponding FITS file!", column)
                 else:
                     log.debug("metadata['mapping']['%s'] = '%s'", column, r)
-                    # metadata['mapping'][column] = r
                     rename = r
             else:
                 log.debug("p['%s'] = %s", tr[m], repr(r))
@@ -250,7 +249,6 @@ def parse_column_metadata(column, data):
                 foo = column.rsplit('_', 1)
                 r = "{0}[{1:d}]".format(foo[0], 'ugriz'.index(foo[1])).upper()
                 log.debug("metadata['mapping']['%s'] = '%s'", column, r)
-                # metadata['mapping'][column] = r
                 rename = r
     return (p, rename)
 
@@ -353,17 +351,17 @@ def construct_sql(options, metadata):
     return '\n'.join(sql) + '\n'
 
 
-def map_columns(t, metadata, options):
+def map_columns(options, metadata, t):
     """Complete mapping of FITS table columns to SQL columns.
 
     Parameters
     ----------
-    t : :class:`astropy.table.Table`
-        A Table constructed from the FITS file.
-    metadata : :class:`dict`
-        A pre-initialized dictionary containing metadata.
     options : :class:`argparse.Namespace`
         The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+    t : :class:`astropy.table.Table`
+        A Table constructed from the FITS file.
 
     Raises
     ------
@@ -435,6 +433,30 @@ def fits_names(column):
             C.rsplit('_', 1)[0],
             column.rsplit('_', 1)[0].replace('_', ''),
             C.rsplit('_', 1)[0].replace('_', ''))
+
+
+def sort_columns(options, metadata):
+    """Sort the SQL columns for best performance.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+    """
+    ordered = ('bigint', 'double', 'integer', 'real', 'smallint', 'character')
+    new_columns = list()
+    for o in ordered:
+        for c in metadata['columns']:
+            if c['table_name'] == options.table and c['datatype'] == o:
+                new_columns.append(c)
+    assert len(new_columns) == len([c['column_name'] for c in metadata['columns']
+                                                     if c['table_name'] == options.table])
+    for i, c in enumerate(metadata['columns']):
+        if c['table_name'] == options.table:
+            metadata['columns'][i] = new_columns.pop(0)
+    return
 
 
 def get_options():
@@ -520,11 +542,14 @@ def main():
     #
     log.debug("t = Table.read('%s', hdu=%d)", dlfits, options.hdu)
     t = Table.read(dlfits, hdu=options.hdu)
-    map_columns(t, metadata)
+    map_columns(options, metadata, t)
     #
     # Sort the columns.
     #
-    # foo = sort_the_columns(metadata)
+    sort_columns(options, metadata)
+    #
+    # Sort the FITS data table to match the columns.
+    #
     #
     # Write the SQL file.
     #

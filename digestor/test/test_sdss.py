@@ -7,7 +7,8 @@ import unittest.mock as mock
 import json
 from tempfile import NamedTemporaryFile
 from ..sdss import (add_dl_columns, init_metadata, get_options, parse_line,
-                    parse_column_metadata, finish_table, construct_sql)
+                    parse_column_metadata, finish_table, construct_sql,
+                    fits_names)
 
 
 class TestSDSS(unittest.TestCase):
@@ -192,6 +193,15 @@ class TestSDSS(unittest.TestCase):
 """.format(self.options)
         sql = construct_sql(self.options, self.metadata)
         self.assertEqual(sql, expected)
+
+    def test_fits_names(self):
+        """Test the conversion of column names.
+        """
+        foo = fits_names('sn_median_u')
+        self.assertEqual(foo, ('sn_median_u', 'SN_MEDIAN_U',
+                               'snmedianu', 'SNMEDIANU',
+                               'sn_median', 'SN_MEDIAN',
+                               'snmedian', 'SNMEDIAN'))
 
 
 def test_suite():
