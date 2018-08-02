@@ -16,6 +16,7 @@ from datetime import datetime
 from argparse import ArgumentParser
 
 from pytz import utc
+from astropy.table import Table
 
 _SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
           'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')}
@@ -55,6 +56,11 @@ def add_dl_columns(options):
     cmd = _stilts_command.format(ra=options.ra.lower(),
                                  dec=options.ra.lower().replace('ra', 'dec')).replace('\n', ' ').strip()
     out = options.fits.replace('.fits', '.stilts.fits')
+    if os.path.exists(out) and options.keep:
+        log.info("Using existing file: %s.", out)
+        return out
+    if os.path.exists(out):
+        os.remove(out)
     command = ['stilts', 'tpipe', 'in={0.fits}'.format(options),
                "cmd='{0}'".format(cmd), 'ofmt=fits-basic',
                'out={0}'.format(out)]
@@ -106,6 +112,7 @@ def init_metadata(options):
         metadata['key_columns'] = [{"key_id": "",
                                     "from_column": "",
                                     "target_column": ""}]
+        metadata['mapping'] = dict()
     else:
         with open(options.merge_json) as f:
             metadata = json.load(f)
@@ -114,6 +121,8 @@ def init_metadata(options):
         for t in metadata['tables']:
             if t['table_name'] == options.table:
                 raise ValueError("Table {0} is already defined!".format(options.table))
+        if 'mapping' not in metadata:
+            metadata['mapping'] = dict()
     return metadata
 
 
@@ -160,7 +169,7 @@ def parse_line(line, options, metadata):
                     post_type = typ
                 log.debug("    %s %s %s,", col, post_type, g[2])
                 log.debug("metadata = '%s'", g[3])
-                p = parse_column_metadata(col, g[3])
+                p, r = parse_column_metadata(col, g[3])
                 p['table_name'] = options.table
                 if post_type == 'double precision':
                     p['datatype'] = 'double'
@@ -170,6 +179,8 @@ def parse_line(line, options, metadata):
                 else:
                     p['datatype'] = post_type
                 metadata['columns'].append(p)
+                if r is not None:
+                    metadata['mapping'][col] = r
                 return
     return
 
@@ -186,8 +197,9 @@ def parse_column_metadata(column, data):
 
     Returns
     -------
-    :class:`dict`
-        A dictionary containing the parsed metadata in TapSchema format.
+    :func:`tuple`
+        A tuple containing a dictionary containing the parsed metadata
+        in TapSchema format and a FITS column name, if found.
     """
     log = logging.getLogger(__name__+'.parse_column_metadata')
     tr = {'D': 'description',
@@ -226,7 +238,8 @@ def parse_column_metadata(column, data):
                 if r == 'NOFITS':
                     log.warning("Column %s is not defined in the corresponding FITS file!", column)
                 else:
-                    log.debug("rename %s -> %s", r, column)
+                    log.debug("metadata['mapping']['%s'] = '%s'", column, r)
+                    # metadata['mapping'][column] = r
                     rename = r
             else:
                 log.debug("p['%s'] = %s", tr[m], repr(r))
@@ -235,43 +248,10 @@ def parse_column_metadata(column, data):
             if m == 'F' and any([column.endswith('_%s' % f) for f in 'ugriz']):
                 foo = column.rsplit('_', 1)
                 r = "{0}[{1:d}]".format(foo[0], 'ugriz'.index(foo[1])).upper()
-                log.debug("rename %s -> %s", r, column)
+                log.debug("metadata['mapping']['%s'] = '%s'", column, r)
+                # metadata['mapping'][column] = r
                 rename = r
-    return p
-
-
-def get_options():
-    """Parse command-line options.
-
-    Returns
-    -------
-    :class:`argparse.Namespace`
-        The parsed options.
-    """
-    parser = ArgumentParser(description=__doc__.split("\n")[-2],
-                            prog=os.path.basename(sys.argv[0]))
-    parser.add_argument('-d', '--schema-description', dest='description',
-                        metavar='TEXT',
-                        default='Sloan Digital Sky Survey Data Relase 14',
-                        help='Short description of the schema.')
-    parser.add_argument('-j', '--output-json', dest='output_json', metavar='FILE',
-                        help='Write table metadata to FILE.')
-    parser.add_argument('-m', '--merge', dest='merge_json', metavar='FILE',
-                        help='Merge metadata in FILE into final metadata output.')
-    parser.add_argument('-o', '--output-sql', dest='output_sql', metavar='FILE',
-                        help='Write table definition to FILE.')
-    parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
-                        help='Right Ascension is in COLUMN.')
-    parser.add_argument('-s', '--schema', metavar='SCHEMA',
-                        default='sdss_dr14',
-                        help='Define table with this schema.')
-    parser.add_argument('-t', '--table', metavar='TABLE',
-                        help='Set the table name.')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help='Print extra information.')
-    parser.add_argument('fits', help='FITS file to convert.')
-    parser.add_argument('sql', help='SQL file to convert.')
-    return parser.parse_args()
+    return (p, rename)
 
 
 def finish_table(options):
@@ -372,6 +352,58 @@ def construct_sql(options, metadata):
     return '\n'.join(sql) + '\n'
 
 
+def map_columns(t, metadata):
+    """Complete mapping of FITS table columns to SQL columns.
+
+    Parameters
+    ----------
+    t : :class:`astropy.table.Table`
+        A Table constructed from the FITS file.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+    """
+    return
+
+
+def get_options():
+    """Parse command-line options.
+
+    Returns
+    -------
+    :class:`argparse.Namespace`
+        The parsed options.
+    """
+    parser = ArgumentParser(description=__doc__.split("\n")[-2],
+                            prog=os.path.basename(sys.argv[0]))
+    parser.add_argument('-d', '--schema-description', dest='description',
+                        metavar='TEXT',
+                        default='Sloan Digital Sky Survey Data Relase 14',
+                        help='Short description of the schema.')
+    parser.add_argument('-e', '--extension', dest='hdu', metavar='N',
+                        type=int, default=1,
+                        help='Read data from FITS HDU N (default %(default)s).')
+    parser.add_argument('-j', '--output-json', dest='output_json', metavar='FILE',
+                        help='Write table metadata to FILE.')
+    parser.add_argument('-k', '--keep', action='store_true',
+                        help='Do not overwrite any existing intermediate files.')
+    parser.add_argument('-m', '--merge', dest='merge_json', metavar='FILE',
+                        help='Merge metadata in FILE into final metadata output.')
+    parser.add_argument('-o', '--output-sql', dest='output_sql', metavar='FILE',
+                        help='Write table definition to FILE.')
+    parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
+                        help='Right Ascension is in COLUMN.')
+    parser.add_argument('-s', '--schema', metavar='SCHEMA',
+                        default='sdss_dr14',
+                        help='Define table with this schema.')
+    parser.add_argument('-t', '--table', metavar='TABLE',
+                        help='Set the table name.')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Print extra information.')
+    parser.add_argument('fits', help='FITS file to convert.')
+    parser.add_argument('sql', help='SQL file to convert.')
+    return parser.parse_args()
+
+
 def main():
     """Entry-point for command-line script.
 
@@ -412,6 +444,12 @@ def main():
     #
     metadata['columns'] += finish_table(options)
     #
+    # Map the FITS columns to table columns.
+    #
+    log.debug("t = Table.read('%s', hdu=%d)", dlfits, options.hdu)
+    t = Table.read(dlfits, hdu=options.hdu)
+    map_columns(t, metadata)
+    #
     # Sort the columns.
     #
     # foo = sort_the_columns(metadata)
@@ -428,6 +466,7 @@ def main():
         options.output_json = os.path.join(os.path.dirname(options.sql),
                                            "%s.%s.json" % (options.schema, options.table))
     log.debug("options.output_json = '%s'", options.output_json)
+    del metadata['mapping']
     with open(options.output_json, 'w') as JSON:
         json.dump(metadata, JSON, indent=4)
     return 0

@@ -75,6 +75,14 @@ class TestSDSS(unittest.TestCase):
                 meta = init_metadata(options)
             self.assertEqual(str(e.exception),
                              "Table specobjall is already defined!")
+        with NamedTemporaryFile('w+') as f:
+            json.dump({'schemas': [{'schema_name': 'sdss_dr14'}], 'tables': [{'table_name': 'foobar'}]}, f)
+            f.seek(0)
+            with mock.patch('sys.argv', ['sdss2dl', '-m', f.name, '-t', 'specobjall',
+                                         'specObj-dr14.fits', 'specobjall.sql']):
+                options = get_options()
+            meta = init_metadata(options)
+            self.assertIn('mapping', meta)
 
     def test_get_options(self):
         """Test command-line arguments.
@@ -90,18 +98,20 @@ class TestSDSS(unittest.TestCase):
     def test_parse_column_metadata(self):
         """Test parsing metadata of individual columns.
         """
-        d = parse_column_metadata('foo', '--/U mm --/D Random column.')
+        d, r = parse_column_metadata('foo', '--/U mm --/D Random column.')
         self.assertEqual(d['unit'], 'mm')
         self.assertEqual(d['description'], 'Random column.')
-        d = parse_column_metadata('foo', '--/F bar --/K ID_CATALOG --/D Random column.')
+        d, r = parse_column_metadata('foo', '--/F bar --/K ID_CATALOG --/D Random column.')
         self.assertEqual(d['ucd'], 'ID_CATALOG')
         self.assertEqual(d['description'], 'Random column.')
-        d = parse_column_metadata('mag_g', '--/F mag 1 --/D Random column.')
+        self.assertEqual(r, 'BAR')
+        d, r = parse_column_metadata('mag_g', '--/F mag 1 --/D Random column.')
         self.assertEqual(d['description'], 'Random column.')
-        d = parse_column_metadata('extra', '--/F NOFITS --/D Random column. --/U arcsec')
+        self.assertEqual(r, 'MAG[1]')
+        d, r = parse_column_metadata('extra', '--/F NOFITS --/D Random column. --/U arcsec')
         self.assertEqual(d['unit'], 'arcsec')
         self.assertEqual(d['description'], 'Random column.')
-        d = parse_column_metadata('flux_u', '--/U nanomaggies --/D Random column.')
+        d, r = parse_column_metadata('flux_u', '--/U nanomaggies --/D Random column.')
         self.assertEqual(d['unit'], 'nanomaggies')
         self.assertEqual(d['description'], 'Random column.')
 
@@ -119,11 +129,13 @@ class TestSDSS(unittest.TestCase):
         self.assertEqual(self.metadata['columns'][0]['datatype'], 'integer')
         self.assertEqual(self.metadata['columns'][0]['unit'], 'mm')
         self.assertEqual(self.metadata['columns'][0]['description'], 'Column description')
+        self.assertEqual(self.metadata['mapping']['column'], 'MY_COLUMN')
         parse_line('   column2 real NOT NULL, --/U deg --/D Column description --/F RA', self.options, self.metadata)
         self.assertEqual(self.metadata['columns'][1]['column_name'], 'column2')
         self.assertEqual(self.metadata['columns'][1]['datatype'], 'real')
         self.assertEqual(self.metadata['columns'][1]['unit'], 'deg')
         self.assertEqual(self.metadata['columns'][1]['description'], 'Column description')
+        self.assertEqual(self.metadata['mapping']['column2'], 'RA')
         parse_line('   column3 varchar(16) NOT NULL, --/K UCD --/D Column description --/F RA', self.options, self.metadata)
         self.assertEqual(self.metadata['columns'][2]['column_name'], 'column3')
         self.assertEqual(self.metadata['columns'][2]['datatype'], 'character')
@@ -140,7 +152,8 @@ class TestSDSS(unittest.TestCase):
         self.assertEqual(self.metadata['columns'][3]['description'], 'Column description')
         parse_line('    loadVersion  int NOT NULL, --/D Load Version --/K ID_TRACER --/F NOFITS', self.options, self.metadata)
         # parse_line('    z real NOT NULL, --/D Redshift', self.options, self.metadata)
-        # parse_line('    snMedian_u real NOT NULL, --/D S/N --/F sn_median 0', self.options, self.metadata)
+        parse_line('    snMedian_u real NOT NULL, --/D S/N --/F sn_median 0', self.options, self.metadata)
+        self.assertEqual(self.metadata['mapping']['snmedian_u'], 'SN_MEDIAN[0]')
         parse_line('  ); ', self.options, self.metadata)
 
     def test_finish_table(self):

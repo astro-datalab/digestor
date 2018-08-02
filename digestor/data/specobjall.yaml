@@ -1,19 +1,32 @@
 sdss_dr14:
+    #
+    # Implicitly drop everything that is not in the SQL file?
+    #
     drop:
         - MARVELS_TARGET1
         - MARVELS_TARGET2
+        - CALIBFLUX
+        - CALIBFLUX_IVAR
+    #
+    # DEFAULT == Expand to column_0, column_1, etc.
+    # DEFAULT+1 == Expand to column_1, column_2, etc.
+    # UGRIZ == Expand to column_u, column_g, etc.
+    #
     expand:
         TCOLUMN: DEFAULT
         THETA: DEFAULT
         SNMEDIAN: UGRIZ
         FRACNSIGMA: DEFAULT+1
         FRACNSIGHI: DEFAULT+1
-        FRACNSIGLO: DEFAULT,
+        FRACNSIGLO: DEFAULT
         SPECTROFLUX: UGRIZ
         SPECTROSYNFLUX: UGRIZ
         SPECTROFLUXIVAR: UGRIZ
         SPECTROSYNFLUXIVAR: UGRIZ
         SPECTROSKYFLUX: UGRIZ
+    #
+    # Continue using --/F with implicit conversion rules?
+    #
     rename:
         SPECPRIMARY: scienceprimary
         SPECSDSS: sdssprimary
