@@ -11,15 +11,14 @@ import os
 import re
 import sys
 import logging
+import subprocess as sub
 from datetime import datetime
 from argparse import ArgumentParser
 
 from pytz import utc
 
-_SQLre = {'create': re.compile(r'\s*CREATE\s+TABLE\s+.*\s+\('),
-          'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
-          'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$'),
-          'finish': re.compile(r'\s*\);?')}
+_SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
+          'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')}
 
 _server2post = {'float': 'double precision', 'int': 'integer'}
 
@@ -28,16 +27,46 @@ _server2post = {'float': 'double precision', 'int': 'integer'}
 #
 _skip_columns = ('htmid', 'loadversion')
 
-_stilts_header = """# {filename}
-# {ts}
-"""
-
-_stilts_footer = """addcol htm9 "(int)htmIndex(9,{ra},{dec})";
+#
+# Defer some pre-processing to STILTS.
+#
+_stilts_command = """addcol htm9 "(int)htmIndex(9,{ra},{dec})";
 addcol ring256 "(int)healpixRingIndex(8,{ra},{dec})";
 addcol nest4096 "(int)healpixNestIndex(12,{ra},{dec})";
 addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat;
 addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
 """
+
+
+def add_dl_columns(options):
+    """Add DL columns to FITS file prior to column reorganization.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+
+    Returns
+    -------
+    :class:`str`
+        The name of the processed file.
+    """
+    log = logging.getLogger(__name__+'.add_dl_columns')
+    cmd = _stilts_command.format(ra=options.ra.lower(),
+                                 dec=options.ra.lower().replace('ra', 'dec')).replace('\n', ' ').strip()
+    out = options.fits.replace('.fits', '.stilts.fits')
+    command = ['stilts', 'tpipe', 'in={0.fits}'.format(options),
+               "cmd='{0}'".format(cmd), 'ofmt=fits-basic',
+               'out={0}'.format(out)]
+    log.debug(' '.join(command))
+    proc = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
+    o, e = proc.communicate()
+    log.debug('STILTS STDOUT = %s', o)
+    if proc.returncode != 0 or e:
+        log.error('STILTS returncode = %d', proc.returncode)
+        log.error('STILTS STDERR = %s', e)
+    return out
+
 
 def init_metadata(options):
     """Create a dictionary compatible with TapSchema.
@@ -109,11 +138,7 @@ def parse_line(line, options, metadata):
     for r in _SQLre:
         m = _SQLre[r].match(l)
         if m is not None:
-            if r == 'create':
-                log.debug(r"CREATE TABLE IF NOT EXISTS %s.%s (", options.schema, options.table)
-                return (r"CREATE TABLE IF NOT EXISTS %s.%s (" % (options.schema, options.table),
-                        'explodeall;')
-            elif r == 'comment':
+            if r == 'comment':
                 g = m.groups()
                 if g[0] == 'H':
                     log.debug("metadata['tables'][0]['description'] += '%s'", g[1])
@@ -121,13 +146,13 @@ def parse_line(line, options, metadata):
                 if g[0] == 'T':
                     log.debug("metadata['tables'][0]['long_description'] += '%s'", g[1])
                     # metadata['description'] += g[1]+'\n'
-                return (None, None)
+                return
             elif r == 'column':
                 g = m.groups()
                 col = g[0].lower()
                 if col in _skip_columns:
                     log.debug("Skipping column %s.", col)
-                    return (None, None)
+                    return
                 typ = g[1].strip('[]').lower()
                 try:
                     post_type = _server2post[typ]
@@ -135,7 +160,7 @@ def parse_line(line, options, metadata):
                     post_type = typ
                 log.debug("    %s %s %s,", col, post_type, g[2])
                 log.debug("metadata = '%s'", g[3])
-                p, r = parse_column_metadata(col, g[3])
+                p = parse_column_metadata(col, g[3])
                 p['table_name'] = options.table
                 if post_type == 'double precision':
                     p['datatype'] = 'double'
@@ -144,25 +169,9 @@ def parse_line(line, options, metadata):
                     p['size'] = int(post_type.split('(')[1].strip(')'))
                 else:
                     p['datatype'] = post_type
-                if r is not None:
-                    try:
-                        foo = r.split('[')
-                        i = int(foo[1].strip(']')) + 1
-                        log.debug('colmeta -name %s %s_%d;', col, foo[0], i)
-                        stilts = 'colmeta -name %s %s_%d;' % (col, foo[0], i)
-                    except IndexError:
-                        log.debug('colmeta -name %s %s;', col, r)
-                        stilts = 'colmeta -name %s %s;' % (col, r)
-                else:
-                    log.debug('colmeta -name %s %s;', col, col.upper())
-                    stilts = 'colmeta -name %s %s;' % (col, col.upper())
                 metadata['columns'].append(p)
-                return ("    %s %s %s," % (col, post_type, g[2]),
-                        stilts)
-            elif r == 'finish':
-                log.debug("End of table definition.")
-                return (None, None)
-    return (None, None)
+                return
+    return
 
 
 def parse_column_metadata(column, data):
@@ -177,10 +186,8 @@ def parse_column_metadata(column, data):
 
     Returns
     -------
-    :func:`tuple`
-        A tuple containing a dictionary containing the parsed metadata
-        in TapSchema format, and the original name of the column in the
-        FITS file, if detected.
+    :class:`dict`
+        A dictionary containing the parsed metadata in TapSchema format.
     """
     log = logging.getLogger(__name__+'.parse_column_metadata')
     tr = {'D': 'description',
@@ -230,7 +237,7 @@ def parse_column_metadata(column, data):
                 r = "{0}[{1:d}]".format(foo[0], 'ugriz'.index(foo[1])).upper()
                 log.debug("rename %s -> %s", r, column)
                 rename = r
-    return (p, rename)
+    return p
 
 
 def get_options():
@@ -255,8 +262,6 @@ def get_options():
                         help='Write table definition to FILE.')
     parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
                         help='Right Ascension is in COLUMN.')
-    parser.add_argument('-S', '--output-stilts', dest='output_stilts', metavar='FILE',
-                        help='Write stitls commands to FILE.')
     parser.add_argument('-s', '--schema', metavar='SCHEMA',
                         default='sdss_dr14',
                         help='Define table with this schema.')
@@ -264,33 +269,23 @@ def get_options():
                         help='Set the table name.')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Print extra information.')
+    parser.add_argument('fits', help='FITS file to convert.')
     parser.add_argument('sql', help='SQL file to convert.')
     return parser.parse_args()
 
 
-def finish_table(options, metadata):
+def finish_table(options):
     """Add SQL column definitions of Data Lab-added columns.
 
     Parameters
     ----------
     options : :class:`argparse.Namespace`
         The command-line options.
-    metadata : :class:`dict`
-        A pre-initialized dictionary containing metadata.
 
     Returns
     -------
     :class:`list`
-        List of SQL column definitions suitable for appending to an
-        existing list.
-    """
-
-    _stilts_footer = """addcol htm9 "(int)htmIndex(9,{ra},{dec})";
-    addcol ring256 "(int)healpixRingIndex(8,{ra},{dec})";
-    addcol nest4096 "(int)healpixNestIndex(12,{ra},{dec})";
-    addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat;
-    addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
-    # colmeta -name first_snr FIRST_SNR;
+        A list suitable for appending to an existing list of columns.
     """
     columns = [{"table_name": options.table,
                 "column_name": "htm9",
@@ -340,19 +335,41 @@ def finish_table(options, metadata):
                 "unit": "deg", "ucd": "", "utype": "",
                 "datatype": "double", "size": 1,
                 "principal": 0, "indexed": 0, "std": 0},]
-    metadata['columns'] += columns
-    sql = list()
-    for c in columns:
-        n = c['column_name']
-        t = c['datatype']
-        if c['datatype'] == 'double':
-            t = 'double precision'
-        s = '    {0} {1} NOT NULL'.format(n, t)
-        if n != 'elat':
-            s += ','
-        sql.append(s)
-    sql.append(') WITH (fillfactor=100);')
-    return sql
+    return columns
+
+
+def construct_sql(options, metadata):
+    """Construct a CREATE TABLE statement from the `metadata`.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+
+    Returns
+    -------
+    :class:`str`
+        A SQL table definition.
+    """
+    log = logging.getLogger(__name__+'.parse_column_metadata')
+    if options.output_sql is None:
+        options.output_sql = os.path.join(os.path.dirname(options.sql),
+                                          "%s.%s.sql" % (options.schema, options.table))
+    log.debug("options.output_sql = '%s'", options.output_sql)
+    sql = [r"CREATE TABLE IF EXISTS {0.schema}.{0.table} (".format(options)]
+    for c in metadata['columns']:
+        if c['table_name'] == options.table:
+            typ = c['datatype']
+            if typ == 'double':
+                typ = 'double precision'
+            if typ == 'character':
+                typ = 'varchar({size})'.format(**c)
+            sql.append("    {0} {1} NOT NULL,".format(c['column_name'], typ))
+    sql[-1] = sql[-1].replace(',', '')
+    sql.append(r") WITH (fillfactor=100);")
+    return '\n'.join(sql) + '\n'
 
 
 def main():
@@ -374,29 +391,27 @@ def main():
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
+    log.debug("options.fits = '%s'", options.fits)
     log.debug("options.sql = '%s'", options.sql)
     if options.table is None:
         options.table = os.path.splitext(os.path.basename(options.sql))[0]
     log.debug("options.table = '%s'", options.table)
-    output = list()
     metadata = init_metadata(options)
-    stilts = list()
     with open(options.sql) as SQL:
         for line in SQL:
-            out, st = parse_line(line, options, metadata)
-            if out is not None:
-                output.append(out)
-            if st is not None:
-                stilts.append(st)
+            parse_line(line, options, metadata)
     #
     # Finish SQL output.
     #
-    output += finish_table(options, metadata)
-    create_table = '\n'.join(output) + '\n'
-    if options.output_sql is None:
-        options.output_sql = os.path.join(os.path.dirname(options.sql),
-                                          "%s.%s.sql" % (options.schema, options.table))
-    log.debug("options.output_sql = '%s'", options.output_sql)
+    metadata['columns'] += finish_table(options)
+    #
+    # Sort the columns.
+    #
+    # foo = sort_the_columns(metadata)
+    #
+    # Write the SQL file.
+    #
+    create_table = construct_sql(options, metadata)
     with open(options.output_sql, 'w') as POST:
         POST.write(create_table)
     #
@@ -408,16 +423,4 @@ def main():
     log.debug("options.output_json = '%s'", options.output_json)
     with open(options.output_json, 'w') as JSON:
         json.dump(metadata, JSON, indent=4)
-    #
-    # Finish STILTS output.
-    #
-    st = ('\n'.join(stilts) + '\n' +
-          _stilts_footer.format(ra=options.ra.lower(),
-                                dec=options.ra.lower().replace('ra', 'dec')))
-    if options.output_stilts is None:
-        options.output_stilts = os.path.join(os.path.dirname(options.sql),
-                                             "%s.%s.stilts" % (options.schema, options.table))
-    log.debug("options.output_stilts = '%s'", options.output_stilts)
-    with open(options.output_stilts, 'w') as STILTS:
-        STILTS.write(st)
     return 0
