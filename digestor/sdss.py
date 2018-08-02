@@ -16,6 +16,7 @@ from datetime import datetime
 from argparse import ArgumentParser
 
 from pytz import utc
+from astropy.io import fits
 from astropy.table import Table
 
 _SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
@@ -351,7 +352,7 @@ def construct_sql(options, metadata):
     return '\n'.join(sql) + '\n'
 
 
-def map_columns(options, metadata, t):
+def map_columns(options, metadata, colnames):
     """Complete mapping of FITS table columns to SQL columns.
 
     Parameters
@@ -360,8 +361,8 @@ def map_columns(options, metadata, t):
         The command-line options.
     metadata : :class:`dict`
         A pre-initialized dictionary containing metadata.
-    t : :class:`astropy.table.Table`
-        A Table constructed from the FITS file.
+    colnames : :class:`list`
+        The FITS column names.
 
     Raises
     ------
@@ -369,43 +370,32 @@ def map_columns(options, metadata, t):
         If an expected mapping cannot be found.
     """
     log = logging.getLogger(__name__+'.map_columns')
-    for c in metadata['columns']:
-        if c['table_name'] == options.table:
-            col = c['column_name']
-            if col in metadata['mapping']:
-                #
-                # Make sure the column actually exists.
-                #
-                fc = metadata['mapping'][col]
-                if '[' in fc:
-                    fc = fc.split('[')[0]
-                if fc in t.colnames:
-                    log.debug("FITS: %s -> SQL: %s",
-                              metadata['mapping'][col], col)
-                else:
-                    msg = "Could not find a FITS column corresponding to %s!"
-                    log.error(msg, col)
-                    raise KeyError(msg % col)
+    sql_columns = [c['column_name'] for c in metadata['columns']
+                   if c['table_name'] == options.table]
+    for sc in sql_columns:
+        if sc in metadata['mapping']:
+            #
+            # Make sure the column actually exists.
+            #
+            fc = metadata['mapping'][sc]
+            if '[' in fc:
+                fc = fc.split('[')[0]
+            if fc in colnames:
+                log.debug("FITS: %s -> SQL: %s", fc, sc)
             else:
-                for fc in fits_names(col):
-                    if fc in t.colnames:
-                        log.debug("FITS: %s -> SQL: %s",
-                                  fc, col)
-                        metadata['mapping'][col] = fc
-                        break
-                if col not in metadata['mapping']:
-                    for fc in t.colnames:
-                        for sc in fits_names(fc):
-                            if sc == col:
-                                log.debug("FITS: %s -> SQL: %s",
-                                          sc, col)
-                                metadata['mapping'][col] = sc
-                        if col in metadata['mapping']:
-                            break
-            if col not in metadata['mapping']:
                 msg = "Could not find a FITS column corresponding to %s!"
-                log.error(msg, col)
-                raise KeyError(msg % col)
+                log.error(msg, sc)
+                raise KeyError(msg % sc)
+        else:
+            for fc in colnames:
+                for fcl in (fc.lower(), fc.lower().replace('_', ''),):
+                    if fcl == sc:
+                        log.debug("FITS: %s -> SQL: %s", fc, sc)
+                        metadata['mapping'][sc] = fc
+        if sc not in metadata['mapping']:
+            msg = "Could not find a FITS column corresponding to %s!"
+            log.error(msg, sc)
+            raise KeyError(msg % sc)
     #
     # Check for FITS columns that are NOT mapped to the SQL file.
     #
@@ -422,7 +412,7 @@ def map_columns(options, metadata, t):
 
 
 def fits_names(column):
-    """Get a list of possible FITS column names corresponding to `column`.
+    """Get a list of possible SQL column names corresponding to `column`.
 
     Parameters
     ----------
@@ -549,9 +539,12 @@ def main():
     #
     # Map the FITS columns to table columns.
     #
-    log.debug("t = Table.read('%s', hdu=%d)", dlfits, options.hdu)
-    t = Table.read(dlfits, hdu=options.hdu)
-    map_columns(options, metadata, t)
+    # log.debug("t = Table.read('%s', hdu=%d)", dlfits, options.hdu)
+    # t = Table.read(dlfits, hdu=options.hdu)
+    with fits.open(dlfits) as hdulist:
+        fits_names = hdulist[options.hdu].columns.names
+        fits_types = hdulist[options.hdu].columns.formats
+    map_columns(options, metadata, fits_names)
     #
     # Sort the columns.
     #
