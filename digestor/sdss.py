@@ -396,6 +396,13 @@ def main():
     if options.table is None:
         options.table = os.path.splitext(os.path.basename(options.sql))[0]
     log.debug("options.table = '%s'", options.table)
+    #
+    # Preprocess the FITS file.
+    #
+    dlfits = add_dl_columns(options)
+    #
+    # Process the metadata.
+    #
     metadata = init_metadata(options)
     with open(options.sql) as SQL:
         for line in SQL:
