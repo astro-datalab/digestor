@@ -53,14 +53,15 @@ def add_dl_columns(options):
         The name of the processed file.
     """
     log = logging.getLogger(__name__+'.add_dl_columns')
-    cmd = _stilts_command.format(ra=options.ra.lower(),
-                                 dec=options.ra.lower().replace('ra', 'dec')).replace('\n', ' ').strip()
     out = options.fits.replace('.fits', '.stilts.fits')
     if os.path.exists(out) and options.keep:
         log.info("Using existing file: %s.", out)
         return out
     if os.path.exists(out):
+        log.info("Removing existing file: %s.", out)
         os.remove(out)
+    cmd = _stilts_command.format(ra=options.ra.lower(),
+                                 dec=options.ra.lower().replace('ra', 'dec')).replace('\n', ' ').strip()
     command = ['stilts', 'tpipe', 'in={0.fits}'.format(options),
                "cmd='{0}'".format(cmd), 'ofmt=fits-basic',
                'out={0}'.format(out)]
@@ -352,7 +353,7 @@ def construct_sql(options, metadata):
     return '\n'.join(sql) + '\n'
 
 
-def map_columns(t, metadata):
+def map_columns(t, metadata, options):
     """Complete mapping of FITS table columns to SQL columns.
 
     Parameters
@@ -361,8 +362,79 @@ def map_columns(t, metadata):
         A Table constructed from the FITS file.
     metadata : :class:`dict`
         A pre-initialized dictionary containing metadata.
+    options : :class:`argparse.Namespace`
+        The command-line options.
+
+    Raises
+    ------
+    :exc:`KeyError`
+        If an expected mapping cannot be found.
     """
+    log = logging.getLogger(__name__+'.map_columns')
+    for c in metadata['columns']:
+        if c['table_name'] == options.table:
+            col = c['column_name']
+            if col in metadata['mapping']:
+                #
+                # Make sure the column actually exists.
+                #
+                fc = metadata['mapping'][col]
+                if '[' in fc:
+                    fc = fc.split('[')[0]
+                if fc in t.colnames:
+                    log.debug("FITS: %s -> SQL: %s",
+                              metadata['mapping'][col], col)
+                else:
+                    msg = "Could not find a FITS column corresponding to %s!"
+                    log.error(msg, col)
+                    raise KeyError(msg % col)
+            else:
+                for fc in fits_names(col):
+                    if fc in t.colnames:
+                        log.debug("FITS: %s -> SQL: %s",
+                                  fc, col)
+                        metadata['mapping'][col] = fc
+                        break
+            if col not in metadata['mapping']:
+                msg = "Could not find a FITS column corresponding to %s!"
+                log.error(msg, col)
+                raise KeyError(msg % col)
+    #
+    # Check for FITS columns that are NOT mapped to the SQL file.
+    #
+    for col in t.colnames:
+        if col in metadata['mapping'].values():
+            log.debug("FITS column %s will be transferred to SQL.", col)
+        else:
+            col_array = re.compile(col + r'\[\d+\]')
+            if any([col_array.match(sc) is not None for sc in metadata['mapping'].values()]):
+                log.debug("FITS column %s will be transferred to SQL.", col)
+            else:
+                log.warning("FITS column %s will be dropped from SQL!", col)
     return
+
+
+def fits_names(column):
+    """Get a list of possible FITS column names corresponding to `column`.
+
+    Parameters
+    ----------
+    column : :class:`str`
+        The SQL column name.
+
+    Returns
+    -------
+    :func:`tuple`
+        The set of possible column names.
+    """
+    C = column.upper()
+    return (column, C,
+            column.replace('_', ''),
+            C.replace('_', ''),
+            column.rsplit('_', 1)[0],
+            C.rsplit('_', 1)[0],
+            column.rsplit('_', 1)[0].replace('_', ''),
+            C.rsplit('_', 1)[0].replace('_', ''))
 
 
 def get_options():
