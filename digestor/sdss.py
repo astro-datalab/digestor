@@ -407,6 +407,9 @@ def map_columns(options, metadata, colnames):
                     if fcl == sc:
                         log.debug("FITS: %s -> SQL: %s", fc, sc)
                         metadata['mapping'][sc] = fc
+                        break
+                if sc in metadata['mapping']:
+                    break
         if sc not in metadata['mapping']:
             msg = "Could not find a FITS column corresponding to %s!"
             log.error(msg, sc)
