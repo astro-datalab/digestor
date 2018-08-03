@@ -535,7 +535,7 @@ def process_fits(options, metadata):
         else:
             msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
             log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
-            raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
+            # raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
     return
 
 
