@@ -6,6 +6,7 @@
                 "dof": {"datatype": "integer"},
                 "elodiedof": {"datatype": "integer"},
                 "npoly": {"datatype": "integer"},
+                "veldispnpix": {"datatype": "real"},
                 "zwarning_noqso": {"datatype": "integer"}
             }
         }
