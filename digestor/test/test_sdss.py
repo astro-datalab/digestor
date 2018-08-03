@@ -12,6 +12,8 @@ from ..sdss import (get_options, configure_log, add_dl_columns, init_metadata, p
                     parse_column_metadata, finish_table, map_columns,
                     fix_columns, sort_columns, process_fits, construct_sql)
 
+import numpy as np
+
 
 class TestHandler(MemoryHandler):
     """Capture log messages in memory.
@@ -395,7 +397,10 @@ class TestSDSS(unittest.TestCase):
                                  '__filename': 'foo'}
         map_columns(self.options, self.metadata)
         # self.assertLog(-1, 'FITS column FOOBAR will be dropped from SQL!')
-        process_fits(self.options, self.metadata)
+        with mock.patch('digestor.sdss.Table') as T:
+            t = T.read.return_value = mock.MagicMock()
+            t.__getitem__.side_effect = lambda key: np.ones((2,), dtype=np.int32)
+            process_fits(self.options, self.metadata)
         # self.assertLog(-1, 'No safe data type conversion possible for unsafe (K) -> unsafe (integer)!')
 
     def test_construct_sql(self):

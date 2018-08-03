@@ -548,8 +548,8 @@ def process_fits(options, metadata):
     rebase = re.compile(r'^(\d+)(\D+)')
     columns = [c for c in metadata['columns']
                if c['table_name'] == options.table]
-    # old = Table.read(metadata['fits']['__filename'], hdu=options.hdu)
-    # new = Table()
+    old = Table.read(metadata['fits']['__filename'], hdu=options.hdu)
+    new = Table()
     for col in columns:
         fcol = metadata['mapping'][col['column_name']]
         index = None
@@ -563,40 +563,39 @@ def process_fits(options, metadata):
             log.debug("Type match for %s -> %s.", fcol, col['column_name'])
             if index is not None:
                 log.debug("new['%s'] = old['%s'][%d]", col['column_name'], fcol, index)
-                # new[col['column_name']] = old[fcol][index]
+                new[col['column_name']] = old[fcol][index]
             else:
                 log.debug("new['%s'] = old['%s']", col['column_name'], fcol)
-                # new[col['column_name']] = old[fcol]
+                new[col['column_name']] = old[fcol]
         elif fbasetype in type_map[col['datatype']]:
             log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
                       fcol, fbasetype, col['column_name'], col['datatype'])
             if index is not None:
                 log.debug("new['%s'] = old['%s'][%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
-                # new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
+                new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
             else:
                 log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
-                # new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
+                new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
         elif fbasetype == 'A' and col['datatype'] == 'bigint':
             log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
             log.debug("new['%s'] = old['%s'].astype(np.uint64)", col['column_name'], fcol)
-            # new[col['column_name']] = old[fcol].astype(np.uint64)
+            new[col['column_name']] = old[fcol].astype(np.uint64)
         else:
             if (fbasetype, col['datatype']) in safe_conversion:
                 limit = safe_conversion[(fbasetype, col['datatype'])]
-                if True:
-                # if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
+                if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
                     if index is not None:
                         log.debug("new['%s'] = old['%s'][%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
-                        # new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
+                        new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
                     else:
                         log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
-                        # new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
+                        new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
             else:
                 msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
                 log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
                 # raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
     log.debug("new.write('%s.%s.fits')", options.schema, options.table)
-    # new.write("{0.schema}.{0.table}.fits".format(options))
+    new.write("{0.schema}.{0.table}.fits".format(options))
     return
 
 
