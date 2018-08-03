@@ -507,6 +507,7 @@ def process_fits(options, metadata):
               'smallint': np.int16,
               'double': np.float64,
               'real': np.float32}
+    safe_conversion = {('J', 'smallint'): 2**15}
     rebase = re.compile(r'^(\d+)(\D+)')
     columns = [c for c in metadata['columns']
                if c['table_name'] == options.table]
@@ -514,36 +515,48 @@ def process_fits(options, metadata):
     # new = Table()
     for col in columns:
         fcol = metadata['mapping'][col['column_name']]
-        try:
-            ftype = metadata['fits'][fcol]
-        except KeyError:
-            ftype = metadata['fits'][fcol.split('[')[0]]
+        index = None
+        if '[' in fcol:
+            foo = fcol.split('[')
+            fcol = foo[0]
+            index = int(foo[1].strip(']'))
+        ftype = metadata['fits'][fcol]
         fbasetype = rebase.sub(r'\2', ftype)
         if fbasetype == type_map[col['datatype']][0]:
             log.debug("Type match for %s -> %s.", fcol, col['column_name'])
-            if '[' in fcol:
-                foo = fcol.split('[')
-                fcol = foo[0]
-                index = int(foo[1].strip(']'))
+            if index is not None:
                 log.debug("new['%s'] = old['%s'][%d]", col['column_name'], fcol, index)
+                # new[col['column_name']] = old[fcol][index]
             else:
                 log.debug("new['%s'] = old['%s']", col['column_name'], fcol)
+                # new[col['column_name']] = old[fcol]
         elif fbasetype in type_map[col['datatype']]:
             log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
                       fcol, fbasetype, col['column_name'], col['datatype'])
-            if '[' in fcol:
-                foo = fcol.split('[')
-                fcol = foo[0]
-                index = int(foo[1].strip(']'))
+            if index is not None:
                 log.debug("new['%s'] = old['%s'][%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+                # new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
             else:
                 log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
+                # new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
         elif fbasetype == 'A' and col['datatype'] == 'bigint':
             log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
+            log.debug("new['%s'] = old['%s'].astype(np.uint64)", col['column_name'], fcol, str(np_map[col['datatype']]))
+            # new[col['column_name']] = old[fcol].astype(np.uint64)
         else:
-            msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
-            log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
-            # raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
+            if (fbasetype, col['datatype']) in safe_conversion:
+                limit = safe_conversion[(fbasetype, col['datatype'])]
+                if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
+                    if index is not None:
+                        log.debug("new['%s'] = old['%s'][%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+                        # new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
+                    else:
+                        log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
+                        # new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
+            else:
+                msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
+                log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
+                # raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
     log.debug("new.write('%s.%s.fits')", options.schema, options.table)
     # new.write("{0.schema}.{0.table}.fits".format(options))
     return
@@ -564,7 +577,7 @@ def construct_sql(options, metadata):
     :class:`str`
         A SQL table definition.
     """
-    log = logging.getLogger(__name__+'.parse_column_metadata')
+    log = logging.getLogger(__name__+'.construct_sql')
     if options.output_sql is None:
         options.output_sql = os.path.join(os.path.dirname(options.sql),
                                           "%s.%s.sql" % (options.schema, options.table))
