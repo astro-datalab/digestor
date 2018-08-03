@@ -418,7 +418,7 @@ def map_columns(options, metadata, colnames):
     #
     # Check for FITS columns that are NOT mapped to the SQL file.
     #
-    for col in t.colnames:
+    for col in colnames:
         if col in metadata['mapping'].values():
             log.debug("FITS column %s will be transferred to SQL.", col)
         else:
