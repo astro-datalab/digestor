@@ -2,7 +2,11 @@
     "sdss_dr14": {
         "specobjall": {
             "columns": {
-                "class_person": {"datatype": "smallint"}
+                "class_person": {"datatype": "smallint"},
+                "dof": {"datatype": "integer"},
+                "elodiedof": {"datatype": "integer"},
+                "npoly": {"datatype": "integer"},
+                "zwarning_noqso": {"datatype": "integer"}
             }
         }
     }
