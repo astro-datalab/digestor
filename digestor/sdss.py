@@ -381,8 +381,9 @@ def map_columns(options, metadata, colnames):
             mc = metadata['mapping'][sc]
             index = ''
             if '[' in mc:
-                mc = mc.split('[')[0]
-                index = '[' + mc.split('[')[1]
+                foo = mc.split('[')
+                mc = foo[0]
+                index = '[' + foo[1]
             if mc in colnames:
                 log.debug("FITS: %s -> SQL: %s", metadata['mapping'][sc], sc)
                 verify_mapping = True
