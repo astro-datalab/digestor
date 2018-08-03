@@ -586,7 +586,7 @@ def main():
         fits_names = hdulist[options.hdu].columns.names
         fits_types = hdulist[options.hdu].columns.formats
     metadata['fits'] = {'__filename': dlfits}
-    for i, f in fits_names:
+    for i, f in enumerate(fits_names):
         metadata['fits'][f] = fits_types[i]
     map_columns(options, metadata)
     #
