@@ -15,6 +15,7 @@ import subprocess as sub
 # from datetime import datetime
 from argparse import ArgumentParser
 
+from pkg_resources import resource_filename
 # from pytz import utc
 import numpy as np
 from astropy.io import fits
@@ -51,6 +52,9 @@ def get_options():
     """
     parser = ArgumentParser(description=__doc__.split("\n")[-2],
                             prog=os.path.basename(sys.argv[0]))
+    parser.add_argument('-c', '--configuration', dest='config', metavar='FILE',
+                        default=resource_filename('digestor', 'data/sdss.json'),
+                        help='Read table-specific configuration from FILE.')
     parser.add_argument('-d', '--schema-description', dest='description',
                         metavar='TEXT',
                         default='Sloan Digital Sky Survey Data Relase 14',
@@ -456,6 +460,33 @@ def map_columns(options, metadata):
     return
 
 
+def fix_columns(options, metadata):
+    """Fix any table definition oddities "by hand".
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+    """
+    log = logging.getLogger(__name__+'.fix_columns')
+    if os.path.exists(options.config):
+        log.debug("Opening %s.", options.config)
+        with open(options.config) as f:
+            conf = json.load(f)
+        try:
+            col_fix = conf[options.schema][options.table]['columns']
+        except KeyError:
+            return
+        colindex = dict([(c['column_name'], i) for i, c in enumerate(metadata['columns'])
+                         if c['table_name'] == options.table])
+        for col in col_fix:
+            for k in col_fix[col]:
+                log.debug("metadata['columns'][%d]['%s'] = col_fix['%s']['%s']", colindex[col], k, col, k)
+                metadata['columns'][colindex[col]][k] = col_fix[col][k]
+    return
+
 def sort_columns(options, metadata):
     """Sort the SQL columns for best performance.
 
@@ -642,8 +673,9 @@ def main():
         metadata['fits'][f] = fits_types[i]
     map_columns(options, metadata)
     #
-    # Sort the columns.
+    # Fix any table definition problems and sort the columns.
     #
+    fix_columns(options, metadata)
     sort_columns(options, metadata)
     #
     # Sort the FITS data table to match the columns.

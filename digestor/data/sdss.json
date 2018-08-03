@@ -1,0 +1,9 @@
+{
+    "sdss_dr14": {
+        "specobjall": {
+            "columns": {
+                "class_person": {"datatype": "smallint"}
+            }
+        }
+    }
+}
