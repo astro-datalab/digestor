@@ -546,7 +546,8 @@ def process_fits(options, metadata):
         else:
             if (fbasetype, col['datatype']) in safe_conversion:
                 limit = safe_conversion[(fbasetype, col['datatype'])]
-                if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
+                if True:
+                # if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
                     if index is not None:
                         log.debug("new['%s'] = old['%s'][%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
                         # new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
