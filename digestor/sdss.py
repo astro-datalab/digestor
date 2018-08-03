@@ -508,6 +508,7 @@ def process_fits(options, metadata):
     :exc:`ValueError`
         If the FITS data type cannot be converted to SQL.
     """
+    log = logging.getLogger(__name__+'.process_fits')
     type_map = {'bigint': ('K', 'J', 'I', 'B'),
                 'integer': ('J', 'I', 'B'),
                 'smallint': ('I', 'B'),
