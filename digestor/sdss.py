@@ -40,6 +40,45 @@ addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
 """
 
 
+def get_options():
+    """Parse command-line options.
+
+    Returns
+    -------
+    :class:`argparse.Namespace`
+        The parsed options.
+    """
+    parser = ArgumentParser(description=__doc__.split("\n")[-2],
+                            prog=os.path.basename(sys.argv[0]))
+    parser.add_argument('-d', '--schema-description', dest='description',
+                        metavar='TEXT',
+                        default='Sloan Digital Sky Survey Data Relase 14',
+                        help='Short description of the schema.')
+    parser.add_argument('-e', '--extension', dest='hdu', metavar='N',
+                        type=int, default=1,
+                        help='Read data from FITS HDU N (default %(default)s).')
+    parser.add_argument('-j', '--output-json', dest='output_json', metavar='FILE',
+                        help='Write table metadata to FILE.')
+    parser.add_argument('-k', '--keep', action='store_true',
+                        help='Do not overwrite any existing intermediate files.')
+    parser.add_argument('-m', '--merge', dest='merge_json', metavar='FILE',
+                        help='Merge metadata in FILE into final metadata output.')
+    parser.add_argument('-o', '--output-sql', dest='output_sql', metavar='FILE',
+                        help='Write table definition to FILE.')
+    parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
+                        help='Right Ascension is in COLUMN.')
+    parser.add_argument('-s', '--schema', metavar='SCHEMA',
+                        default='sdss_dr14',
+                        help='Define table with this schema.')
+    parser.add_argument('-t', '--table', metavar='TABLE',
+                        help='Set the table name.')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Print extra information.')
+    parser.add_argument('fits', help='FITS file to convert.')
+    parser.add_argument('sql', help='SQL file to convert.')
+    return parser.parse_args()
+
+
 def add_dl_columns(options):
     """Add DL columns to FITS file prior to column reorganization.
 
@@ -352,7 +391,7 @@ def construct_sql(options, metadata):
     return '\n'.join(sql) + '\n'
 
 
-def map_columns(options, metadata, colnames):
+def map_columns(options, metadata):
     """Complete mapping of FITS table columns to SQL columns.
 
     Parameters
@@ -361,8 +400,6 @@ def map_columns(options, metadata, colnames):
         The command-line options.
     metadata : :class:`dict`
         A pre-initialized dictionary containing metadata.
-    colnames : :class:`list`
-        The FITS column names.
 
     Raises
     ------
@@ -372,6 +409,8 @@ def map_columns(options, metadata, colnames):
     log = logging.getLogger(__name__+'.map_columns')
     sql_columns = [c['column_name'] for c in metadata['columns']
                    if c['table_name'] == options.table]
+    colnames = list(metadata['fits'].keys())
+    del colnames[colnames.index('__filename')]
     for sc in sql_columns:
         if sc in metadata['mapping']:
             #
@@ -430,29 +469,6 @@ def map_columns(options, metadata, colnames):
     return
 
 
-def fits_names(column):
-    """Get a list of possible SQL column names corresponding to `column`.
-
-    Parameters
-    ----------
-    column : :class:`str`
-        The SQL column name.
-
-    Returns
-    -------
-    :func:`tuple`
-        The set of possible column names.
-    """
-    C = column.upper()
-    return (column, C,
-            column.replace('_', ''),
-            C.replace('_', ''),
-            column.rsplit('_', 1)[0],
-            C.rsplit('_', 1)[0],
-            column.rsplit('_', 1)[0].replace('_', ''),
-            C.rsplit('_', 1)[0].replace('_', ''))
-
-
 def sort_columns(options, metadata):
     """Sort the SQL columns for best performance.
 
@@ -477,43 +493,49 @@ def sort_columns(options, metadata):
     return
 
 
-def get_options():
-    """Parse command-line options.
+def process_fits(options, metadata):
+    """Convert a pre-processed FITS file into one ready for database loading.
 
-    Returns
-    -------
-    :class:`argparse.Namespace`
-        The parsed options.
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+
+    Raises
+    ------
+    :exc:`ValueError`
+        If the FITS data type cannot be converted to SQL.
     """
-    parser = ArgumentParser(description=__doc__.split("\n")[-2],
-                            prog=os.path.basename(sys.argv[0]))
-    parser.add_argument('-d', '--schema-description', dest='description',
-                        metavar='TEXT',
-                        default='Sloan Digital Sky Survey Data Relase 14',
-                        help='Short description of the schema.')
-    parser.add_argument('-e', '--extension', dest='hdu', metavar='N',
-                        type=int, default=1,
-                        help='Read data from FITS HDU N (default %(default)s).')
-    parser.add_argument('-j', '--output-json', dest='output_json', metavar='FILE',
-                        help='Write table metadata to FILE.')
-    parser.add_argument('-k', '--keep', action='store_true',
-                        help='Do not overwrite any existing intermediate files.')
-    parser.add_argument('-m', '--merge', dest='merge_json', metavar='FILE',
-                        help='Merge metadata in FILE into final metadata output.')
-    parser.add_argument('-o', '--output-sql', dest='output_sql', metavar='FILE',
-                        help='Write table definition to FILE.')
-    parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
-                        help='Right Ascension is in COLUMN.')
-    parser.add_argument('-s', '--schema', metavar='SCHEMA',
-                        default='sdss_dr14',
-                        help='Define table with this schema.')
-    parser.add_argument('-t', '--table', metavar='TABLE',
-                        help='Set the table name.')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help='Print extra information.')
-    parser.add_argument('fits', help='FITS file to convert.')
-    parser.add_argument('sql', help='SQL file to convert.')
-    return parser.parse_args()
+    type_map = {'bigint': ('K', 'J', 'I', 'B'),
+                'integer': ('J', 'I', 'B'),
+                'smallint': ('I', 'B'),
+                'double': ('D', 'E'),
+                'real': ('E',),
+                'character': ('A',)}
+    rebase = re.compile(r'^(\d+)(\D+)')
+    columns = [c for c in metadata['columns']
+               if c['table_name'] == options.table]
+    for col in columns:
+        fcol = metadata['mapping'][col['column_name']]
+        try:
+            ftype = metadata['fits'][fcol]
+        except KeyError:
+            ftype = metadata['fits'][fcol.split('[')[0]]
+        fbasetype = rebase.sub(r'\2', ftype)
+        if fbasetype == type_map[col['datatype']][0]:
+            log.debug("Type match for %s -> %s.", fcol, col['column_name'])
+        elif fbasetype in type_map[col['datatype']]:
+            log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
+                      fcol, fbasetype, col['column_name'], col['datatype'])
+        elif fbasetype == 'A' and col['datatype'] == 'bigint':
+            log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
+        else:
+            msg = "No safe data type conversion possible for %s -> %s!"
+            log.error(msg, fcol, col['column_name'])
+            raise ValueError(msg % (fcol, col['column_name']))
+    return
 
 
 def main():
@@ -563,7 +585,10 @@ def main():
     with fits.open(dlfits) as hdulist:
         fits_names = hdulist[options.hdu].columns.names
         fits_types = hdulist[options.hdu].columns.formats
-    map_columns(options, metadata, fits_names)
+    metadata['fits'] = {'__filename': dlfits}
+    for i, f in fits_names:
+        metadata['fits'][f] = fits_types[i]
+    map_columns(options, metadata)
     #
     # Sort the columns.
     #
@@ -571,6 +596,7 @@ def main():
     #
     # Sort the FITS data table to match the columns.
     #
+    process_fits(options, metadata)
     #
     # Write the SQL file.
     #
@@ -585,6 +611,7 @@ def main():
                                            "%s.%s.json" % (options.schema, options.table))
     log.debug("options.output_json = '%s'", options.output_json)
     del metadata['mapping']
+    del metadata['fits']
     with open(options.output_json, 'w') as JSON:
         json.dump(metadata, JSON, indent=4)
     return 0
