@@ -541,7 +541,7 @@ def process_fits(options, metadata):
                 # new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
         elif fbasetype == 'A' and col['datatype'] == 'bigint':
             log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
-            log.debug("new['%s'] = old['%s'].astype(np.uint64)", col['column_name'], fcol, str(np_map[col['datatype']]))
+            log.debug("new['%s'] = old['%s'].astype(np.uint64)", col['column_name'], fcol)
             # new[col['column_name']] = old[fcol].astype(np.uint64)
         else:
             if (fbasetype, col['datatype']) in safe_conversion:
