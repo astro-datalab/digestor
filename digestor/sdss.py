@@ -377,12 +377,27 @@ def map_columns(options, metadata, colnames):
             #
             # Make sure the column actually exists.
             #
-            fc = metadata['mapping'][sc]
-            if '[' in fc:
-                fc = fc.split('[')[0]
-            if fc in colnames:
-                log.debug("FITS: %s -> SQL: %s", fc, sc)
+            verify_mapping = False
+            mc = metadata['mapping'][sc]
+            index = ''
+            if '[' in mc:
+                mc = mc.split('[')[0]
+                index = '[' + mc.split('[')[1]
+            if mc in colnames:
+                log.debug("FITS: %s -> SQL: %s", metadata['mapping'][sc], sc)
+                verify_mapping = True
             else:
+                #
+                # See if there is a column containing underscores that
+                # could correspond to this mapping.
+                #
+                for fc in colnames:
+                    for fcl in (fc.lower(), fc.lower.replace('_'), ''),):
+                        if fcl == mc.lower():
+                            log.debug("FITS: %s -> SQL: %s", fc, sc)
+                            metadata['mapping'][sc] = fc + index
+                            verify_mapping = True
+            if not verify_mapping:
                 msg = "Could not find a FITS column corresponding to %s!"
                 log.error(msg, sc)
                 raise KeyError(msg % sc)
