@@ -392,7 +392,7 @@ def map_columns(options, metadata, colnames):
                 # could correspond to this mapping.
                 #
                 for fc in colnames:
-                    for fcl in (fc.lower(), fc.lower.replace('_'), '',):
+                    for fcl in (fc.lower(), fc.lower().replace('_', ''),):
                         if fcl == mc.lower():
                             log.debug("FITS: %s -> SQL: %s", fc, sc)
                             metadata['mapping'][sc] = fc + index
