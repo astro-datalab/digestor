@@ -5,10 +5,11 @@
 import unittest
 import unittest.mock as mock
 import json
+import logging
 from tempfile import NamedTemporaryFile
 from ..sdss import (get_options, add_dl_columns, init_metadata, parse_line,
-                    parse_column_metadata, finish_table, construct_sql,
-                    map_columns, sort_columns)
+                    parse_column_metadata, finish_table,
+                    map_columns, sort_columns, process_fits, construct_sql)
 
 
 class TestSDSS(unittest.TestCase):
@@ -28,18 +29,40 @@ class TestSDSS(unittest.TestCase):
                                      'specObj-dr14.fits', 'specobjall.sql']):
             self.options = get_options()
         self.metadata = init_metadata(self.options)
+        # log = logging.getLogger('digestor.sdss')
 
     def tearDown(self):
         pass
 
+    def test_get_options(self):
+        """Test command-line arguments.
+        """
+        self.assertEqual(self.options.sql, 'specobjall.sql')
+        self.assertFalse(self.options.verbose)
+        self.assertEqual(self.options.table, 'specobjall')
+        self.assertEqual(self.options.schema, 'sdss_dr14')
+        self.assertIsNone(self.options.output_sql)
+        self.assertIsNone(self.options.output_json)
+        self.assertIsNone(self.options.merge_json)
+
     def test_add_dl_columns(self):
         """Test adding STILTS columns.
         """
+        self.options.keep = True
+        with mock.patch('os.path.exists') as e:
+            e.return_value = True
+            out = add_dl_columns(self.options)
+        self.assertEqual(out, 'specObj-dr14.stilts.fits')
+        self.options.keep = False
         with mock.patch('subprocess.Popen') as proc:
             p = proc.return_value = mock.MagicMock()
             p.returncode = 0
             p.communicate.return_value = ('', '')
-            out = add_dl_columns(self.options)
+            with mock.patch('os.path.exists') as e:
+                e.return_value = True
+                with mock.patch('os.remove') as rm:
+                    out = add_dl_columns(self.options)
+                    rm.assert_called_with(out)
             proc.assert_called_with(['stilts', 'tpipe',
                                      'in=specObj-dr14.fits',
                                      'cmd=\'addcol htm9 "(int)htmIndex(9,plug_ra,plug_dec)"; addcol ring256 "(int)healpixRingIndex(8,plug_ra,plug_dec)"; addcol nest4096 "(int)healpixNestIndex(12,plug_ra,plug_dec)"; addskycoords -inunit deg -outunit deg icrs galactic plug_ra plug_dec glon glat; addskycoords -inunit deg -outunit deg icrs ecliptic plug_ra plug_dec elon elat;\'',
@@ -85,37 +108,6 @@ class TestSDSS(unittest.TestCase):
             meta = init_metadata(options)
             self.assertIn('mapping', meta)
 
-    def test_get_options(self):
-        """Test command-line arguments.
-        """
-        self.assertEqual(self.options.sql, 'specobjall.sql')
-        self.assertFalse(self.options.verbose)
-        self.assertEqual(self.options.table, 'specobjall')
-        self.assertEqual(self.options.schema, 'sdss_dr14')
-        self.assertIsNone(self.options.output_sql)
-        self.assertIsNone(self.options.output_json)
-        self.assertIsNone(self.options.merge_json)
-
-    def test_parse_column_metadata(self):
-        """Test parsing metadata of individual columns.
-        """
-        d, r = parse_column_metadata('foo', '--/U mm --/D Random column.')
-        self.assertEqual(d['unit'], 'mm')
-        self.assertEqual(d['description'], 'Random column.')
-        d, r = parse_column_metadata('foo', '--/F bar --/K ID_CATALOG --/D Random column.')
-        self.assertEqual(d['ucd'], 'ID_CATALOG')
-        self.assertEqual(d['description'], 'Random column.')
-        self.assertEqual(r, 'BAR')
-        d, r = parse_column_metadata('mag_g', '--/F mag 1 --/D Random column.')
-        self.assertEqual(d['description'], 'Random column.')
-        self.assertEqual(r, 'MAG[1]')
-        d, r = parse_column_metadata('extra', '--/F NOFITS --/D Random column. --/U arcsec')
-        self.assertEqual(d['unit'], 'arcsec')
-        self.assertEqual(d['description'], 'Random column.')
-        d, r = parse_column_metadata('flux_u', '--/U nanomaggies --/D Random column.')
-        self.assertEqual(d['unit'], 'nanomaggies')
-        self.assertEqual(d['description'], 'Random column.')
-
     def test_parse_line(self):
         """Test parsing single SQL lines.
         """
@@ -156,6 +148,26 @@ class TestSDSS(unittest.TestCase):
         parse_line('    snMedian_u real NOT NULL, --/D S/N --/F sn_median 0', self.options, self.metadata)
         self.assertEqual(self.metadata['mapping']['snmedian_u'], 'SN_MEDIAN[0]')
         parse_line('  ); ', self.options, self.metadata)
+
+    def test_parse_column_metadata(self):
+        """Test parsing metadata of individual columns.
+        """
+        d, r = parse_column_metadata('foo', '--/U mm --/D Random column.')
+        self.assertEqual(d['unit'], 'mm')
+        self.assertEqual(d['description'], 'Random column.')
+        d, r = parse_column_metadata('foo', '--/F bar --/K ID_CATALOG --/D Random column.')
+        self.assertEqual(d['ucd'], 'ID_CATALOG')
+        self.assertEqual(d['description'], 'Random column.')
+        self.assertEqual(r, 'BAR')
+        d, r = parse_column_metadata('mag_g', '--/F mag 1 --/D Random column.')
+        self.assertEqual(d['description'], 'Random column.')
+        self.assertEqual(r, 'MAG[1]')
+        d, r = parse_column_metadata('extra', '--/F NOFITS --/D Random column. --/U arcsec')
+        self.assertEqual(d['unit'], 'arcsec')
+        self.assertEqual(d['description'], 'Random column.')
+        d, r = parse_column_metadata('flux_u', '--/U nanomaggies --/D Random column.')
+        self.assertEqual(d['unit'], 'nanomaggies')
+        self.assertEqual(d['description'], 'Random column.')
 
     def test_finish_table(self):
         """Test Data Lab-specific columns.

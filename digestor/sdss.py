@@ -357,40 +357,6 @@ def finish_table(options):
     return columns
 
 
-def construct_sql(options, metadata):
-    """Construct a CREATE TABLE statement from the `metadata`.
-
-    Parameters
-    ----------
-    options : :class:`argparse.Namespace`
-        The command-line options.
-    metadata : :class:`dict`
-        A pre-initialized dictionary containing metadata.
-
-    Returns
-    -------
-    :class:`str`
-        A SQL table definition.
-    """
-    log = logging.getLogger(__name__+'.parse_column_metadata')
-    if options.output_sql is None:
-        options.output_sql = os.path.join(os.path.dirname(options.sql),
-                                          "%s.%s.sql" % (options.schema, options.table))
-    log.debug("options.output_sql = '%s'", options.output_sql)
-    sql = [r"CREATE TABLE IF EXISTS {0.schema}.{0.table} (".format(options)]
-    for c in metadata['columns']:
-        if c['table_name'] == options.table:
-            typ = c['datatype']
-            if typ == 'double':
-                typ = 'double precision'
-            if typ == 'character':
-                typ = 'varchar({size})'.format(**c)
-            sql.append("    {0} {1} NOT NULL,".format(c['column_name'], typ))
-    sql[-1] = sql[-1].replace(',', '')
-    sql.append(r") WITH (fillfactor=100);")
-    return '\n'.join(sql) + '\n'
-
-
 def map_columns(options, metadata):
     """Complete mapping of FITS table columns to SQL columns.
 
@@ -539,6 +505,40 @@ def process_fits(options, metadata):
     return
 
 
+def construct_sql(options, metadata):
+    """Construct a CREATE TABLE statement from the `metadata`.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+
+    Returns
+    -------
+    :class:`str`
+        A SQL table definition.
+    """
+    log = logging.getLogger(__name__+'.parse_column_metadata')
+    if options.output_sql is None:
+        options.output_sql = os.path.join(os.path.dirname(options.sql),
+                                          "%s.%s.sql" % (options.schema, options.table))
+    log.debug("options.output_sql = '%s'", options.output_sql)
+    sql = [r"CREATE TABLE IF EXISTS {0.schema}.{0.table} (".format(options)]
+    for c in metadata['columns']:
+        if c['table_name'] == options.table:
+            typ = c['datatype']
+            if typ == 'double':
+                typ = 'double precision'
+            if typ == 'character':
+                typ = 'varchar({size})'.format(**c)
+            sql.append("    {0} {1} NOT NULL,".format(c['column_name'], typ))
+    sql[-1] = sql[-1].replace(',', '')
+    sql.append(r") WITH (fillfactor=100);")
+    return '\n'.join(sql) + '\n'
+
+
 def main():
     """Entry-point for command-line script.
 
@@ -550,7 +550,7 @@ def main():
     options = get_options()
     ts = datetime.utcnow().replace(tzinfo=utc).strftime('%Y-%m-%dT%H:%M:%S %Z')
     ch = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter('%(levelname)s:%(lineno)s: %(message)s')
+    formatter = logging.Formatter('%(levelname)s:%(name)s:%(lineno)s: %(message)s')
     ch.setFormatter(formatter)
     log = logging.getLogger(__name__)
     log.addHandler(ch)
