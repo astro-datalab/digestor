@@ -482,10 +482,16 @@ def fix_columns(options, metadata):
         colindex = dict([(c['column_name'], i) for i, c in enumerate(metadata['columns'])
                          if c['table_name'] == options.table])
         for col in col_fix:
+            try:
+                i = colindex[col]
+            except KeyError:
+                continue
             for k in col_fix[col]:
-                log.debug("metadata['columns'][%d]['%s'] = col_fix['%s']['%s']", colindex[col], k, col, k)
+                log.debug("metadata['columns'][%d]['%s'] = col_fix['%s']['%s'] = '%s'",
+                          colindex[col], k, col, k, col_fix[col][k])
                 metadata['columns'][colindex[col]][k] = col_fix[col][k]
     return
+
 
 def sort_columns(options, metadata):
     """Sort the SQL columns for best performance.

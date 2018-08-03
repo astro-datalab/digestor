@@ -9,8 +9,8 @@ import logging
 from logging.handlers import MemoryHandler
 from tempfile import NamedTemporaryFile
 from ..sdss import (get_options, configure_log, add_dl_columns, init_metadata, parse_line,
-                    parse_column_metadata, finish_table,
-                    map_columns, sort_columns, process_fits, construct_sql)
+                    parse_column_metadata, finish_table, map_columns,
+                    fix_columns, sort_columns, process_fits, construct_sql)
 
 
 class TestHandler(MemoryHandler):
@@ -310,6 +310,20 @@ class TestSDSS(unittest.TestCase):
             map_columns(self.options, self.metadata)
         self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to z!')
 
+    def test_fix_columns(self):
+        """Test "by hand" fixes to table definition.
+        """
+        self.metadata['columns'] += [{"table_name": self.options.table,
+                                      "column_name": "veldispnpix",
+                                      "description": "number of pixels",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "integer", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},]
+        fix_columns(self.options, self.metadata)
+        self.assertEqual(self.metadata['columns'][0]['datatype'], 'real')
+        self.options.table = 'foobar'
+        fix_columns(self.options, self.metadata)
+
     def test_sort_columns(self):
         """Test sorting columns by size.
         """
@@ -358,9 +372,17 @@ class TestSDSS(unittest.TestCase):
                                       "description": "unsafe",
                                       "unit": "", "ucd": "", "utype": "",
                                       "datatype": "integer", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},
+                                     {"table_name": self.options.table,
+                                      "column_name": "flags_0",
+                                      "description": "unsafe",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "smallint", "size": 1,
                                       "principal": 0, "indexed": 0, "std": 0}]
+        self.metadata['columns'][0]['datatype'] = 'smallint'
         self.metadata['mapping'] = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
-                                    'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]'}
+                                    'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
+                                    'flags_0': 'FLAGS[0]'}
         self.metadata['fits'] = {'e_lon': 'D', 'e_lat': 'D',
                                  'g_lon': 'E', 'g_lat': 'E',
                                  'HTM9': 'J', 'ring256': 'J',
@@ -368,6 +390,7 @@ class TestSDSS(unittest.TestCase):
                                  'MAG_IVAR': '2E',
                                  'OBJID': '16A',
                                  'FOOBAR': '16A',
+                                 'flags': '2J',
                                  'unsafe': 'K',
                                  '__filename': 'foo'}
         map_columns(self.options, self.metadata)
