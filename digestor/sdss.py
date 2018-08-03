@@ -501,9 +501,16 @@ def process_fits(options, metadata):
                 'double': ('D', 'E'),
                 'real': ('E',),
                 'character': ('A',)}
+    np_map = {'bigint': np.int64,
+              'integer': np.int32,
+              'smallint': np.int16,
+              'double': np.float64,
+              'real': np.float32}
     rebase = re.compile(r'^(\d+)(\D+)')
     columns = [c for c in metadata['columns']
                if c['table_name'] == options.table]
+    # old = Table.read(metadata['fits']['__filename'], hdu=options.hdu)
+    # new = Table()
     for col in columns:
         fcol = metadata['mapping'][col['column_name']]
         try:
@@ -513,15 +520,31 @@ def process_fits(options, metadata):
         fbasetype = rebase.sub(r'\2', ftype)
         if fbasetype == type_map[col['datatype']][0]:
             log.debug("Type match for %s -> %s.", fcol, col['column_name'])
+            if '[' in fcol:
+                foo = fcol.split('[')
+                fcol = foo[0]
+                index = int(foo[1].strip(']'))
+                log.debug("new['%s'] = old['%s'][%d]", col['column_name'], fcol, index)
+            else:
+                log.debug("new['%s'] = old['%s']", col['column_name'], fcol)
         elif fbasetype in type_map[col['datatype']]:
             log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
                       fcol, fbasetype, col['column_name'], col['datatype'])
+            if '[' in fcol:
+                foo = fcol.split('[')
+                fcol = foo[0]
+                index = int(foo[1].strip(']'))
+                log.debug("new['%s'] = old['%s'][%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+            else:
+                log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
         elif fbasetype == 'A' and col['datatype'] == 'bigint':
             log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
         else:
             msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
             log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
             # raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
+    log.debug("new.write('%s.%s.fits')", options.schema, options.table)
+    # new.write("{0.schema}.{0.table}.fits".format(options))
     return
 
 
