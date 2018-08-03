@@ -533,9 +533,9 @@ def process_fits(options, metadata):
         elif fbasetype == 'A' and col['datatype'] == 'bigint':
             log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
         else:
-            msg = "No safe data type conversion possible for %s -> %s!"
-            log.error(msg, fcol, col['column_name'])
-            raise ValueError(msg % (fcol, col['column_name']))
+            msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
+            log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
+            raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
     return
 
 
