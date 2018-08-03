@@ -12,10 +12,11 @@ import re
 import sys
 import logging
 import subprocess as sub
-from datetime import datetime
+# from datetime import datetime
 from argparse import ArgumentParser
 
-from pytz import utc
+# from pytz import utc
+import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
