@@ -79,6 +79,26 @@ def get_options():
     return parser.parse_args()
 
 
+def configure_log(options):
+    """Set up logging for the module.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    """
+    ch = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('%(levelname)s:%(name)s:%(lineno)s: %(message)s')
+    ch.setFormatter(formatter)
+    log = logging.getLogger(__name__)
+    log.addHandler(ch)
+    level = logging.INFO
+    if options.verbose:
+        level = logging.DEBUG
+    log.setLevel(level)
+    return
+
+
 def add_dl_columns(options):
     """Add DL columns to FITS file prior to column reorganization.
 
@@ -238,7 +258,7 @@ def parse_column_metadata(column, data):
 
     Returns
     -------
-    :func:`tuple`
+    :class:`tuple`
         A tuple containing a dictionary containing the parsed metadata
         in TapSchema format and a FITS column name, if found.
     """
@@ -548,16 +568,9 @@ def main():
         An integer suitable for passing to :func:`sys.exit`.
     """
     options = get_options()
-    ts = datetime.utcnow().replace(tzinfo=utc).strftime('%Y-%m-%dT%H:%M:%S %Z')
-    ch = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter('%(levelname)s:%(name)s:%(lineno)s: %(message)s')
-    ch.setFormatter(formatter)
-    log = logging.getLogger(__name__)
-    log.addHandler(ch)
-    if options.verbose:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
+    configure_log(options)
+    log = logging.getLogger(__name__+'.main')
+    # ts = datetime.utcnow().replace(tzinfo=utc).strftime('%Y-%m-%dT%H:%M:%S %Z')
     log.debug("options.fits = '%s'", options.fits)
     log.debug("options.sql = '%s'", options.sql)
     if options.table is None:

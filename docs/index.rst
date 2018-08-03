@@ -40,7 +40,7 @@ TO DO
 * SQL functions for ``specObjID``, etc.
 * String to bigint conversions.
 * Some primary keys are in the range where a signed 64-bit integer would be
-  negative, *i.e.* :math:`2^63 < k < 2^64 - 1`.
+  negative, *i.e.* :math:`2^{63} < k < 2^{64} - 1`.
 
 Indices and tables
 ==================

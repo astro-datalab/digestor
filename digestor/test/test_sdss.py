@@ -6,10 +6,25 @@ import unittest
 import unittest.mock as mock
 import json
 import logging
+from logging.handlers import MemoryHandler
 from tempfile import NamedTemporaryFile
-from ..sdss import (get_options, add_dl_columns, init_metadata, parse_line,
+from ..sdss import (get_options, configure_log, add_dl_columns, init_metadata, parse_line,
                     parse_column_metadata, finish_table,
                     map_columns, sort_columns, process_fits, construct_sql)
+
+
+class TestHandler(MemoryHandler):
+    """Capture log messages in memory.
+    """
+    def __init__(self, capacity=1000000, flushLevel=logging.CRITICAL):
+        nh = logging.NullHandler()
+        MemoryHandler.__init__(self, capacity,
+                               flushLevel=flushLevel, target=nh)
+
+    def shouldFlush(self, record):
+        """Never flush, except manually.
+        """
+        return False
 
 
 class TestSDSS(unittest.TestCase):
@@ -18,7 +33,7 @@ class TestSDSS(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        pass
+        cls.maxDiff = None
 
     @classmethod
     def tearDownClass(cls):
@@ -29,10 +44,39 @@ class TestSDSS(unittest.TestCase):
                                      'specObj-dr14.fits', 'specobjall.sql']):
             self.options = get_options()
         self.metadata = init_metadata(self.options)
-        # log = logging.getLogger('digestor.sdss')
+        root_logger = logging.getLogger('digestor.sdss')
+        if len(root_logger.handlers) == 0:
+            self.cache_handler = None
+            fmt = logging.Formatter()
+        else:
+            while len(root_logger.handlers) > 0:
+                h = root_logger.handlers[0]
+                h.flush()
+                self.cache_handler = h
+                fmt = h.formatter
+                root_logger.removeHandler(h)
+        mh = TestHandler()
+        mh.setFormatter(fmt)
+        root_logger.addHandler(mh)
+        root_logger.setLevel(logging.DEBUG)
 
     def tearDown(self):
-        pass
+        root_logger = logging.getLogger('digestor.sdss')
+        while len(root_logger.handlers) > 0:
+            h = root_logger.handlers[0]
+            h.flush()
+            root_logger.removeHandler(h)
+        if self.cache_handler is not None:
+            root_logger.addHandler(self.cache_handler)
+            self.cache_handler = None
+
+    def assertLog(self, order=-1, message=''):
+        """Examine the log messages.
+        """
+        root_logger = logging.getLogger('digestor.sdss')
+        handler = root_logger.handlers[0]
+        record = handler.buffer[order]
+        self.assertEqual(record.getMessage(), message)
 
     def test_get_options(self):
         """Test command-line arguments.
@@ -44,6 +88,15 @@ class TestSDSS(unittest.TestCase):
         self.assertIsNone(self.options.output_sql)
         self.assertIsNone(self.options.output_json)
         self.assertIsNone(self.options.merge_json)
+
+    def test_configure_log(self):
+        """Test the logging configuration.
+        """
+        self.options.verbose = True
+        configure_log(self.options)
+        root_logger = logging.getLogger('digestor.sdss')
+        self.assertEqual(len(root_logger.handlers), 2)
+        self.assertIsInstance(root_logger.handlers[1], logging.StreamHandler)
 
     def test_add_dl_columns(self):
         """Test adding STILTS columns.
@@ -70,6 +123,22 @@ class TestSDSS(unittest.TestCase):
                                      'out=specObj-dr14.stilts.fits'],
                                      stderr=-1, stdout=-1)
         self.assertEqual(out, 'specObj-dr14.stilts.fits')
+        with mock.patch('subprocess.Popen') as proc:
+            p = proc.return_value = mock.MagicMock()
+            p.returncode = 0
+            p.communicate.return_value = ('', 'foobar')
+            with mock.patch('os.path.exists') as e:
+                e.return_value = True
+                with mock.patch('os.remove') as rm:
+                    out = add_dl_columns(self.options)
+                    rm.assert_called_with(out)
+            proc.assert_called_with(['stilts', 'tpipe',
+                                     'in=specObj-dr14.fits',
+                                     'cmd=\'addcol htm9 "(int)htmIndex(9,plug_ra,plug_dec)"; addcol ring256 "(int)healpixRingIndex(8,plug_ra,plug_dec)"; addcol nest4096 "(int)healpixNestIndex(12,plug_ra,plug_dec)"; addskycoords -inunit deg -outunit deg icrs galactic plug_ra plug_dec glon glat; addskycoords -inunit deg -outunit deg icrs ecliptic plug_ra plug_dec elon elat;\'',
+                                     'ofmt=fits-basic',
+                                     'out=specObj-dr14.stilts.fits'],
+                                     stderr=-1, stdout=-1)
+        self.assertLog(-1, 'STILTS STDERR = foobar')
 
     def test_init_metadata(self):
         """Test metadata initialization.
@@ -175,6 +244,136 @@ class TestSDSS(unittest.TestCase):
         columns = finish_table(self.options)
         self.assertEqual(columns[-1]['table_name'], 'specobjall')
         self.assertEqual(columns[-1]['column_name'], 'elat')
+
+    def test_map_columns(self):
+        """Test mapping of FITS columns to SQL columns.
+        """
+        self.metadata['columns'] += finish_table(self.options)
+        self.metadata['columns'] += [{"table_name": self.options.table,
+                                      "column_name": "mag_u",
+                                      "description": "u Magnitude",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "real", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},
+                                     {"table_name": self.options.table,
+                                      "column_name": "mag_g",
+                                      "description": "g Magnitude",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "real", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},
+                                     {"table_name": self.options.table,
+                                      "column_name": "magivar_u",
+                                      "description": "u ivar",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "real", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},
+                                     {"table_name": self.options.table,
+                                      "column_name": "magivar_g",
+                                      "description": "g ivar",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "real", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0}]
+        self.metadata['mapping'] = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
+                                    'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]'}
+        self.metadata['fits'] = {'e_lon': 'D', 'e_lat': 'D',
+                                 'g_lon': 'D', 'g_lat': 'D',
+                                 'HTM9': 'J', 'ring256': 'J',
+                                 'nest4096': 'J', 'MAG': '2E',
+                                 'MAG_IVAR': '2E',
+                                 'FOOBAR': '16A',
+                                 '__filename': 'foo'}
+        map_columns(self.options, self.metadata)
+        self.assertLog(-1, 'FITS column FOOBAR will be dropped from SQL!')
+        self.metadata['columns'] += [{"table_name": self.options.table,
+                                      "column_name": "flux_u",
+                                      "description": "u flux",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "real", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},]
+        self.metadata['mapping'] = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
+                                    'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
+                                    'flux_u': 'FLUX[0]'}
+        with self.assertRaises(KeyError) as e:
+            map_columns(self.options, self.metadata)
+        self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to flux_u!')
+        self.metadata['fits']['FLUX'] = '2E'
+        self.metadata['columns'] += [{"table_name": self.options.table,
+                                      "column_name": "z",
+                                      "description": "z",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "real", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},]
+        self.metadata['mapping'] = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
+                                    'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
+                                    'flux_u': 'FLUX[0]'}
+        with self.assertRaises(KeyError) as e:
+            map_columns(self.options, self.metadata)
+        self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to z!')
+
+    def test_sort_columns(self):
+        """Test sorting columns by size.
+        """
+        self.metadata['columns'] += finish_table(self.options)
+        sort_columns(self.options, self.metadata)
+        types = [c['datatype'] for c in self.metadata['columns']]
+        self.assertListEqual(types, ['double', 'double', 'double', 'double',
+                                     'integer', 'integer', 'integer'])
+
+    def test_process_fits(self):
+        """Test processing of FITS file for loading.
+        """
+        self.metadata['columns'] += finish_table(self.options)
+        self.metadata['columns'] += [{"table_name": self.options.table,
+                                      "column_name": "mag_u",
+                                      "description": "u Magnitude",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "real", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},
+                                     {"table_name": self.options.table,
+                                      "column_name": "mag_g",
+                                      "description": "g Magnitude",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "real", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},
+                                     {"table_name": self.options.table,
+                                      "column_name": "magivar_u",
+                                      "description": "u ivar",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "double", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},
+                                     {"table_name": self.options.table,
+                                      "column_name": "magivar_g",
+                                      "description": "g ivar",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "double", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},
+                                     {"table_name": self.options.table,
+                                      "column_name": "objid",
+                                      "description": "id",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "bigint", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0},
+                                     {"table_name": self.options.table,
+                                      "column_name": "unsafe",
+                                      "description": "unsafe",
+                                      "unit": "", "ucd": "", "utype": "",
+                                      "datatype": "integer", "size": 1,
+                                      "principal": 0, "indexed": 0, "std": 0}]
+        self.metadata['mapping'] = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
+                                    'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]'}
+        self.metadata['fits'] = {'e_lon': 'D', 'e_lat': 'D',
+                                 'g_lon': 'D', 'g_lat': 'D',
+                                 'HTM9': 'J', 'ring256': 'J',
+                                 'nest4096': 'J', 'MAG': '2E',
+                                 'MAG_IVAR': '2E',
+                                 'OBJID': '16A',
+                                 'FOOBAR': '16A',
+                                 'unsafe': 'K',
+                                 '__filename': 'foo'}
+        map_columns(self.options, self.metadata)
+        # self.assertLog(-1, 'FITS column FOOBAR will be dropped from SQL!')
+        process_fits(self.options, self.metadata)
+        self.assertLog(-1, 'No safe data type conversion possible for unsafe (K) -> unsafe (integer)!')
 
     def test_construct_sql(self):
         """Test SQL output.
