@@ -41,6 +41,7 @@ TO DO
 * Some primary keys are in the range where a signed 64-bit integer would be
   negative, *i.e.* :math:`2^{63} < k < 2^{64} - 1`.  Need functions to
   deal with this in SQL.
+* bestObjID has some rows that are blank strings.  Those should be set to zero.
 
 Indices and tables
 ==================
