@@ -683,10 +683,6 @@ def main():
     fix_columns(options, metadata)
     sort_columns(options, metadata)
     #
-    # Sort the FITS data table to match the columns.
-    #
-    process_fits(options, metadata)
-    #
     # Write the SQL file.
     #
     create_table = construct_sql(options, metadata)
@@ -703,4 +699,9 @@ def main():
     del metadata['fits']
     with open(options.output_json, 'w') as JSON:
         json.dump(metadata, JSON, indent=4)
+    #
+    # Sort the FITS data table to match the columns.  Do thi last so that
+    # if it crashes, we at least have the SQL and JSON files.
+    #
+    process_fits(options, metadata)
     return 0
