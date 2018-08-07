@@ -349,12 +349,12 @@ def finish_table(options):
                 "unit": "", "ucd": "", "utype": "",
                 "datatype": "integer", "size": 1,
                 "principal": 0, "indexed": 1, "std": 0},
-               # {"table_name": options.table,
-               #  "column_name": "random_id",
-               #  "description": "Random ID in the range 0.0 => 100.0",
-               #  "unit": "", "ucd": "", "utype": "",
-               #  "datatype": "real", "size": 1,
-               #  "principal": 0, "indexed": 1, "std": 0},
+               {"table_name": options.table,
+                "column_name": "random_id",
+                "description": "Random ID in the range 0.0 => 100.0",
+                "unit": "", "ucd": "", "utype": "",
+                "datatype": "real", "size": 1,
+                "principal": 0, "indexed": 1, "std": 0},
                {"table_name" : options.table,
                 "column_name": "glon",
                 "description": "Galactic Longitude",
@@ -551,6 +551,10 @@ def process_fits(options, metadata):
     old = Table.read(metadata['fits']['__filename'], hdu=options.hdu)
     new = Table()
     for col in columns:
+        if col['column_name'] == 'random_id':
+            log.info("Skipping %s which will be added by FITS2DB.",
+                     col['column_name'])
+            continue
         fcol = metadata['mapping'][col['column_name']]
         index = None
         if '[' in fcol:
@@ -562,7 +566,8 @@ def process_fits(options, metadata):
         if fbasetype == type_map[col['datatype']][0]:
             log.debug("Type match for %s -> %s.", fcol, col['column_name'])
             if index is not None:
-                log.debug("new['%s'] = old['%s'][:,%d]", col['column_name'], fcol, index)
+                log.debug("new['%s'] = old['%s'][:,%d]",
+                          col['column_name'], fcol, index)
                 new[col['column_name']] = old[fcol][:,index]
             else:
                 log.debug("new['%s'] = old['%s']", col['column_name'], fcol)
@@ -630,7 +635,7 @@ def construct_sql(options, metadata):
         options.output_sql = os.path.join(os.path.dirname(options.sql),
                                           "%s.%s.sql" % (options.schema, options.table))
     log.debug("options.output_sql = '%s'", options.output_sql)
-    sql = [r"CREATE TABLE IF EXISTS {0.schema}.{0.table} (".format(options)]
+    sql = [r"CREATE TABLE IF NOT EXISTS {0.schema}.{0.table} (".format(options)]
     for c in metadata['columns']:
         if c['table_name'] == options.table:
             typ = c['datatype']

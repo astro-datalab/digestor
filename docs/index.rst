@@ -33,6 +33,21 @@ Data Lab Database Loading Notes
 * `TapSchema <http://gitlab.noao.edu/weaver/TapSchema>`_ has the Data Lab
   table definitions.
 * Treat ``varchar(N)`` columns the same as ``text`` when ordering.
+* Example :command:`fits2db`::
+
+    fits2db --sql=postgres --truncate --rid=random_id -B \
+        -t sdss_dr14.specobjall sdss_dr14.specobjall.fits | \
+        psql tapdb datalab
+
+* Example post-load SQL::
+
+    CREATE INDEX specobjall_q3c_ang2ipix ON sdss_dr14.specobjall (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CLUSTER specobjall_q3c_ang2ipix ON sdss_dr14.specobjall;
+    ALTER TABLE sdss_dr14.specobjall ADD PRIMARY KEY (specobjid);
+    CREATE VIEW sdss_dr14.specobj AS SELECT * FROM sdss_dr14.specobjall AS s WHERE s.scienceprimary = 1;
+    GRANT USAGE ON SCHEMA myschema TO dlquery;
+    GRANT SELECT ON mytable TO dlquery;
+    GRANT SELECT ON myview TO dlquery;
 
 TO DO
 =====
@@ -41,8 +56,13 @@ TO DO
 * Some primary keys are in the range where a signed 64-bit integer would be
   negative, *i.e.* :math:`2^{63} < k < 2^{64} - 1`.  Need functions to
   deal with this in SQL.
-* bestObjID has some rows that are blank strings.  Those should be set to zero.
+* Only convert to ``np.uint64`` if absolutely necessary.
+* ``bestObjID`` has some rows that are blank strings.  Those should be set to zero.
   In general, need to be able to deal with ``inf``, ``nan``.
+* ``random_id`` is added by :command:`fits2db --rid=random_id`.
+* Set ``uint=False`` when writing final FITS file?
+* Load PlateX to get plate foreign key.
+* Post-load SQL.
 
 Indices and tables
 ==================
