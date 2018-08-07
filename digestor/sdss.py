@@ -571,13 +571,24 @@ def process_fits(options, metadata):
             log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
                       fcol, fbasetype, col['column_name'], col['datatype'])
             if index is not None:
-                log.debug("new['%s'] = old['%s'][%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+                log.debug("new['%s'] = old['%s'][%d].astype(%s)",
+                          col['column_name'], fcol, index,
+                          str(np_map[col['datatype']]))
                 new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
             else:
-                log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
+                log.debug("new['%s'] = old['%s'].astype(%s)",
+                          col['column_name'], fcol,
+                          str(np_map[col['datatype']]))
                 new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
         elif fbasetype == 'A' and col['datatype'] == 'bigint':
             log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
+            width = int(str(old[fcol].dtype).split('S')[1])
+            blank = ' '*width
+            w = np.nonzero(old[fcol] == blank)[0]
+            if len(w) > 0:
+                log.debug("old['%s'][old['%s'] == blank] = blank[0:%d] + '0'",
+                          fcol, fcol, width - 1)
+                old[fcol][w] = blank[0:(width-1)] + '0'
             log.debug("new['%s'] = old['%s'].astype(np.uint64)", col['column_name'], fcol)
             new[col['column_name']] = old[fcol].astype(np.uint64)
         else:
