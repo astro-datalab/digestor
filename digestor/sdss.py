@@ -117,6 +117,11 @@ def add_dl_columns(options):
     -------
     :class:`str`
         The name of the processed file.
+
+    Raises
+    ------
+    :exc:`ValueError`
+        If a problem with :command:`stilts` is detected.
     """
     log = logging.getLogger(__name__+'.add_dl_columns')
     out = options.fits.replace('.fits', '.stilts.fits')
@@ -134,10 +139,11 @@ def add_dl_columns(options):
     log.debug(' '.join(command))
     proc = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
     o, e = proc.communicate()
-    log.debug('STILTS STDOUT = %s', o)
+    log.debug('STILTS STDOUT = %s', o.decode('utf-8'))
     if proc.returncode != 0 or e:
         log.error('STILTS returncode = %d', proc.returncode)
-        log.error('STILTS STDERR = %s', e)
+        log.error('STILTS STDERR = %s', e.decode('utf-8'))
+        raise ValueError("STILTS error detected!")
     return out
 
 
@@ -614,7 +620,7 @@ def process_fits(options, metadata):
             else:
                 msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
                 log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
-                # raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
+                raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
     log.debug("new.write('%s.%s.fits')", options.schema, options.table)
     new.write("{0.schema}.{0.table}.fits".format(options))
     return
@@ -674,11 +680,17 @@ def main():
     #
     # Preprocess the FITS file.
     #
-    dlfits = add_dl_columns(options)
+    try:
+        dlfits = add_dl_columns(options)
+    except ValueError as e:
+        return 1
     #
     # Process the metadata.
     #
-    metadata = init_metadata(options)
+    try:
+        metadata = init_metadata(options)
+    except ValueError as e:
+        return 1
     with open(options.sql) as SQL:
         for line in SQL:
             parse_line(line, options, metadata)
@@ -697,7 +709,10 @@ def main():
     metadata['fits'] = {'__filename': dlfits}
     for i, f in enumerate(fits_names):
         metadata['fits'][f] = fits_types[i]
-    map_columns(options, metadata)
+    try:
+        map_columns(options, metadata)
+    except KeyError as e:
+        return 1
     #
     # Fix any table definition problems and sort the columns.
     #
@@ -713,7 +728,10 @@ def main():
     # Sort the FITS data table to match the columns.  Do thi last so that
     # if it crashes, we at least have the SQL and JSON files.
     #
-    process_fits(options, metadata)
+    try:
+        process_fits(options, metadata)
+    except ValueError as e:
+        return 1
     #
     # Finish JSON output.
     #
