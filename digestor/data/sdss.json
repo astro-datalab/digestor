@@ -2,6 +2,7 @@
     "sdss_dr14": {
         "platex": {
             "columns": {
+                "dateobs": {"size": 32},
                 "nturnoff": {"datatype": "integer"}
             }
         },
