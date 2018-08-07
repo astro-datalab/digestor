@@ -582,7 +582,7 @@ def process_fits(options, metadata):
                 new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
         elif fbasetype == 'A' and col['datatype'] == 'bigint':
             log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
-            width = old[fcol].dtype.itemsize
+            width = int(str(t[fcol].dtype).split(t[fcol].dtype.kind)[1])
             blank = ' '*width
             w = np.nonzero(old[fcol] == blank)[0]
             if len(w) > 0:
