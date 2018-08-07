@@ -24,7 +24,8 @@ from astropy.table import Table
 _SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
           'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')}
 
-_server2post = {'float': 'double precision', 'int': 'integer'}
+_server2post = {'float': 'double precision', 'int': 'integer',
+                'tinyint': 'smallint'}
 
 #
 # Ignore columns that are specific to the SDSS CAS system.
