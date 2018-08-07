@@ -333,7 +333,7 @@ class TestSDSS(unittest.TestCase):
         sort_columns(self.options, self.metadata)
         types = [c['datatype'] for c in self.metadata['columns']]
         self.assertListEqual(types, ['double', 'double', 'double', 'double',
-                                     'integer', 'integer', 'integer'])
+                                     'integer', 'integer', 'integer', 'real'])
 
     def test_process_fits(self):
         """Test processing of FITS file for loading.
@@ -395,11 +395,25 @@ class TestSDSS(unittest.TestCase):
                                  'flags': '2J',
                                  'unsafe': 'K',
                                  '__filename': 'foo'}
+        dummy_values = {'e_lon': np.ones((5,), dtype=np.float64),
+                        'e_lat': np.ones((5,), dtype=np.float64),
+                        'g_lon': np.ones((5,), dtype=np.float32),
+                        'g_lat': np.ones((5,), dtype=np.float32),
+                        'HTM9': np.ones((5,), dtype=np.int32),
+                        'ring256': np.ones((5,), dtype=np.int32),
+                        'nest4096': np.ones((5,), dtype=np.int32),
+                        'MAG': np.ones((5, 2), dtype=np.float32),
+                        'MAG_IVAR': np.ones((5, 2), dtype=np.float32),
+                        'OBJID': np.array([' '*15 + '1']*4 + [' '*16], dtype='U16'),
+                        'FOOBAR': np.array([' '*16]*5, dtype='U16'),
+                        'flags': np.ones((5, 2), dtype=np.int32),
+                        'unsafe': np.ones((5,), dtype=np.int64),}
         map_columns(self.options, self.metadata)
         # self.assertLog(-1, 'FITS column FOOBAR will be dropped from SQL!')
         with mock.patch('digestor.sdss.Table') as T:
             t = T.read.return_value = mock.MagicMock()
-            t.__getitem__.side_effect = lambda key: np.ones((2,), dtype=np.int32)
+            # t.__getitem__.side_effect = lambda key: np.ones((5,2), dtype=np.int32)
+            t.__getitem__.side_effect = lambda key: dummy_values[key]
             process_fits(self.options, self.metadata)
         # self.assertLog(-1, 'No safe data type conversion possible for unsafe (K) -> unsafe (integer)!')
 
@@ -424,7 +438,7 @@ class TestSDSS(unittest.TestCase):
                                      "unit": "", "ucd": "", "utype": "",
                                      "datatype": "character", "size": 10,
                                      "principal": 0, "indexed": 1, "std": 0}]
-        expected = """CREATE TABLE IF EXISTS {0.schema}.{0.table} (
+        expected = """CREATE TABLE IF NOT EXISTS {0.schema}.{0.table} (
     htm9 integer NOT NULL,
     foo double precision NOT NULL,
     bar varchar(10) NOT NULL

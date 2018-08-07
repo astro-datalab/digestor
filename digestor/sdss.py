@@ -442,9 +442,13 @@ def map_columns(options, metadata):
                 if sc in metadata['mapping']:
                     break
         if sc not in metadata['mapping']:
-            msg = "Could not find a FITS column corresponding to %s!"
-            log.error(msg, sc)
-            raise KeyError(msg % sc)
+            if sc == 'random_id':
+                log.info("Skipping %s which will be added by FITS2DB.",
+                         sc)
+            else:
+                msg = "Could not find a FITS column corresponding to %s!"
+                log.error(msg, sc)
+                raise KeyError(msg % sc)
     #
     # Check for FITS columns that are NOT mapped to the SQL file.
     #
