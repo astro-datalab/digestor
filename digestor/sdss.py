@@ -194,6 +194,11 @@ def init_metadata(options):
         for t in metadata['tables']:
             if t['table_name'] == options.table:
                 raise ValueError("Table {0} is already defined!".format(options.table))
+        metadata['tables'].append({'schema_name': options.schema,
+                                   'table_name': options.table,
+                                   'table_type': 'table',
+                                   'utype': '',
+                                   'description': ''})
         if 'mapping' not in metadata:
             metadata['mapping'] = dict()
     return metadata
@@ -217,16 +222,19 @@ def parse_line(line, options, metadata):
     """
     log = logging.getLogger(__name__+'.parse_line')
     l = line.strip()
+    for i, t in enumerate(metadata['tables']):
+        if t['schema_name'] == options.schema and t['table_name'] == options.table:
+            ti = i
     for r in _SQLre:
         m = _SQLre[r].match(l)
         if m is not None:
             if r == 'comment':
                 g = m.groups()
                 if g[0] == 'H':
-                    log.debug("metadata['tables'][0]['description'] += '%s'", g[1])
-                    metadata['tables'][0]['description'] += g[1]
+                    log.debug("metadata['tables'][%d]['description'] += '%s'", ti, g[1])
+                    metadata['tables'][ti]['description'] += g[1]
                 if g[0] == 'T':
-                    log.debug("metadata['tables'][0]['long_description'] += '%s'", g[1])
+                    log.debug("metadata['tables'][%d]['long_description'] += '%s'", ti, g[1])
                     # metadata['description'] += g[1]+'\n'
                 return
             elif r == 'column':

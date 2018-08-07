@@ -44,6 +44,7 @@ Data Lab Database Loading Notes
     CREATE INDEX specobjall_q3c_ang2ipix ON sdss_dr14.specobjall (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
     CLUSTER specobjall_q3c_ang2ipix ON sdss_dr14.specobjall;
     ALTER TABLE sdss_dr14.specobjall ADD PRIMARY KEY (specobjid);
+    ALTER TABLE sdss_dr14.specobjall ADD CONSTRAINT specobjall_platex_fx FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
     CREATE VIEW sdss_dr14.specobj AS SELECT * FROM sdss_dr14.specobjall AS s WHERE s.scienceprimary = 1;
     GRANT USAGE ON SCHEMA myschema TO dlquery;
     GRANT SELECT ON mytable TO dlquery;
