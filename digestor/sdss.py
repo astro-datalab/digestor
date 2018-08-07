@@ -689,6 +689,11 @@ def main():
     with open(options.output_sql, 'w') as POST:
         POST.write(create_table)
     #
+    # Sort the FITS data table to match the columns.  Do thi last so that
+    # if it crashes, we at least have the SQL and JSON files.
+    #
+    process_fits(options, metadata)
+    #
     # Finish JSON output.
     #
     if options.output_json is None:
@@ -699,9 +704,4 @@ def main():
     del metadata['fits']
     with open(options.output_json, 'w') as JSON:
         json.dump(metadata, JSON, indent=4)
-    #
-    # Sort the FITS data table to match the columns.  Do thi last so that
-    # if it crashes, we at least have the SQL and JSON files.
-    #
-    process_fits(options, metadata)
     return 0
