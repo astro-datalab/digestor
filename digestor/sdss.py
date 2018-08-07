@@ -11,15 +11,18 @@ import os
 import re
 import sys
 import logging
-from datetime import datetime
+import subprocess as sub
+# from datetime import datetime
 from argparse import ArgumentParser
 
-from pytz import utc
+from pkg_resources import resource_filename
+# from pytz import utc
+import numpy as np
+from astropy.io import fits
+from astropy.table import Table
 
-_SQLre = {'create': re.compile(r'\s*CREATE\s+TABLE\s+.*\s+\('),
-          'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
-          'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$'),
-          'finish': re.compile(r'\s*\);?')}
+_SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
+          'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')}
 
 _server2post = {'float': 'double precision', 'int': 'integer'}
 
@@ -28,16 +31,114 @@ _server2post = {'float': 'double precision', 'int': 'integer'}
 #
 _skip_columns = ('htmid', 'loadversion')
 
-_stilts_header = """# {filename}
-# {ts}
-"""
-
-_stilts_footer = """addcol htm9 "(int)htmIndex(9,{ra},{dec})";
+#
+# Defer some pre-processing to STILTS.
+#
+_stilts_command = """addcol htm9 "(int)htmIndex(9,{ra},{dec})";
 addcol ring256 "(int)healpixRingIndex(8,{ra},{dec})";
 addcol nest4096 "(int)healpixNestIndex(12,{ra},{dec})";
 addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat;
 addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
 """
+
+
+def get_options():
+    """Parse command-line options.
+
+    Returns
+    -------
+    :class:`argparse.Namespace`
+        The parsed options.
+    """
+    parser = ArgumentParser(description=__doc__.split("\n")[-2],
+                            prog=os.path.basename(sys.argv[0]))
+    parser.add_argument('-c', '--configuration', dest='config', metavar='FILE',
+                        default=resource_filename('digestor', 'data/sdss.json'),
+                        help='Read table-specific configuration from FILE.')
+    parser.add_argument('-d', '--schema-description', dest='description',
+                        metavar='TEXT',
+                        default='Sloan Digital Sky Survey Data Relase 14',
+                        help='Short description of the schema.')
+    parser.add_argument('-e', '--extension', dest='hdu', metavar='N',
+                        type=int, default=1,
+                        help='Read data from FITS HDU N (default %(default)s).')
+    parser.add_argument('-j', '--output-json', dest='output_json', metavar='FILE',
+                        help='Write table metadata to FILE.')
+    parser.add_argument('-k', '--keep', action='store_true',
+                        help='Do not overwrite any existing intermediate files.')
+    parser.add_argument('-m', '--merge', dest='merge_json', metavar='FILE',
+                        help='Merge metadata in FILE into final metadata output.')
+    parser.add_argument('-o', '--output-sql', dest='output_sql', metavar='FILE',
+                        help='Write table definition to FILE.')
+    parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
+                        help='Right Ascension is in COLUMN.')
+    parser.add_argument('-s', '--schema', metavar='SCHEMA',
+                        default='sdss_dr14',
+                        help='Define table with this schema.')
+    parser.add_argument('-t', '--table', metavar='TABLE',
+                        help='Set the table name.')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Print extra information.')
+    parser.add_argument('fits', help='FITS file to convert.')
+    parser.add_argument('sql', help='SQL file to convert.')
+    return parser.parse_args()
+
+
+def configure_log(options):
+    """Set up logging for the module.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    """
+    ch = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('%(levelname)s:%(name)s:%(lineno)s: %(message)s')
+    ch.setFormatter(formatter)
+    log = logging.getLogger(__name__)
+    log.addHandler(ch)
+    level = logging.INFO
+    if options.verbose:
+        level = logging.DEBUG
+    log.setLevel(level)
+    return
+
+
+def add_dl_columns(options):
+    """Add DL columns to FITS file prior to column reorganization.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+
+    Returns
+    -------
+    :class:`str`
+        The name of the processed file.
+    """
+    log = logging.getLogger(__name__+'.add_dl_columns')
+    out = options.fits.replace('.fits', '.stilts.fits')
+    if os.path.exists(out) and options.keep:
+        log.info("Using existing file: %s.", out)
+        return out
+    if os.path.exists(out):
+        log.info("Removing existing file: %s.", out)
+        os.remove(out)
+    cmd = _stilts_command.format(ra=options.ra.lower(),
+                                 dec=options.ra.lower().replace('ra', 'dec')).replace('\n', ' ').strip()
+    command = ['stilts', 'tpipe', 'in={0.fits}'.format(options),
+               "cmd='{0}'".format(cmd), 'ofmt=fits-basic',
+               'out={0}'.format(out)]
+    log.debug(' '.join(command))
+    proc = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
+    o, e = proc.communicate()
+    log.debug('STILTS STDOUT = %s', o)
+    if proc.returncode != 0 or e:
+        log.error('STILTS returncode = %d', proc.returncode)
+        log.error('STILTS STDERR = %s', e)
+    return out
+
 
 def init_metadata(options):
     """Create a dictionary compatible with TapSchema.
@@ -77,6 +178,7 @@ def init_metadata(options):
         metadata['key_columns'] = [{"key_id": "",
                                     "from_column": "",
                                     "target_column": ""}]
+        metadata['mapping'] = dict()
     else:
         with open(options.merge_json) as f:
             metadata = json.load(f)
@@ -85,6 +187,8 @@ def init_metadata(options):
         for t in metadata['tables']:
             if t['table_name'] == options.table:
                 raise ValueError("Table {0} is already defined!".format(options.table))
+        if 'mapping' not in metadata:
+            metadata['mapping'] = dict()
     return metadata
 
 
@@ -109,11 +213,7 @@ def parse_line(line, options, metadata):
     for r in _SQLre:
         m = _SQLre[r].match(l)
         if m is not None:
-            if r == 'create':
-                log.debug(r"CREATE TABLE IF NOT EXISTS %s.%s (", options.schema, options.table)
-                return (r"CREATE TABLE IF NOT EXISTS %s.%s (" % (options.schema, options.table),
-                        'explodeall;')
-            elif r == 'comment':
+            if r == 'comment':
                 g = m.groups()
                 if g[0] == 'H':
                     log.debug("metadata['tables'][0]['description'] += '%s'", g[1])
@@ -121,13 +221,13 @@ def parse_line(line, options, metadata):
                 if g[0] == 'T':
                     log.debug("metadata['tables'][0]['long_description'] += '%s'", g[1])
                     # metadata['description'] += g[1]+'\n'
-                return (None, None)
+                return
             elif r == 'column':
                 g = m.groups()
                 col = g[0].lower()
                 if col in _skip_columns:
                     log.debug("Skipping column %s.", col)
-                    return (None, None)
+                    return
                 typ = g[1].strip('[]').lower()
                 try:
                     post_type = _server2post[typ]
@@ -144,25 +244,11 @@ def parse_line(line, options, metadata):
                     p['size'] = int(post_type.split('(')[1].strip(')'))
                 else:
                     p['datatype'] = post_type
-                if r is not None:
-                    try:
-                        foo = r.split('[')
-                        i = int(foo[1].strip(']')) + 1
-                        log.debug('colmeta -name %s %s_%d;', col, foo[0], i)
-                        stilts = 'colmeta -name %s %s_%d;' % (col, foo[0], i)
-                    except IndexError:
-                        log.debug('colmeta -name %s %s;', col, r)
-                        stilts = 'colmeta -name %s %s;' % (col, r)
-                else:
-                    log.debug('colmeta -name %s %s;', col, col.upper())
-                    stilts = 'colmeta -name %s %s;' % (col, col.upper())
                 metadata['columns'].append(p)
-                return ("    %s %s %s," % (col, post_type, g[2]),
-                        stilts)
-            elif r == 'finish':
-                log.debug("End of table definition.")
-                return (None, None)
-    return (None, None)
+                if r is not None:
+                    metadata['mapping'][col] = r
+                return
+    return
 
 
 def parse_column_metadata(column, data):
@@ -177,10 +263,9 @@ def parse_column_metadata(column, data):
 
     Returns
     -------
-    :func:`tuple`
+    :class:`tuple`
         A tuple containing a dictionary containing the parsed metadata
-        in TapSchema format, and the original name of the column in the
-        FITS file, if detected.
+        in TapSchema format and a FITS column name, if found.
     """
     log = logging.getLogger(__name__+'.parse_column_metadata')
     tr = {'D': 'description',
@@ -219,7 +304,7 @@ def parse_column_metadata(column, data):
                 if r == 'NOFITS':
                     log.warning("Column %s is not defined in the corresponding FITS file!", column)
                 else:
-                    log.debug("rename %s -> %s", r, column)
+                    log.debug("metadata['mapping']['%s'] = '%s'", column, r)
                     rename = r
             else:
                 log.debug("p['%s'] = %s", tr[m], repr(r))
@@ -228,69 +313,23 @@ def parse_column_metadata(column, data):
             if m == 'F' and any([column.endswith('_%s' % f) for f in 'ugriz']):
                 foo = column.rsplit('_', 1)
                 r = "{0}[{1:d}]".format(foo[0], 'ugriz'.index(foo[1])).upper()
-                log.debug("rename %s -> %s", r, column)
+                log.debug("metadata['mapping']['%s'] = '%s'", column, r)
                 rename = r
     return (p, rename)
 
 
-def get_options():
-    """Parse command-line options.
-
-    Returns
-    -------
-    :class:`argparse.Namespace`
-        The parsed options.
-    """
-    parser = ArgumentParser(description=__doc__.split("\n")[-2],
-                            prog=os.path.basename(sys.argv[0]))
-    parser.add_argument('-d', '--schema-description', dest='description',
-                        metavar='TEXT',
-                        default='Sloan Digital Sky Survey Data Relase 14',
-                        help='Short description of the schema.')
-    parser.add_argument('-j', '--output-json', dest='output_json', metavar='FILE',
-                        help='Write table metadata to FILE.')
-    parser.add_argument('-m', '--merge', dest='merge_json', metavar='FILE',
-                        help='Merge metadata in FILE into final metadata output.')
-    parser.add_argument('-o', '--output-sql', dest='output_sql', metavar='FILE',
-                        help='Write table definition to FILE.')
-    parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
-                        help='Right Ascension is in COLUMN.')
-    parser.add_argument('-S', '--output-stilts', dest='output_stilts', metavar='FILE',
-                        help='Write stitls commands to FILE.')
-    parser.add_argument('-s', '--schema', metavar='SCHEMA',
-                        default='sdss_dr14',
-                        help='Define table with this schema.')
-    parser.add_argument('-t', '--table', metavar='TABLE',
-                        help='Set the table name.')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help='Print extra information.')
-    parser.add_argument('sql', help='SQL file to convert.')
-    return parser.parse_args()
-
-
-def finish_table(options, metadata):
+def finish_table(options):
     """Add SQL column definitions of Data Lab-added columns.
 
     Parameters
     ----------
     options : :class:`argparse.Namespace`
         The command-line options.
-    metadata : :class:`dict`
-        A pre-initialized dictionary containing metadata.
 
     Returns
     -------
     :class:`list`
-        List of SQL column definitions suitable for appending to an
-        existing list.
-    """
-
-    _stilts_footer = """addcol htm9 "(int)htmIndex(9,{ra},{dec})";
-    addcol ring256 "(int)healpixRingIndex(8,{ra},{dec})";
-    addcol nest4096 "(int)healpixNestIndex(12,{ra},{dec})";
-    addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat;
-    addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
-    # colmeta -name first_snr FIRST_SNR;
+        A list suitable for appending to an existing list of columns.
     """
     columns = [{"table_name": options.table,
                 "column_name": "htm9",
@@ -310,12 +349,12 @@ def finish_table(options, metadata):
                 "unit": "", "ucd": "", "utype": "",
                 "datatype": "integer", "size": 1,
                 "principal": 0, "indexed": 1, "std": 0},
-               # {"table_name": options.table,
-               #  "column_name": "random_id",
-               #  "description": "Random ID in the range 0.0 => 100.0",
-               #  "unit": "", "ucd": "", "utype": "",
-               #  "datatype": "real", "size": 1,
-               #  "principal": 0, "indexed": 1, "std": 0},
+               {"table_name": options.table,
+                "column_name": "random_id",
+                "description": "Random ID in the range 0.0 => 100.0",
+                "unit": "", "ucd": "", "utype": "",
+                "datatype": "real", "size": 1,
+                "principal": 0, "indexed": 1, "std": 0},
                {"table_name" : options.table,
                 "column_name": "glon",
                 "description": "Galactic Longitude",
@@ -340,19 +379,278 @@ def finish_table(options, metadata):
                 "unit": "deg", "ucd": "", "utype": "",
                 "datatype": "double", "size": 1,
                 "principal": 0, "indexed": 0, "std": 0},]
-    metadata['columns'] += columns
-    sql = list()
-    for c in columns:
-        n = c['column_name']
-        t = c['datatype']
-        if c['datatype'] == 'double':
-            t = 'double precision'
-        s = '    {0} {1} NOT NULL'.format(n, t)
-        if n != 'elat':
-            s += ','
-        sql.append(s)
-    sql.append(') WITH (fillfactor=100);')
-    return sql
+    return columns
+
+
+def map_columns(options, metadata):
+    """Complete mapping of FITS table columns to SQL columns.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+
+    Raises
+    ------
+    :exc:`KeyError`
+        If an expected mapping cannot be found.
+    """
+    log = logging.getLogger(__name__+'.map_columns')
+    sql_columns = [c['column_name'] for c in metadata['columns']
+                   if c['table_name'] == options.table]
+    colnames = list(metadata['fits'].keys())
+    del colnames[colnames.index('__filename')]
+    for sc in sql_columns:
+        if sc in metadata['mapping']:
+            #
+            # Make sure the column actually exists.
+            #
+            verify_mapping = False
+            mc = metadata['mapping'][sc]
+            index = ''
+            if '[' in mc:
+                foo = mc.split('[')
+                mc = foo[0]
+                index = '[' + foo[1]
+            if mc in colnames:
+                log.debug("FITS: %s -> SQL: %s", metadata['mapping'][sc], sc)
+                verify_mapping = True
+            else:
+                #
+                # See if there is a column containing underscores that
+                # could correspond to this mapping.
+                #
+                for fc in colnames:
+                    for fcl in (fc.lower(), fc.lower().replace('_', ''),):
+                        if fcl == mc.lower():
+                            log.debug("FITS: %s -> SQL: %s", fc, sc)
+                            metadata['mapping'][sc] = fc + index
+                            verify_mapping = True
+            if not verify_mapping:
+                msg = "Could not find a FITS column corresponding to %s!"
+                log.error(msg, sc)
+                raise KeyError(msg % sc)
+        else:
+            for fc in colnames:
+                for fcl in (fc.lower(), fc.lower().replace('_', ''),):
+                    if fcl == sc:
+                        log.debug("FITS: %s -> SQL: %s", fc, sc)
+                        metadata['mapping'][sc] = fc
+                        break
+                if sc in metadata['mapping']:
+                    break
+        if sc not in metadata['mapping']:
+            if sc == 'random_id':
+                log.info("Skipping %s which will be added by FITS2DB.",
+                         sc)
+            else:
+                msg = "Could not find a FITS column corresponding to %s!"
+                log.error(msg, sc)
+                raise KeyError(msg % sc)
+    #
+    # Check for FITS columns that are NOT mapped to the SQL file.
+    #
+    for col in colnames:
+        if col in metadata['mapping'].values():
+            log.debug("FITS column %s will be transferred to SQL.", col)
+        else:
+            col_array = re.compile(col + r'\[\d+\]')
+            if any([col_array.match(sc) is not None for sc in metadata['mapping'].values()]):
+                log.debug("FITS column %s will be transferred to SQL.", col)
+            else:
+                log.warning("FITS column %s will be dropped from SQL!", col)
+    return
+
+
+def fix_columns(options, metadata):
+    """Fix any table definition oddities "by hand".
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+    """
+    log = logging.getLogger(__name__+'.fix_columns')
+    if os.path.exists(options.config):
+        log.debug("Opening %s.", options.config)
+        with open(options.config) as f:
+            conf = json.load(f)
+        try:
+            col_fix = conf[options.schema][options.table]['columns']
+        except KeyError:
+            return
+        colindex = dict([(c['column_name'], i) for i, c in enumerate(metadata['columns'])
+                         if c['table_name'] == options.table])
+        for col in col_fix:
+            try:
+                i = colindex[col]
+            except KeyError:
+                continue
+            for k in col_fix[col]:
+                log.debug("metadata['columns'][%d]['%s'] = col_fix['%s']['%s'] = '%s'",
+                          colindex[col], k, col, k, col_fix[col][k])
+                metadata['columns'][colindex[col]][k] = col_fix[col][k]
+    return
+
+
+def sort_columns(options, metadata):
+    """Sort the SQL columns for best performance.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+    """
+    ordered = ('bigint', 'double', 'integer', 'real', 'smallint', 'character')
+    new_columns = list()
+    for o in ordered:
+        for c in metadata['columns']:
+            if c['table_name'] == options.table and c['datatype'] == o:
+                new_columns.append(c)
+    assert len(new_columns) == len([c['column_name'] for c in metadata['columns']
+                                                     if c['table_name'] == options.table])
+    for i, c in enumerate(metadata['columns']):
+        if c['table_name'] == options.table:
+            metadata['columns'][i] = new_columns.pop(0)
+    return
+
+
+def process_fits(options, metadata):
+    """Convert a pre-processed FITS file into one ready for database loading.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+
+    Raises
+    ------
+    :exc:`ValueError`
+        If the FITS data type cannot be converted to SQL.
+    """
+    log = logging.getLogger(__name__+'.process_fits')
+    type_map = {'bigint': ('K', 'J', 'I', 'B'),
+                'integer': ('J', 'I', 'B'),
+                'smallint': ('I', 'B'),
+                'double': ('D', 'E'),
+                'real': ('E',),
+                'character': ('A',)}
+    np_map = {'bigint': np.int64,
+              'integer': np.int32,
+              'smallint': np.int16,
+              'double': np.float64,
+              'real': np.float32}
+    safe_conversion = {('J', 'smallint'): 2**15}
+    rebase = re.compile(r'^(\d+)(\D+)')
+    columns = [c for c in metadata['columns']
+               if c['table_name'] == options.table]
+    old = Table.read(metadata['fits']['__filename'], hdu=options.hdu)
+    new = Table()
+    for col in columns:
+        if col['column_name'] == 'random_id':
+            log.info("Skipping %s which will be added by FITS2DB.",
+                     col['column_name'])
+            continue
+        fcol = metadata['mapping'][col['column_name']]
+        index = None
+        if '[' in fcol:
+            foo = fcol.split('[')
+            fcol = foo[0]
+            index = int(foo[1].strip(']'))
+        ftype = metadata['fits'][fcol]
+        fbasetype = rebase.sub(r'\2', ftype)
+        if fbasetype == type_map[col['datatype']][0]:
+            log.debug("Type match for %s -> %s.", fcol, col['column_name'])
+            if index is not None:
+                log.debug("new['%s'] = old['%s'][:,%d]",
+                          col['column_name'], fcol, index)
+                new[col['column_name']] = old[fcol][:,index]
+            else:
+                log.debug("new['%s'] = old['%s']", col['column_name'], fcol)
+                new[col['column_name']] = old[fcol]
+        elif fbasetype in type_map[col['datatype']]:
+            log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
+                      fcol, fbasetype, col['column_name'], col['datatype'])
+            if index is not None:
+                log.debug("new['%s'] = old['%s'][:,%d].astype(%s)",
+                          col['column_name'], fcol, index,
+                          str(np_map[col['datatype']]))
+                new[col['column_name']] = old[fcol][:,index].astype(np_map[col['datatype']])
+            else:
+                log.debug("new['%s'] = old['%s'].astype(%s)",
+                          col['column_name'], fcol,
+                          str(np_map[col['datatype']]))
+                new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
+        elif fbasetype == 'A' and col['datatype'] == 'bigint':
+            log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
+            width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
+            blank = ' '*width
+            w = np.nonzero(old[fcol] == blank)[0]
+            if len(w) > 0:
+                log.debug("old['%s'][old['%s'] == blank] = blank[0:%d] + '0'",
+                          fcol, fcol, width - 1)
+                old[fcol][w] = blank[0:(width-1)] + '0'
+            log.debug("new['%s'] = old['%s'].astype(np.uint64)", col['column_name'], fcol)
+            new[col['column_name']] = old[fcol].astype(np.uint64)
+        else:
+            if (fbasetype, col['datatype']) in safe_conversion:
+                limit = safe_conversion[(fbasetype, col['datatype'])]
+                if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
+                    if index is not None:
+                        log.debug("new['%s'] = old['%s'][:,%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+                        new[col['column_name']] = old[fcol][:,index].astype(np_map[col['datatype']])
+                    else:
+                        log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
+                        new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
+            else:
+                msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
+                log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
+                # raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
+    log.debug("new.write('%s.%s.fits')", options.schema, options.table)
+    new.write("{0.schema}.{0.table}.fits".format(options))
+    return
+
+
+def construct_sql(options, metadata):
+    """Construct a CREATE TABLE statement from the `metadata`.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The command-line options.
+    metadata : :class:`dict`
+        A pre-initialized dictionary containing metadata.
+
+    Returns
+    -------
+    :class:`str`
+        A SQL table definition.
+    """
+    log = logging.getLogger(__name__+'.construct_sql')
+    if options.output_sql is None:
+        options.output_sql = os.path.join(os.path.dirname(options.sql),
+                                          "%s.%s.sql" % (options.schema, options.table))
+    log.debug("options.output_sql = '%s'", options.output_sql)
+    sql = [r"CREATE TABLE IF NOT EXISTS {0.schema}.{0.table} (".format(options)]
+    for c in metadata['columns']:
+        if c['table_name'] == options.table:
+            typ = c['datatype']
+            if typ == 'double':
+                typ = 'double precision'
+            if typ == 'character':
+                typ = 'varchar({size})'.format(**c)
+            sql.append("    {0} {1} NOT NULL,".format(c['column_name'], typ))
+    sql[-1] = sql[-1].replace(',', '')
+    sql.append(r") WITH (fillfactor=100);")
+    return '\n'.join(sql) + '\n'
 
 
 def main():
@@ -364,41 +662,57 @@ def main():
         An integer suitable for passing to :func:`sys.exit`.
     """
     options = get_options()
-    ts = datetime.utcnow().replace(tzinfo=utc).strftime('%Y-%m-%dT%H:%M:%S %Z')
-    ch = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter('%(levelname)s:%(lineno)s: %(message)s')
-    ch.setFormatter(formatter)
-    log = logging.getLogger(__name__)
-    log.addHandler(ch)
-    if options.verbose:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
+    configure_log(options)
+    log = logging.getLogger(__name__+'.main')
+    # ts = datetime.utcnow().replace(tzinfo=utc).strftime('%Y-%m-%dT%H:%M:%S %Z')
+    log.debug("options.fits = '%s'", options.fits)
     log.debug("options.sql = '%s'", options.sql)
     if options.table is None:
         options.table = os.path.splitext(os.path.basename(options.sql))[0]
     log.debug("options.table = '%s'", options.table)
-    output = list()
+    #
+    # Preprocess the FITS file.
+    #
+    dlfits = add_dl_columns(options)
+    #
+    # Process the metadata.
+    #
     metadata = init_metadata(options)
-    stilts = list()
     with open(options.sql) as SQL:
         for line in SQL:
-            out, st = parse_line(line, options, metadata)
-            if out is not None:
-                output.append(out)
-            if st is not None:
-                stilts.append(st)
+            parse_line(line, options, metadata)
     #
     # Finish SQL output.
     #
-    output += finish_table(options, metadata)
-    create_table = '\n'.join(output) + '\n'
-    if options.output_sql is None:
-        options.output_sql = os.path.join(os.path.dirname(options.sql),
-                                          "%s.%s.sql" % (options.schema, options.table))
-    log.debug("options.output_sql = '%s'", options.output_sql)
+    metadata['columns'] += finish_table(options)
+    #
+    # Map the FITS columns to table columns.
+    #
+    # log.debug("t = Table.read('%s', hdu=%d)", dlfits, options.hdu)
+    # t = Table.read(dlfits, hdu=options.hdu)
+    with fits.open(dlfits) as hdulist:
+        fits_names = hdulist[options.hdu].columns.names
+        fits_types = hdulist[options.hdu].columns.formats
+    metadata['fits'] = {'__filename': dlfits}
+    for i, f in enumerate(fits_names):
+        metadata['fits'][f] = fits_types[i]
+    map_columns(options, metadata)
+    #
+    # Fix any table definition problems and sort the columns.
+    #
+    fix_columns(options, metadata)
+    sort_columns(options, metadata)
+    #
+    # Write the SQL file.
+    #
+    create_table = construct_sql(options, metadata)
     with open(options.output_sql, 'w') as POST:
         POST.write(create_table)
+    #
+    # Sort the FITS data table to match the columns.  Do thi last so that
+    # if it crashes, we at least have the SQL and JSON files.
+    #
+    process_fits(options, metadata)
     #
     # Finish JSON output.
     #
@@ -406,18 +720,8 @@ def main():
         options.output_json = os.path.join(os.path.dirname(options.sql),
                                            "%s.%s.json" % (options.schema, options.table))
     log.debug("options.output_json = '%s'", options.output_json)
+    del metadata['mapping']
+    del metadata['fits']
     with open(options.output_json, 'w') as JSON:
         json.dump(metadata, JSON, indent=4)
-    #
-    # Finish STILTS output.
-    #
-    st = ('\n'.join(stilts) + '\n' +
-          _stilts_footer.format(ra=options.ra.lower(),
-                                dec=options.ra.lower().replace('ra', 'dec')))
-    if options.output_stilts is None:
-        options.output_stilts = os.path.join(os.path.dirname(options.sql),
-                                             "%s.%s.stilts" % (options.schema, options.table))
-    log.debug("options.output_stilts = '%s'", options.output_stilts)
-    with open(options.output_stilts, 'w') as STILTS:
-        STILTS.write(st)
     return 0

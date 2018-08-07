@@ -1,0 +1,14 @@
+{
+    "sdss_dr14": {
+        "specobjall": {
+            "columns": {
+                "class_person": {"datatype": "smallint"},
+                "dof": {"datatype": "integer"},
+                "elodiedof": {"datatype": "integer"},
+                "npoly": {"datatype": "integer"},
+                "veldispnpix": {"datatype": "real"},
+                "zwarning_noqso": {"datatype": "integer"}
+            }
+        }
+    }
+}
