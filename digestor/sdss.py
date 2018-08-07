@@ -562,8 +562,8 @@ def process_fits(options, metadata):
         if fbasetype == type_map[col['datatype']][0]:
             log.debug("Type match for %s -> %s.", fcol, col['column_name'])
             if index is not None:
-                log.debug("new['%s'] = old['%s'][%d]", col['column_name'], fcol, index)
-                new[col['column_name']] = old[fcol][index]
+                log.debug("new['%s'] = old['%s'][:,%d]", col['column_name'], fcol, index)
+                new[col['column_name']] = old[fcol][:,index]
             else:
                 log.debug("new['%s'] = old['%s']", col['column_name'], fcol)
                 new[col['column_name']] = old[fcol]
@@ -571,10 +571,10 @@ def process_fits(options, metadata):
             log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
                       fcol, fbasetype, col['column_name'], col['datatype'])
             if index is not None:
-                log.debug("new['%s'] = old['%s'][%d].astype(%s)",
+                log.debug("new['%s'] = old['%s'][:,%d].astype(%s)",
                           col['column_name'], fcol, index,
                           str(np_map[col['datatype']]))
-                new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
+                new[col['column_name']] = old[fcol][:,index].astype(np_map[col['datatype']])
             else:
                 log.debug("new['%s'] = old['%s'].astype(%s)",
                           col['column_name'], fcol,
@@ -596,8 +596,8 @@ def process_fits(options, metadata):
                 limit = safe_conversion[(fbasetype, col['datatype'])]
                 if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
                     if index is not None:
-                        log.debug("new['%s'] = old['%s'][%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
-                        new[col['column_name']] = old[fcol][index].astype(np_map[col['datatype']])
+                        log.debug("new['%s'] = old['%s'][:,%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+                        new[col['column_name']] = old[fcol][:,index].astype(np_map[col['datatype']])
                     else:
                         log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
                         new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
