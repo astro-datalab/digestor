@@ -1,5 +1,10 @@
 {
     "sdss_dr14": {
+        "platex": {
+            "columns": {
+                "nturnoff": {"datatype": "integer"}
+            }
+        },
         "specobjall": {
             "columns": {
                 "class_person": {"datatype": "smallint"},
