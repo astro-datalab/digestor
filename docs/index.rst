@@ -41,14 +41,24 @@ Data Lab Database Loading Notes
 
 * Example post-load SQL::
 
+    CREATE INDEX platex_q3c_ang2ipix ON sdss_dr14.platex (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CLUSTER platex_q3c_ang2ipix ON sdss_dr14.platex;
+    ALTER TABLE sdss_dr14.platex ADD PRIMARY KEY (plateid);
     CREATE INDEX specobjall_q3c_ang2ipix ON sdss_dr14.specobjall (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
     CLUSTER specobjall_q3c_ang2ipix ON sdss_dr14.specobjall;
     ALTER TABLE sdss_dr14.specobjall ADD PRIMARY KEY (specobjid);
     ALTER TABLE sdss_dr14.specobjall ADD CONSTRAINT specobjall_platex_fx FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
     CREATE VIEW sdss_dr14.specobj AS SELECT * FROM sdss_dr14.specobjall AS s WHERE s.scienceprimary = 1;
-    GRANT USAGE ON SCHEMA myschema TO dlquery;
-    GRANT SELECT ON mytable TO dlquery;
-    GRANT SELECT ON myview TO dlquery;
+    CREATE VIEW sdss_dr14.seguespecobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%';
+    CREATE VIEW sdss_dr14.segue1specobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%' AND p.programname NOT LIKE 'segue2%';
+    CREATE VIEW sdss_dr14.segue2specobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'segue2%';
+    GRANT USAGE ON SCHEMA sdss_dr14 TO dlquery;
+    GRANT SELECT ON sdss_dr14.platex TO dlquery;
+    GRANT SELECT ON sdss_dr14.specobjall TO dlquery;
+    GRANT SELECT ON sdss_dr14.specobj TO dlquery;
+    GRANT SELECT ON sdss_dr14.seguespecobjall TO dlquery;
+    GRANT SELECT ON sdss_dr14.segue1specobjall TO dlquery;
+    GRANT SELECT ON sdss_dr14.segue2specobjall TO dlquery;
 
 TO DO
 =====
