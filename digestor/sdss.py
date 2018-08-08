@@ -22,26 +22,132 @@ import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
-_SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
-          'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')}
 
-_server2post = {'float': 'double precision', 'int': 'integer',
-                'tinyint': 'smallint'}
+class SDSS(object):
+    """Simple object for storing FITS and SQL metadata.
 
-#
-# Ignore columns that are specific to the SDSS CAS system.
-#
-_skip_columns = ('htmid', 'loadversion')
+    Parameters
+    ----------
+    schema : :class:`str`
+        Name of the PostgreSQL schema containing `table`.
+    table : :class:`str`
+        Name of the PostgreSQL table.
+    """
+    #
+    # Match lines in SQL definition files.
+    #
+    _SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
+              'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')}
 
-#
-# Defer some pre-processing to STILTS.
-#
-_stilts_command = """addcol htm9 "(int)htmIndex(9,{ra},{dec})";
-addcol ring256 "(int)healpixRingIndex(8,{ra},{dec})";
-addcol nest4096 "(int)healpixNestIndex(12,{ra},{dec})";
-addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat;
-addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
-"""
+    #
+    # Map SQL Server data types to PostgreSQL.
+    #
+    _server2post = {'float': 'double precision', 'int': 'integer',
+                    'tinyint': 'smallint'}
+
+    #
+    # Ignore columns that are specific to the SDSS CAS system.
+    #
+    _skip_columns = ('htmid', 'loadversion')
+
+    #
+    # Defer some pre-processing to STILTS.
+    #
+    _stilts_command = """addcol htm9 "(int)htmIndex(9,{ra},{dec})";
+    addcol ring256 "(int)healpixRingIndex(8,{ra},{dec})";
+    addcol nest4096 "(int)healpixNestIndex(12,{ra},{dec})";
+    addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat;
+    addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
+    """
+
+    def __init__(self, schema, table):
+        self.schema = schema
+        self.table = table
+        self.tapSchema = dict()
+        self.mapping = dict()
+        self._table_index_cache = dict()
+        pass
+
+    def table_index(self):
+        """Find the index of the table in the list of tables.
+
+        Raises
+        ------
+        :exc:`ValueError`
+            If the table is not found.
+        """
+        if (self.schema, self.table) in self._table_index_cache:
+            return self._table_index_cache[(self.schema, self.table)]
+        for i, t in enumerate(self.tapSchema['tables']):
+            if t['schema_name'] == self.schema and t['table_name'] == self.table:
+                self._table_index_cache[(self.schema, self.table)] = i
+                return i
+        raise ValueError("Table {0.table} was not found in schema {0.schema}!".format(self))
+
+    def column_index(self, column):
+        """Find the index of the column in the list of columns.
+        """
+        if (self.schema, self.table, column) in self._column_index_cache:
+            return self._column_index_cache[(self.schema, self.table, column)]
+        for i, c in enumerate(self.tapSchema['columns']):
+            if c['schema_name'] == self.schema and c['table_name'] == self.table and c['column_name'] == column:
+                self._column_index_cache[(self.schema, self.table, column)] = i
+                return i
+        raise ValueError("Column {0} was not found in {1.schema}.{1.table}!".format(column, self))
+
+    def parse_line(self, line):
+        """Parse a single line from a SQL file.
+
+        Parameters
+        ----------
+        line : :class:`str`
+            A single line from a SQL file.
+
+        Notes
+        -----
+        * Currently, the long description (``--/T``) is thrown out.
+        """
+        log = logging.getLogger(__name__+'.parse_line')
+        l = line.strip()
+        for r in self._SQLre:
+            m = self._SQLre[r].match(l)
+            if m is not None:
+                g = m.groups()
+                if r == 'comment':
+                    ti = self.table_index()
+                    if g[0] == 'H':
+                        log.debug("self.tapSchema['tables'][%d]['description'] += '%s'", ti, g[1])
+                        self.tapSchema['tables'][ti]['description'] += g[1]
+                    if g[0] == 'T':
+                        log.debug("self.tapSchema['tables'][%d]['long_description'] += '%s'", ti, g[1])
+                        # self.tapSchema['tables'][ti]['long_description'] += g[1]+'\n'
+                    return
+                elif r == 'column':
+                    col = g[0].lower()
+                    if col in self._skip_columns:
+                        log.debug("Skipping column %s.", col)
+                        return
+                    typ = g[1].strip('[]').lower()
+                    try:
+                        post_type = self._server2post[typ]
+                    except KeyError:
+                        post_type = typ
+                    log.debug("    %s %s %s,", col, post_type, g[2])
+                    log.debug("metadata = '%s'", g[3])
+                    p, r = parse_column_metadata(col, g[3])
+                    p['table_name'] = self.table
+                    if post_type == 'double precision':
+                        p['datatype'] = 'double'
+                    elif post_type.startswith('varchar'):
+                        p['datatype'] = 'character'
+                        p['size'] = int(post_type.split('(')[1].strip(')'))
+                    else:
+                        p['datatype'] = post_type
+                    self.tapSchema['columns'].append(p)
+                    if r is not None:
+                        self.mapping[col] = r
+                    return
+        return
 
 
 def get_options():
@@ -203,68 +309,6 @@ def init_metadata(options):
         if 'mapping' not in metadata:
             metadata['mapping'] = dict()
     return metadata
-
-
-def parse_line(line, options, metadata):
-    """Parse a single line from a SQL file.
-
-    Parameters
-    ----------
-    line : :class:`str`
-        A single line from a SQL file.
-    options : :class:`argparse.Namespace`
-        The command-line options.
-    metadata : :class:`dict`
-        A pre-initialized dictionary containing metadata.
-
-    Notes
-    -----
-    * Currently, the long description (``--/T``) is thrown out.
-    """
-    log = logging.getLogger(__name__+'.parse_line')
-    l = line.strip()
-    for i, t in enumerate(metadata['tables']):
-        if t['schema_name'] == options.schema and t['table_name'] == options.table:
-            ti = i
-    for r in _SQLre:
-        m = _SQLre[r].match(l)
-        if m is not None:
-            if r == 'comment':
-                g = m.groups()
-                if g[0] == 'H':
-                    log.debug("metadata['tables'][%d]['description'] += '%s'", ti, g[1])
-                    metadata['tables'][ti]['description'] += g[1]
-                if g[0] == 'T':
-                    log.debug("metadata['tables'][%d]['long_description'] += '%s'", ti, g[1])
-                    # metadata['description'] += g[1]+'\n'
-                return
-            elif r == 'column':
-                g = m.groups()
-                col = g[0].lower()
-                if col in _skip_columns:
-                    log.debug("Skipping column %s.", col)
-                    return
-                typ = g[1].strip('[]').lower()
-                try:
-                    post_type = _server2post[typ]
-                except KeyError:
-                    post_type = typ
-                log.debug("    %s %s %s,", col, post_type, g[2])
-                log.debug("metadata = '%s'", g[3])
-                p, r = parse_column_metadata(col, g[3])
-                p['table_name'] = options.table
-                if post_type == 'double precision':
-                    p['datatype'] = 'double'
-                elif post_type.startswith('varchar'):
-                    p['datatype'] = 'character'
-                    p['size'] = int(post_type.split('(')[1].strip(')'))
-                else:
-                    p['datatype'] = post_type
-                metadata['columns'].append(p)
-                if r is not None:
-                    metadata['mapping'][col] = r
-                return
-    return
 
 
 def parse_column_metadata(column, data):
