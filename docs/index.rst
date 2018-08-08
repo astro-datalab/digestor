@@ -41,12 +41,22 @@ Data Lab Database Loading Notes
 
 * Example post-load SQL::
 
+    CREATE OR REPLACE FUNCTION sdss_dr14.uint64(id bigint) RETURNS numeric(20,0) AS $$
+    DECLARE
+        tzero CONSTANT numeric(20,0) := 9223372036854775808;
+    BEGIN
+        RETURN CAST(id AS numeric(20,0)) + tzero;
+    END;
+    $$ LANGUAGE plpgsql IMMUTABLE;
     CREATE INDEX platex_q3c_ang2ipix ON sdss_dr14.platex (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
     CLUSTER platex_q3c_ang2ipix ON sdss_dr14.platex;
     ALTER TABLE sdss_dr14.platex ADD PRIMARY KEY (plateid);
+    CREATE UNIQUE INDEX platex_uint64_plateid ON sdss_dr14.platex (sdss_dr14.uint64(plateid)) WITH (fillfactor=100);
     CREATE INDEX specobjall_q3c_ang2ipix ON sdss_dr14.specobjall (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
     CLUSTER specobjall_q3c_ang2ipix ON sdss_dr14.specobjall;
     ALTER TABLE sdss_dr14.specobjall ADD PRIMARY KEY (specobjid);
+    CREATE UNIQUE INDEX specobjall_uint64_specobjid ON sdss_dr14.specobjall (sdss_dr14.uint64(specobjid)) WITH (fillfactor=100);
+    CREATE INDEX specobjall_uint64_plateid ON sdss_dr14.specobjall (sdss_dr14.uint64(plateid)) WITH (fillfactor=100);
     ALTER TABLE sdss_dr14.specobjall ADD CONSTRAINT specobjall_platex_fx FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
     CREATE VIEW sdss_dr14.specobj AS SELECT * FROM sdss_dr14.specobjall AS s WHERE s.scienceprimary = 1;
     CREATE VIEW sdss_dr14.seguespecobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%';
@@ -63,16 +73,22 @@ Data Lab Database Loading Notes
 TO DO
 =====
 
-* SQL functions for ``specObjID``, etc.
 * Some primary keys are in the range where a signed 64-bit integer would be
   negative, *i.e.* :math:`2^{63} < k < 2^{64} - 1`.  Need functions to
   deal with this in SQL.
-* Only convert to ``np.uint64`` if absolutely necessary.
 * ``bestObjID`` has some rows that are blank strings.  Those should be set to zero.
   In general, need to be able to deal with ``inf``, ``nan``.
+* Set SDSS-style "null values":
+
+  - During string to bigint conversions, blank strings become zero.
+  - For real and double precision, ``not numpy.isfinite()`` goes to -9999.
+  - For real, ``abs(x) > 3.4e+38`` goes to -9999.
+  - Convert commas to '%2C'?  Not really needed if we're avoiding CSV.
+
+* Only convert to ``np.uint64`` if absolutely necessary.
 * ``random_id`` is added by :command:`fits2db --rid=random_id`.
 * Set ``uint=False`` when writing final FITS file?
-* Load PlateX to get plate foreign key.
+* SQL functions for ``specObjID``, etc.
 * Post-load SQL.
 
 Indices and tables
