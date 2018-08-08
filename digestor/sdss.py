@@ -17,6 +17,7 @@ from argparse import ArgumentParser
 
 from pkg_resources import resource_filename
 # from pytz import utc
+import yaml
 import numpy as np
 from astropy.io import fits
 from astropy.table import Table
@@ -54,7 +55,7 @@ def get_options():
     parser = ArgumentParser(description=__doc__.split("\n")[-2],
                             prog=os.path.basename(sys.argv[0]))
     parser.add_argument('-c', '--configuration', dest='config', metavar='FILE',
-                        default=resource_filename('digestor', 'data/sdss.json'),
+                        default=resource_filename('digestor', 'data/sdss.yaml'),
                         help='Read table-specific configuration from FILE.')
     parser.add_argument('-d', '--schema-description', dest='description',
                         metavar='TEXT',
@@ -493,7 +494,7 @@ def fix_columns(options, metadata):
     if os.path.exists(options.config):
         log.debug("Opening %s.", options.config)
         with open(options.config) as f:
-            conf = json.load(f)
+            conf = yaml.load(f)
         try:
             col_fix = conf[options.schema][options.table]['columns']
         except KeyError:

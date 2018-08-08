@@ -1,0 +1,28 @@
+sdss_dr14:
+    platex:
+        columns:
+            dateobs:
+                #
+                # Original SQL definition file has size 12, which is too small.
+                # Consider converting this to timestamp.
+                #
+                size: 32
+            nturnoff:
+                datatype: integer
+    specobjall:
+        columns:
+            class_person:
+                datatype: smallint
+            dof:
+                datatype: integer
+            elodiedof:
+                datatype: integer
+            npoly:
+                datatype: integer
+            veldispnpix:
+                #
+                # This obvious integer is stored as a real number in the FITS file.
+                #
+                datatype: real
+            zwarning_noqso:
+                datatype: integer
