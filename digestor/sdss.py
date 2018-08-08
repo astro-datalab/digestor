@@ -547,12 +547,24 @@ def process_fits(options, metadata):
     metadata : :class:`dict`
         A pre-initialized dictionary containing metadata.
 
+    Returns
+    -------
+    :class:`str`
+        The name of the file written.
+
     Raises
     ------
     :exc:`ValueError`
         If the FITS data type cannot be converted to SQL.
     """
     log = logging.getLogger(__name__+'.process_fits')
+    out = "{0.schema}.{0.table}.fits".format(options)
+    if os.path.exists(out) and options.keep:
+        log.info("Using existing file: %s.", out)
+        return out
+    if os.path.exists(out):
+        log.info("Removing existing file: %s.", out)
+        os.remove(out)
     type_map = {'bigint': ('K', 'J', 'I', 'B'),
                 'integer': ('J', 'I', 'B'),
                 'smallint': ('I', 'B'),
@@ -630,9 +642,9 @@ def process_fits(options, metadata):
                 msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
                 log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
                 raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
-    log.debug("new.write('%s.%s.fits')", options.schema, options.table)
-    new.write("{0.schema}.{0.table}.fits".format(options))
-    return
+    log.debug("new.write('%s')", out)
+    new.write(out)
+    return out
 
 
 def construct_sql(options, metadata):
@@ -738,7 +750,7 @@ def main():
     # if it crashes, we at least have the SQL and JSON files.
     #
     try:
-        process_fits(options, metadata)
+        pgfits = process_fits(options, metadata)
     except ValueError as e:
         return 1
     #
