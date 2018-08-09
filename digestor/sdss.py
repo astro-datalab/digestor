@@ -318,7 +318,7 @@ def main():
     except ValueError as e:
         log.error(str(e))
         return 1
-    sdss.parseFITS(dlfits, hdu=options.extension)
+    sdss.parseFITS(dlfits, hdu=options.hdu)
     #
     # Read the SQL file.
     #
@@ -352,7 +352,7 @@ def main():
     # if it crashes, we at least have the SQL and JSON files.
     #
     try:
-        pgfits = sdss.processFITS(hdu=options.extension,
+        pgfits = sdss.processFITS(hdu=options.hdu,
                                   overwrite=(not options.keep))
     except ValueError as e:
         return 1
