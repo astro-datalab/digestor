@@ -141,7 +141,11 @@ class TestBase(DigestorCase):
                     rm.assert_called_with(out)
             proc.assert_called_with(['stilts', 'tpipe',
                                      'in=specObj-dr14.fits',
-                                     'cmd=\'addcol htm9 "(int)htmIndex(9,plug_ra,plug_dec)"; addcol ring256 "(int)healpixRingIndex(8,plug_ra,plug_dec)"; addcol nest4096 "(int)healpixNestIndex(12,plug_ra,plug_dec)"; addskycoords -inunit deg -outunit deg icrs galactic plug_ra plug_dec glon glat; addskycoords -inunit deg -outunit deg icrs ecliptic plug_ra plug_dec elon elat;\'',
+                                     'cmd=addcol htm9 (int)htmIndex(9,plug_ra,plug_dec)',
+                                     'cmd=addcol ring256 (int)healpixRingIndex(8,plug_ra,plug_dec)',
+                                     'cmd=addcol nest4096 (int)healpixNestIndex(12,plug_ra,plug_dec)',
+                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic plug_ra plug_dec glon glat',
+                                     'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic plug_ra plug_dec elon elat',
                                      'ofmt=fits-basic',
                                      'out=specObj-dr14.stilts.fits'],
                                      stderr=-1, stdout=-1)
@@ -155,12 +159,16 @@ class TestBase(DigestorCase):
                 with mock.patch('os.remove') as rm:
                     with self.assertRaises(ValueError) as exc:
                         out = self.base.addDLColumns('specObj-dr14.fits',
-                                                     ra='plug_ra', overwrite=True)
+                                                     ra='racen', overwrite=True)
                     self.assertEqual(str(exc.exception), "STILTS error detected!")
                     rm.assert_called_with(out)
             proc.assert_called_with(['stilts', 'tpipe',
                                      'in=specObj-dr14.fits',
-                                     'cmd=\'addcol htm9 "(int)htmIndex(9,plug_ra,plug_dec)"; addcol ring256 "(int)healpixRingIndex(8,plug_ra,plug_dec)"; addcol nest4096 "(int)healpixNestIndex(12,plug_ra,plug_dec)"; addskycoords -inunit deg -outunit deg icrs galactic plug_ra plug_dec glon glat; addskycoords -inunit deg -outunit deg icrs ecliptic plug_ra plug_dec elon elat;\'',
+                                     'cmd=addcol htm9 (int)htmIndex(9,racen,deccen)',
+                                     'cmd=addcol ring256 (int)healpixRingIndex(8,racen,deccen)',
+                                     'cmd=addcol nest4096 (int)healpixNestIndex(12,racen,deccen)',
+                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic racen deccen glon glat',
+                                     'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic racen deccen elon elat',
                                      'ofmt=fits-basic',
                                      'out=specObj-dr14.stilts.fits'],
                                      stderr=-1, stdout=-1)

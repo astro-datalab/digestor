@@ -44,12 +44,11 @@ class Digestor(object):
     #
     # Defer some pre-processing to STILTS.
     #
-    _stilts_command = """addcol htm9 "(int)htmIndex(9,{ra},{dec})";
-addcol ring256 "(int)healpixRingIndex(8,{ra},{dec})";
-addcol nest4096 "(int)healpixNestIndex(12,{ra},{dec})";
-addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat;
-addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
-"""
+    _stilts_command = ['cmd=addcol htm9 (int)htmIndex(9,{ra},{dec})',
+                       'cmd=addcol ring256 (int)healpixRingIndex(8,{ra},{dec})',
+                       'cmd=addcol nest4096 (int)healpixNestIndex(12,{ra},{dec})',
+                       'cmd=addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat',
+                       'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat']
 
     def __init__(self, schema, table, description=None, merge=None):
         self.schema = schema
@@ -365,11 +364,11 @@ addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
         if os.path.exists(out):
             log.info("Removing existing file: %s.", out)
             os.remove(out)
-        cmd = self._stilts_command.format(ra=ra.lower(),
-                                          dec=ra.lower().replace('ra', 'dec')).replace('\n', ' ').strip()
-        command = ['stilts', 'tpipe', 'in={0}'.format(filename),
-                   "cmd='{0}'".format(cmd), 'ofmt=fits-basic',
-                   'out={0}'.format(out)]
+        fra = ra.lower()
+        fdec = ra.lower().replace('ra', 'dec')
+        command = ['stilts', 'tpipe', 'in={0}'.format(filename)]
+        command += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
+        command += ['ofmt=fits-basic', 'out={0}'.format(out)]
         log.debug(' '.join(command))
         proc = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
         o, e = proc.communicate()
