@@ -6,8 +6,6 @@ import unittest
 import unittest.mock as mock
 from tempfile import NamedTemporaryFile
 
-import numpy as np
-
 from ..sdss import SDSS, get_options
 from .utils import DigestorCase
 
@@ -169,16 +167,9 @@ class TestSDSS(DigestorCase):
         self.sdss.mapping = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
                              'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
                              'flux_u': 'FLUX[0]', 'flux_g': 'FLUX[1]'}
-        self.assertIn('flux_u', self.sdss.mapping)
-        self.assertNotIn('FLUX', self.sdss.FITS)
-        final_mapping['flux_u'] = 'FLUX[0]'
-        final_mapping['flux_g'] = 'FLUX[1]'
-        # with self.assertRaises(KeyError) as e:
-        self.sdss.mapColumns()
-        self.assertDictEqual(self.sdss.mapping, final_mapping)
-        self.assertLog(-1, 'FITS column FOOBAR will be dropped from SQL!')
-
-        # self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to flux_u!')
+        with self.assertRaises(KeyError) as e:
+            self.sdss.mapColumns()
+        self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to flux_u!')
         self.sdss.FITS['FLUX'] = '2E'
         self.sdss.tapSchema['columns'] += [{"table_name": self.table,
                                             "column_name": "z",
@@ -188,10 +179,10 @@ class TestSDSS(DigestorCase):
                                             "principal": 0, "indexed": 0, "std": 0},]
         self.sdss.mapping = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
                              'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
-                             'flux_u': 'FLUX[0]'}
-        # with self.assertRaises(KeyError) as e:
-        #     self.sdss.mapColumns()
-        # self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to z!')
+                             'flux_u': 'FLUX[0]', 'flux_g': 'FLUX[1]'}
+        with self.assertRaises(KeyError) as e:
+            self.sdss.mapColumns()
+        self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to z!')
 
 
 def test_suite():

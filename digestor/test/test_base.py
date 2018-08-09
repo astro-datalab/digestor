@@ -8,6 +8,8 @@ import logging
 import json
 from tempfile import NamedTemporaryFile
 
+import numpy as np
+
 from ..base import Digestor
 from .utils import DigestorCase
 
@@ -66,6 +68,60 @@ class TestBase(DigestorCase):
                             merge=f.name)
             self.assertEqual(base.tapSchema['tables'][1]['table_name'], self.table)
 
+    def test_table_index(self):
+        """Test the table index search function.
+        """
+        self.assertEqual(self.base.tableIndex(), 0)
+        self.base.table = 'foobar'
+        with self.assertRaises(ValueError) as e:
+            i = self.base.tableIndex()
+        self.assertEqual(e.exception.args[0],
+                         "Table {0.table} was not found in schema {0.schema}!".format(self.base))
+
+    def test_column_index(self):
+        """Test the column index search function.
+        """
+        self.assertEqual(self.base.columnIndex('htm9'), 0)
+        with self.assertRaises(ValueError) as e:
+            i = self.base.columnIndex('foobar')
+        self.assertEqual(e.exception.args[0],
+                         "Column {0} was not found in {1.schema}.{1.table}!".format('foobar', self.base))
+
+    def test_fix_columns(self):
+        """Test "by hand" fixes to table definition.
+        """
+        self.base.tapSchema['columns'] += [{"table_name": self.table,
+                                            "column_name": "veldispnpix",
+                                            "description": "number of pixels",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "integer", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},]
+        self.base.fixColumns('no_such_file.yaml')
+        yaml = """sdss:
+    spectra:
+        columns:
+            veldispnpix:
+                datatype: real
+"""
+        with NamedTemporaryFile('w+') as f:
+            f.write(yaml)
+            f.seek(0)
+            self.base.fixColumns(f.name)
+            self.assertEqual(self.base.tapSchema['columns'][-1]['datatype'], 'real')
+        self.base.table = 'foobar'
+        with NamedTemporaryFile('w+') as f:
+            f.write(yaml)
+            f.seek(0)
+            self.base.fixColumns(f.name)
+
+    def test_sort_columns(self):
+        """Test sorting columns by size.
+        """
+        self.base.sortColumns()
+        types = [c['datatype'] for c in self.base.tapSchema['columns']]
+        self.assertListEqual(types, ['double', 'double', 'double', 'double',
+                                     'integer', 'integer', 'integer', 'real'])
+
     def test_add_dl_columns(self):
         """Test adding STILTS columns.
         """
@@ -93,7 +149,7 @@ class TestBase(DigestorCase):
         with mock.patch('subprocess.Popen') as proc:
             p = proc.return_value = mock.MagicMock()
             p.returncode = 0
-            p.communicate.return_value = (b'', b'foobar')
+            p.communicate.return_value = (b'fail', b'foobar')
             with mock.patch('os.path.exists') as e:
                 e.return_value = True
                 with mock.patch('os.remove') as rm:
@@ -110,109 +166,164 @@ class TestBase(DigestorCase):
                                      stderr=-1, stdout=-1)
         self.assertLog(-1, 'STILTS STDERR = foobar')
 
-    # def test_fix_columns(self):
-    #     """Test "by hand" fixes to table definition.
-    #     """
-    #     self.metadata['columns'] += [{"table_name": self.options.table,
-    #                                   "column_name": "veldispnpix",
-    #                                   "description": "number of pixels",
-    #                                   "unit": "", "ucd": "", "utype": "",
-    #                                   "datatype": "integer", "size": 1,
-    #                                   "principal": 0, "indexed": 0, "std": 0},]
-    #     fix_columns(self.options, self.metadata)
-    #     self.assertEqual(self.metadata['columns'][0]['datatype'], 'real')
-    #     self.options.table = 'foobar'
-    #     fix_columns(self.options, self.metadata)
-
-    def test_sort_columns(self):
-        """Test sorting columns by size.
+    def test_map_columns(self):
+        """Test mapping of FITS columns to SQL columns.
         """
-        self.base.sortColumns()
-        types = [c['datatype'] for c in self.base.tapSchema['columns']]
-        self.assertListEqual(types, ['double', 'double', 'double', 'double',
-                                     'integer', 'integer', 'integer', 'real'])
+        self.base.FITS = {'elon': 'D', 'elat': 'D',
+                          'glon': 'D', 'glat': 'D',
+                          'htm9': 'J', 'ring256': 'J',
+                          'nest4096': 'J', 'random_id': 'E'}
+        self.base.mapColumns()
+        final_mapping = {'htm9': 'htm9', 'ring256': 'ring256', 'nest4096': 'nest4096',
+                         'glon': 'glon', 'glat': 'glat',
+                         'elon': 'elon', 'elat': 'elat',
+                         'random_id': 'random_id'}
+        self.assertDictEqual(self.base.mapping, final_mapping)
+        self.base.tapSchema['columns'] += [{"table_name": self.table,
+                                            "column_name": "z",
+                                            "description": "z",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},]
+        self.base.mapping = {'random_id': 'random_id', 'z': 'z'}
+        with self.assertRaises(KeyError) as e:
+            self.base.mapColumns()
+        self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to z!')
 
-    # def test_process_fits(self):
-    #     """Test processing of FITS file for loading.
-    #     """
-    #     self.metadata['columns'] += finish_table(self.options)
-    #     self.metadata['columns'] += [{"table_name": self.options.table,
-    #                                   "column_name": "mag_u",
-    #                                   "description": "u Magnitude",
-    #                                   "unit": "", "ucd": "", "utype": "",
-    #                                   "datatype": "real", "size": 1,
-    #                                   "principal": 0, "indexed": 0, "std": 0},
-    #                                  {"table_name": self.options.table,
-    #                                   "column_name": "mag_g",
-    #                                   "description": "g Magnitude",
-    #                                   "unit": "", "ucd": "", "utype": "",
-    #                                   "datatype": "real", "size": 1,
-    #                                   "principal": 0, "indexed": 0, "std": 0},
-    #                                  {"table_name": self.options.table,
-    #                                   "column_name": "magivar_u",
-    #                                   "description": "u ivar",
-    #                                   "unit": "", "ucd": "", "utype": "",
-    #                                   "datatype": "double", "size": 1,
-    #                                   "principal": 0, "indexed": 0, "std": 0},
-    #                                  {"table_name": self.options.table,
-    #                                   "column_name": "magivar_g",
-    #                                   "description": "g ivar",
-    #                                   "unit": "", "ucd": "", "utype": "",
-    #                                   "datatype": "double", "size": 1,
-    #                                   "principal": 0, "indexed": 0, "std": 0},
-    #                                  {"table_name": self.options.table,
-    #                                   "column_name": "objid",
-    #                                   "description": "id",
-    #                                   "unit": "", "ucd": "", "utype": "",
-    #                                   "datatype": "bigint", "size": 1,
-    #                                   "principal": 0, "indexed": 0, "std": 0},
-    #                                  {"table_name": self.options.table,
-    #                                   "column_name": "unsafe",
-    #                                   "description": "unsafe",
-    #                                   "unit": "", "ucd": "", "utype": "",
-    #                                   "datatype": "integer", "size": 1,
-    #                                   "principal": 0, "indexed": 0, "std": 0},
-    #                                  {"table_name": self.options.table,
-    #                                   "column_name": "flags_0",
-    #                                   "description": "unsafe",
-    #                                   "unit": "", "ucd": "", "utype": "",
-    #                                   "datatype": "smallint", "size": 1,
-    #                                   "principal": 0, "indexed": 0, "std": 0}]
-    #     self.metadata['columns'][0]['datatype'] = 'smallint'
-    #     self.metadata['mapping'] = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
-    #                                 'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
-    #                                 'flags_0': 'FLAGS[0]'}
-    #     self.metadata['fits'] = {'e_lon': 'D', 'e_lat': 'D',
-    #                              'g_lon': 'E', 'g_lat': 'E',
-    #                              'HTM9': 'J', 'ring256': 'J',
-    #                              'nest4096': 'J', 'MAG': '2E',
-    #                              'MAG_IVAR': '2E',
-    #                              'OBJID': '16A',
-    #                              'FOOBAR': '16A',
-    #                              'flags': '2J',
-    #                              'unsafe': 'K',
-    #                              '__filename': 'foo'}
-    #     dummy_values = {'e_lon': np.ones((5,), dtype=np.float64),
-    #                     'e_lat': np.ones((5,), dtype=np.float64),
-    #                     'g_lon': np.ones((5,), dtype=np.float32),
-    #                     'g_lat': np.ones((5,), dtype=np.float32),
-    #                     'HTM9': np.ones((5,), dtype=np.int32),
-    #                     'ring256': np.ones((5,), dtype=np.int32),
-    #                     'nest4096': np.ones((5,), dtype=np.int32),
-    #                     'MAG': np.ones((5, 2), dtype=np.float32),
-    #                     'MAG_IVAR': np.ones((5, 2), dtype=np.float32),
-    #                     'OBJID': np.array([' '*15 + '1']*4 + [' '*16], dtype='U16'),
-    #                     'FOOBAR': np.array([' '*16]*5, dtype='U16'),
-    #                     'flags': np.ones((5, 2), dtype=np.int32),
-    #                     'unsafe': np.ones((5,), dtype=np.int64),}
-    #     map_columns(self.options, self.metadata)
-    #     # self.assertLog(-1, 'FITS column FOOBAR will be dropped from SQL!')
-    #     with mock.patch('digestor.sdss.Table') as T:
-    #         t = T.read.return_value = mock.MagicMock()
-    #         # t.__getitem__.side_effect = lambda key: np.ones((5,2), dtype=np.int32)
-    #         t.__getitem__.side_effect = lambda key: dummy_values[key]
-    #         process_fits(self.options, self.metadata)
-    #     # self.assertLog(-1, 'No safe data type conversion possible for unsafe (K) -> unsafe (integer)!')
+    def test_parse_fits(self):
+        """Test reading metadata from FITS file.
+        """
+        with mock.patch('astropy.io.fits.open', mock.mock_open()) as mo:
+            columns = mock.MagicMock()
+            columns.columns.names = ['foo', 'bar']
+            columns.columns.formats = ['D', 'J']
+            mo.return_value.__enter__.return_value = [None, columns]
+            self.base.parseFITS('foo.fits')
+        self.assertEqual(self.base._inputFITS, 'foo.fits')
+        self.assertDictEqual(self.base.FITS, {'foo': 'D', 'bar': 'J'})
+
+    def test_process_fits(self):
+        """Test processing of FITS file for loading.
+        """
+        self.base.tapSchema['columns'] += [{"table_name": self.table,
+                                            "column_name": "mag_u",
+                                            "description": "u Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "mag_g",
+                                            "description": "g Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "magivar_u",
+                                            "description": "u ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "double", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "magivar_g",
+                                            "description": "g ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "double", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "objid",
+                                            "description": "id",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "bigint", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "unsafe",
+                                            "description": "unsafe",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "integer", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "flags_0",
+                                            "description": "unsafe",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "smallint", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0}]
+        i = self.base.columnIndex('nest4096')
+        self.base.tapSchema['columns'][i]['datatype'] = 'smallint'
+        self.base.FITS = {'elon': 'D', 'elat': 'D',
+                          'glon': 'E', 'glat': 'E',
+                          'htm9': 'J', 'ring256': 'J',
+                          'nest4096': 'J',
+                          'random_id': 'E',
+                          'mag': '2E', 'magivar': '2E',
+                          'objid': '16A',
+                          'foobar': '16A',
+                          'flags': '2J',
+                          'unsafe': 'K'}
+        for k in self.base.FITS:
+            self.base.mapping[k] = k
+        self.base.mapping['mag_u'] = 'mag[0]'
+        self.base.mapping['mag_g'] = 'mag[1]'
+        self.base.mapping['magivar_u'] = 'magivar[0]'
+        self.base.mapping['magivar_g'] = 'magivar[1]'
+        self.base.mapping['flags_0'] = 'flags[0]'
+        self.base._inputFITS = 'foo.fits'
+        dummy_values = {'elon': np.ones((5,), dtype=np.float64),
+                        'elat': np.ones((5,), dtype=np.float64),
+                        'glon': np.ones((5,), dtype=np.float32),
+                        'glat': np.ones((5,), dtype=np.float32),
+                        'htm9': np.ones((5,), dtype=np.int32),
+                        'ring256': np.ones((5,), dtype=np.int32),
+                        'nest4096': np.ones((5,), dtype=np.int32),
+                        'random_id': np.ones((5,), dtype=np.float32),
+                        'mag': np.ones((5, 2), dtype=np.float32),
+                        'magivar': np.ones((5, 2), dtype=np.float32),
+                        'objid': np.array([' '*15 + '1']*4 + [' '*16], dtype='U16'),
+                        'foobar': np.array([' '*16]*5, dtype='U16'),
+                        'flags': np.ones((5, 2), dtype=np.int32),
+                        'unsafe': np.ones((5,), dtype=np.int64),}
+        #
+        # Raise an unsafe error.
+        #
+        with mock.patch('digestor.base.Table') as T:
+            t = T.read.return_value = mock.MagicMock()
+            t.__getitem__.side_effect = lambda key: dummy_values[key]
+            with self.assertRaises(ValueError) as e:
+                self.base.processFITS()
+            self.assertEqual(e.exception.args[0], 'No safe data type conversion possible for unsafe (K) -> unsafe (integer)!')
+        del dummy_values['unsafe']
+        del self.base.FITS['unsafe']
+        del self.base.mapping['unsafe']
+        del self.base.tapSchema['columns'][-2]
+        #
+        # Try again.
+        #
+        with mock.patch('digestor.base.Table') as T:
+            t = T.read.return_value = mock.MagicMock()
+            t.__getitem__.side_effect = lambda key: dummy_values[key]
+            out = self.base.processFITS()
+        self.assertEqual(out, '{0.schema}.{0.table}.fits'.format(self))
+        #
+        # Check overwrite
+        #
+        with mock.patch('os.path.exists') as ex:
+            ex.return_value = True
+            out = self.base.processFITS()
+            ex.assert_called_with(out)
+        with mock.patch('os.path.exists') as ex:
+            with mock.patch('os.remove') as rm:
+                with mock.patch('digestor.base.Table') as T:
+                    t = T.read.return_value = mock.MagicMock()
+                    t.__getitem__.side_effect = lambda key: dummy_values[key]
+                    ex.return_value = True
+                    out = self.base.processFITS(overwrite=True)
+            rm.assert_called_with(out)
+            ex.assert_called_with(out)
+
+    def test_write_schema(self):
+        """Test writing TapSchema metadata to file.
+        """
+        with NamedTemporaryFile('w+') as f:
+            self.base.writeTapSchema(f.name)
 
     def test_create_sql(self):
         """Test SQL output.
@@ -243,6 +354,12 @@ class TestBase(DigestorCase):
 """.format(self.base)
         sql = self.base.createSQL()
         self.assertEqual(sql, expected)
+
+    def test_write_sql(self):
+        """Test writing SQL to file.
+        """
+        with NamedTemporaryFile('w+') as f:
+            self.base.writeSQL(f.name)
 
 
 def test_suite():

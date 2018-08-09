@@ -170,7 +170,6 @@ class SDSS(Digestor):
             If an expected mapping cannot be found.
         """
         log = self.logName('sdss.SDSS.mapColumns')
-        colnames = list(self.FITS.keys())
         for sc in self.colNames:
             if sc in self.mapping:
                 #
@@ -183,7 +182,7 @@ class SDSS(Digestor):
                     foo = mc.split('[')
                     mc = foo[0]
                     index = '[' + foo[1]
-                if mc in colnames:
+                if mc in self.FITS:
                     log.debug("FITS: %s -> SQL: %s", self.mapping[sc], sc)
                     verify_mapping = True
                 else:
@@ -191,7 +190,7 @@ class SDSS(Digestor):
                     # See if there is a column containing underscores that
                     # could correspond to this mapping.
                     #
-                    for fc in colnames:
+                    for fc in self.FITS:
                         for fcl in (fc.lower(), fc.lower().replace('_', ''),):
                             if fcl == mc.lower():
                                 log.debug("FITS: %s -> SQL: %s", fc, sc)
@@ -202,7 +201,7 @@ class SDSS(Digestor):
                     log.error(msg, sc)
                     raise KeyError(msg % sc)
             else:
-                for fc in colnames:
+                for fc in self.FITS:
                     for fcl in (fc.lower(), fc.lower().replace('_', ''),):
                         if fcl == sc:
                             log.debug("FITS: %s -> SQL: %s", fc, sc)
@@ -221,7 +220,7 @@ class SDSS(Digestor):
         #
         # Check for FITS columns that are NOT mapped to the SQL file.
         #
-        for col in colnames:
+        for col in self.FITS:
             if col in self.mapping.values():
                 log.debug("FITS column %s will be transferred to SQL.", col)
             else:

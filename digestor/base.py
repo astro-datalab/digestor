@@ -59,7 +59,6 @@ addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
         self.FITS = dict()
         self._tableIndexCache = dict()
         self._columnIndexCache = dict()
-        self._colNames = None
         self._inputFits = None
 
     @classmethod
@@ -245,7 +244,7 @@ addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
             return self._columnIndexCache[(self.schema, self.table, column)]
         except KeyError:
             for i, c in enumerate(self.tapSchema['columns']):
-                if c['schema_name'] == self.schema and c['table_name'] == self.table and c['column_name'] == column:
+                if c['table_name'] == self.table and c['column_name'] == column:
                     self._columnIndexCache[(self.schema, self.table, column)] = i
                     return i
         raise ValueError("Column {0} was not found in {1.schema}.{1.table}!".format(column, self))
@@ -254,10 +253,8 @@ addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
     def colNames(self):
         """List of columns in the table.
         """
-        if self._colNames is None:
-            self._colNames = [c['column_name'] for c in self.tapSchema['columns']
-                              if c['table_name'] == self.table]
-        return self._colNames
+        return [c['column_name'] for c in self.tapSchema['columns']
+                if c['table_name'] == self.table]
 
     @property
     def nColumns(self):
@@ -276,12 +273,14 @@ addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
             If an expected mapping cannot be found.
         """
         log = self.logName('base.Digestor.mapColumns')
-        colnames = list(self.FITS.keys())
-        del colnames[colnames.index('__filename')]
         for sc in self.colNames:
             if sc in self.mapping:
-                if self.mapping[sc] in colnames:
+                if self.mapping[sc] in self.FITS:
                     log.debug("FITS: %s -> SQL: %s", self.mapping[sc], sc)
+                else:
+                    msg = "Could not find a FITS column corresponding to %s!"
+                    log.error(msg, sc)
+                    raise KeyError(msg % sc)
             else:
                 log.debug("FITS: %s -> SQL: %s", sc, sc)
                 self.mapping[sc] = sc
@@ -420,7 +419,7 @@ addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
             If the FITS data type cannot be converted to SQL.
         """
         log = self.logName('base.Digestor.processFITS')
-        out = "{0.schema}.{0.table}.fits".format(options)
+        out = "{0.schema}.{0.table}.fits".format(self)
         if os.path.exists(out) and not overwrite:
             log.info("Using existing file: %s.", out)
             return out
