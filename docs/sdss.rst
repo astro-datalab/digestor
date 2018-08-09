@@ -2,10 +2,10 @@
 SDSS Loading Notes
 ==================
 
-* Example post-load SQL::
+Example post-load SQL code::
 
     --
-    -- Version for FITS-style unsigned integers.  This ifunction is no
+    -- Version for FITS-style unsigned integers.  This function is no
     -- longer required.
     --
     CREATE OR REPLACE FUNCTION sdss_dr14.uint64(id bigint) RETURNS numeric(20,0) AS $$
