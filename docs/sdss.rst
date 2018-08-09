@@ -4,11 +4,28 @@ SDSS Loading Notes
 
 * Example post-load SQL::
 
+    --
+    -- Version for FITS-style unsigned integers.
+    --
     CREATE OR REPLACE FUNCTION sdss_dr14.uint64(id bigint) RETURNS numeric(20,0) AS $$
     DECLARE
         tzero CONSTANT numeric(20,0) := 9223372036854775808;
     BEGIN
         RETURN CAST(id AS numeric(20,0)) + tzero;
+    END;
+    $$ LANGUAGE plpgsql IMMUTABLE;
+    --
+    -- Version for bitwise-correct signed to unsigned conversion.
+    --
+    CREATE OR REPLACE FUNCTION sdss_dr14.uint64(id bigint) RETURNS numeric(20,0) AS $$
+    DECLARE
+        tzero CONSTANT numeric(20,0) := 18446744073709551616;
+    BEGIN
+        IF id < 0 THEN
+            RETURN CAST(id AS numeric(20,0)) + tzero;
+        ELSE
+            RETURN CAST(id AS numeric(20,0));
+        END IF;
     END;
     $$ LANGUAGE plpgsql IMMUTABLE;
     CREATE INDEX platex_q3c_ang2ipix ON sdss_dr14.platex (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);

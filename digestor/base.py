@@ -486,8 +486,12 @@ class Digestor(object):
                     log.debug("old['%s'][old['%s'] == blank] = blank[0:%d] + '0'",
                               fcol, fcol, width - 1)
                     old[fcol][w] = blank[0:(width-1)] + '0'
-                log.debug("new['%s'] = old['%s'].astype(np.uint64)", col['column_name'], fcol)
-                new[col['column_name']] = old[fcol].astype(np.uint64)
+                try:
+                    log.debug("new['%s'] = old['%s'].astype(np.int64)", col['column_name'], fcol)
+                    new[col['column_name']] = old[fcol].astype(np.int64)
+                except OverflowError:
+                    log.debug("new['%s'] = old['%s'].astype(np.uint64)", col['column_name'], fcol)
+                    new[col['column_name']] = old[fcol].astype(np.uint64)
             else:
                 if (fbasetype, col['datatype']) in safe_conversion:
                     limit = safe_conversion[(fbasetype, col['datatype'])]
@@ -503,7 +507,7 @@ class Digestor(object):
                     log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
                     raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
         log.debug("new.write('%s')", out)
-        new.write(out)
+        new.write(out, uint=False)
         return out
 
     def writeTapSchema(self, filename):
