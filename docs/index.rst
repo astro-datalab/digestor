@@ -12,6 +12,7 @@ Welcome to Digestor's documentation!
    :caption: Contents:
 
    api
+   changes
    notes
    sdss
    tutorial
