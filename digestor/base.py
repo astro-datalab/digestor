@@ -59,7 +59,7 @@ addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat;
         self.FITS = dict()
         self._tableIndexCache = dict()
         self._columnIndexCache = dict()
-        self._inputFits = None
+        self._inputFITS = None
 
     @classmethod
     def configureLog(cls, debug=False):
