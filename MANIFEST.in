@@ -1,0 +1,11 @@
+include README.rst
+include LICENSE.rst
+include setup.cfg
+
+recursive-include digestor *.pyx *.c *.pxd
+recursive-include docs *
+
+prune build
+prune docs/_build
+prune docs/api
+prune htmlcov
