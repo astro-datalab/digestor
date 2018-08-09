@@ -511,6 +511,8 @@ class Digestor(object):
                     msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
                     log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
                     raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
+            if fbasetype in ('D', 'E'):
+                new[col['column_name']][~np.isfinite(new[col['column_name']])] = -9999.0
         log.debug("new.write('%s')", out)
         new.write(out)
         return out
