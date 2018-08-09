@@ -22,7 +22,7 @@ setup_keywords['author'] = 'NOAO Data Lab Project'
 setup_keywords['author_email'] = 'datalab@noao.edu'
 setup_keywords['license'] = 'MIT'
 setup_keywords['url'] = 'http://gitlab.noao.edu/weaver/digestor'
-setup_keywords['version'] = '0.1.0.dev12'
+setup_keywords['version'] = '0.1.0'
 #
 # Use README.rst as long_description.
 #
