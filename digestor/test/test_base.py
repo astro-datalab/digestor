@@ -244,6 +244,12 @@ class TestBase(DigestorCase):
                                             "datatype": "bigint", "size": 1,
                                             "principal": 0, "indexed": 0, "std": 0},
                                            {"table_name": self.table,
+                                            "column_name": "bigobjid",
+                                            "description": "id",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "bigint", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
                                             "column_name": "unsafe",
                                             "description": "unsafe",
                                             "unit": "", "ucd": "", "utype": "",
@@ -264,6 +270,7 @@ class TestBase(DigestorCase):
                           'random_id': 'E',
                           'mag': '2E', 'magivar': '2E',
                           'objid': '16A',
+                          'bigobjid': '20A',
                           'foobar': '16A',
                           'flags': '2J',
                           'unsafe': 'K'}
@@ -286,6 +293,7 @@ class TestBase(DigestorCase):
                         'mag': np.ones((5, 2), dtype=np.float32),
                         'magivar': np.ones((5, 2), dtype=np.float32),
                         'objid': np.array([' '*15 + '1']*4 + [' '*16], dtype='U16'),
+                        'bigobjid': np.array(['9223372036854775808']*3 + ['18446744073709551615']*2, dtype='U20'),
                         'foobar': np.array([' '*16]*5, dtype='U16'),
                         'flags': np.ones((5, 2), dtype=np.int32),
                         'unsafe': np.ones((5,), dtype=np.int64),}
