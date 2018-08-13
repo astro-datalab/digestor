@@ -14,3 +14,5 @@ TO DO
 * SQL functions for ``specObjID``, etc.
 * Need instructions for indexing DL-specific tables.
 * Post-load SQL.
+* Support pre-computed columns that are exactly equivalent to Data Lab columns,
+  for example, ``(L, B)``  in photoObj files is equivalent to ``(glon, glat)``.
