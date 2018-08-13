@@ -26,3 +26,16 @@ sdss_dr14:
                 datatype: real
             zwarning_noqso:
                 datatype: integer
+    photoplate:
+        NOFITS:
+            #
+            # Instructions on how to deal with columns that are NOT defined
+            # in the FITS file, and that are not dropped or deferred by default.
+            #
+            insidemask: drop
+            specobjid: drop
+            dered_u: defer
+            dered_g: defer
+            dered_r: defer
+            dered_i: defer
+            dered_z: defer
