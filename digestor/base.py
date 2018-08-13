@@ -59,6 +59,7 @@ class Digestor(object):
         self._tableIndexCache = dict()
         self._columnIndexCache = dict()
         self._inputFITS = None
+        self._yamlCache = dict()
 
     @classmethod
     def configureLog(cls, debug=False):
@@ -120,12 +121,12 @@ class Digestor(object):
             metadata = dict()
             metadata['schemas'] = [{'schema_name': self.schema,
                                     'description': description,
-                                    'utype': ''},]
+                                    'utype': ''}]
             metadata['tables'] = [{'schema_name': self.schema,
                                    'table_name': self.table,
                                    'table_type': 'table',
                                    'utype': '',
-                                   'description': ''},]
+                                   'description': ''}]
             metadata['columns'] = self._dlColumns()
             metadata['keys'] = [{"key_id": "",
                                  "from_table": "",
@@ -183,6 +184,29 @@ class Digestor(object):
                 self.tapColumn('elat',
                                description="Ecliptic Longitude",
                                datatype='double', unit='deg', indexed=1)]
+
+    def _getYAML(self, filename):
+        """Cache reads of YAML configuration files.
+
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the YAML configuration file.
+
+        Returns
+        -------
+        :class:`dict`
+            The contents of `filename`, or ``None`` if there is no such file.
+        """
+        log = self.logName('base.Digestor._getYAML')
+        if filename in self._yamlCache:
+            return self._yamlCache[filename]
+        if os.path.exists(filename):
+            log.debug("Opening %s.", filename)
+            with open(filename) as f:
+                self._yamlCache[filename] = yaml.load(f)
+            return self._yamlCache[filename]
+        return None
 
     def tapColumn(self, column, **kwargs):
         """Create a TapSchema-compatible column definition.
@@ -299,12 +323,10 @@ class Digestor(object):
             If the configuration file contains an unknown column.
         """
         log = self.logName('base.Digestor.fixColumns')
-        if os.path.exists(filename):
-            log.debug("Opening %s.", filename)
-            with open(filename) as f:
-                conf = yaml.load(f)
+        config = self._getYAML(filename)
+        if config is not None:
             try:
-                col_fix = conf[self.schema][self.table]['columns']
+                col_fix = config[self.schema][self.table]['columns']
             except KeyError:
                 return
             for col in col_fix:
@@ -400,6 +422,9 @@ class Digestor(object):
     def processFITS(self, hdu=1, overwrite=False):
         """Convert a pre-processed FITS file into one ready for database loading.
 
+        This method may be overridden in subclasses with survey-specific
+        requirements.
+
         Parameters
         ----------
         hdu : :class:`int`, optional
@@ -458,9 +483,9 @@ class Digestor(object):
             if fbasetype == type_map[col['datatype']][0]:
                 log.debug("Type match for %s -> %s.", fcol, col['column_name'])
                 if index is not None:
-                    log.debug("new['%s'] = old['%s'][:,%d]",
+                    log.debug("new['%s'] = old['%s'][:, %d]",
                               col['column_name'], fcol, index)
-                    new[col['column_name']] = old[fcol][:,index]
+                    new[col['column_name']] = old[fcol][:, index]
                 else:
                     log.debug("new['%s'] = old['%s']", col['column_name'], fcol)
                     new[col['column_name']] = old[fcol]
@@ -468,42 +493,22 @@ class Digestor(object):
                 log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
                           fcol, fbasetype, col['column_name'], col['datatype'])
                 if index is not None:
-                    log.debug("new['%s'] = old['%s'][:,%d].astype(%s)",
+                    log.debug("new['%s'] = old['%s'][:, %d].astype(%s)",
                               col['column_name'], fcol, index,
                               str(np_map[col['datatype']]))
-                    new[col['column_name']] = old[fcol][:,index].astype(np_map[col['datatype']])
+                    new[col['column_name']] = old[fcol][:, index].astype(np_map[col['datatype']])
                 else:
                     log.debug("new['%s'] = old['%s'].astype(%s)",
                               col['column_name'], fcol,
                               str(np_map[col['datatype']]))
                     new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
-            elif fbasetype == 'A' and col['datatype'] == 'bigint':
-                log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
-                width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
-                blank = ' '*width
-                w = np.nonzero(old[fcol] == blank)[0]
-                if len(w) > 0:
-                    log.debug("old['%s'][old['%s'] == blank] = blank[0:%d] + '0'",
-                              fcol, fcol, width - 1)
-                    old[fcol][w] = blank[0:(width-1)] + '0'
-                log.debug("new['%s'] = old['%s'].astype(np.int64)", col['column_name'], fcol)
-                try:
-                    new[col['column_name']] = old[fcol].astype(np.int64)
-                except OverflowError:
-                    uold = old[fcol].astype(np.uint64)
-                    hi = np.nonzero(uold >= 2**63)[0]
-                    lo = np.nonzero(uold < 2**63)[0]
-                    inew = np.zeros(uold.shape, dtype=np.int64)
-                    inew[lo] = uold[lo]
-                    inew[hi] = (uold[hi] - 2**63).astype(np.int64) - 2**63
-                    new[col['column_name']] = inew
             else:
                 if (fbasetype, col['datatype']) in safe_conversion:
                     limit = safe_conversion[(fbasetype, col['datatype'])]
                     if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
                         if index is not None:
-                            log.debug("new['%s'] = old['%s'][:,%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
-                            new[col['column_name']] = old[fcol][:,index].astype(np_map[col['datatype']])
+                            log.debug("new['%s'] = old['%s'][:, %d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+                            new[col['column_name']] = old[fcol][:, index].astype(np_map[col['datatype']])
                         else:
                             log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
                             new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
@@ -511,8 +516,6 @@ class Digestor(object):
                     msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
                     log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
                     raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
-            if fbasetype in ('D', 'E'):
-                new[col['column_name']][~np.isfinite(new[col['column_name']])] = -9999.0
         log.debug("new.write('%s')", out)
         new.write(out)
         return out

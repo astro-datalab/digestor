@@ -6,8 +6,11 @@ import unittest
 import unittest.mock as mock
 from tempfile import NamedTemporaryFile
 
+import numpy as np
+
 from ..sdss import SDSS, get_options
 from .utils import DigestorCase
+
 
 class TestSDSS(DigestorCase):
     """Test digestor.sdss.
@@ -163,7 +166,7 @@ class TestSDSS(DigestorCase):
                                             "description": "g flux",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "real", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},]
+                                            "principal": 0, "indexed": 0, "std": 0}]
         self.sdss.mapping = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
                              'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
                              'flux_u': 'FLUX[0]', 'flux_g': 'FLUX[1]'}
@@ -176,13 +179,138 @@ class TestSDSS(DigestorCase):
                                             "description": "z",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "real", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},]
+                                            "principal": 0, "indexed": 0, "std": 0}]
         self.sdss.mapping = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
                              'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
                              'flux_u': 'FLUX[0]', 'flux_g': 'FLUX[1]'}
         with self.assertRaises(KeyError) as e:
             self.sdss.mapColumns()
         self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to z!')
+
+    def test_process_fits(self):
+        """Test processing of SDSS-specific FITS file for loading.
+        """
+        self.sdss.tapSchema['columns'] += [{"table_name": self.table,
+                                            "column_name": "mag_u",
+                                            "description": "u Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "mag_g",
+                                            "description": "g Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "magivar_u",
+                                            "description": "u ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "double", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "magivar_g",
+                                            "description": "g ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "double", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "objid",
+                                            "description": "id",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "bigint", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "bigobjid",
+                                            "description": "id",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "bigint", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "unsafe",
+                                            "description": "unsafe",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "integer", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": self.table,
+                                            "column_name": "flags_0",
+                                            "description": "unsafe",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "smallint", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0}]
+        i = self.sdss.columnIndex('nest4096')
+        self.sdss.tapSchema['columns'][i]['datatype'] = 'smallint'
+        self.sdss.FITS = {'elon': 'D', 'elat': 'D',
+                          'glon': 'E', 'glat': 'E',
+                          'htm9': 'J', 'ring256': 'J',
+                          'nest4096': 'J',
+                          'random_id': 'E',
+                          'mag': '2E', 'magivar': '2E',
+                          'objid': '16A',
+                          'bigobjid': '20A',
+                          'foobar': '16A',
+                          'flags': '2J',
+                          'unsafe': 'K'}
+        for k in self.sdss.FITS:
+            self.sdss.mapping[k] = k
+        self.sdss.mapping['mag_u'] = 'mag[0]'
+        self.sdss.mapping['mag_g'] = 'mag[1]'
+        self.sdss.mapping['magivar_u'] = 'magivar[0]'
+        self.sdss.mapping['magivar_g'] = 'magivar[1]'
+        self.sdss.mapping['flags_0'] = 'flags[0]'
+        self.sdss._inputFITS = 'foo.fits'
+        dummy_values = {'elon': np.ones((5,), dtype=np.float64),
+                        'elat': np.ones((5,), dtype=np.float64),
+                        'glon': np.ones((5,), dtype=np.float32),
+                        'glat': np.ones((5,), dtype=np.float32),
+                        'htm9': np.ones((5,), dtype=np.int32),
+                        'ring256': np.ones((5,), dtype=np.int32),
+                        'nest4096': np.ones((5,), dtype=np.int32),
+                        'random_id': np.ones((5,), dtype=np.float32),
+                        'mag': np.ones((5, 2), dtype=np.float32),
+                        'magivar': np.ones((5, 2), dtype=np.float32),
+                        'objid': np.array([' '*15 + '1']*4 + [' '*16], dtype='U16'),
+                        'bigobjid': np.array(['9223372036854775808']*3 + ['18446744073709551615']*2, dtype='U20'),
+                        'foobar': np.array([' '*16]*5, dtype='U16'),
+                        'flags': np.ones((5, 2), dtype=np.int32),
+                        'unsafe': np.ones((5,), dtype=np.int64)}
+        #
+        # Raise an unsafe error.
+        #
+        with mock.patch('digestor.sdss.Table') as T:
+            t = T.read.return_value = mock.MagicMock()
+            t.__getitem__.side_effect = lambda key: dummy_values[key]
+            with self.assertRaises(ValueError) as e:
+                self.sdss.processFITS()
+            self.assertEqual(e.exception.args[0], 'No safe data type conversion possible for unsafe (K) -> unsafe (integer)!')
+        del dummy_values['unsafe']
+        del self.sdss.FITS['unsafe']
+        del self.sdss.mapping['unsafe']
+        del self.sdss.tapSchema['columns'][-2]
+        #
+        # Try again.
+        #
+        with mock.patch('digestor.sdss.Table') as T:
+            t = T.read.return_value = mock.MagicMock()
+            t.__getitem__.side_effect = lambda key: dummy_values[key]
+            out = self.sdss.processFITS()
+        self.assertEqual(out, '{0.schema}.{0.table}.fits'.format(self))
+        #
+        # Check overwrite
+        #
+        with mock.patch('os.path.exists') as ex:
+            ex.return_value = True
+            out = self.sdss.processFITS()
+            ex.assert_called_with(out)
+        with mock.patch('os.path.exists') as ex:
+            with mock.patch('os.remove') as rm:
+                with mock.patch('digestor.sdss.Table') as T:
+                    t = T.read.return_value = mock.MagicMock()
+                    t.__getitem__.side_effect = lambda key: dummy_values[key]
+                    ex.return_value = True
+                    out = self.sdss.processFITS(overwrite=True)
+            rm.assert_called_with(out)
+            ex.assert_called_with(out)
 
 
 def test_suite():

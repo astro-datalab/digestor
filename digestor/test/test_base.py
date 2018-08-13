@@ -95,7 +95,7 @@ class TestBase(DigestorCase):
                                             "description": "number of pixels",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "integer", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},]
+                                            "principal": 0, "indexed": 0, "std": 0}]
         self.base.fixColumns('no_such_file.yaml')
         yaml = """sdss:
     spectra:
@@ -148,7 +148,7 @@ class TestBase(DigestorCase):
                                      'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic plug_ra plug_dec elon elat',
                                      'ofmt=fits-basic',
                                      'out=specObj-dr14.stilts.fits'],
-                                     stderr=-1, stdout=-1)
+                                    stderr=-1, stdout=-1)
         self.assertEqual(out, 'specObj-dr14.stilts.fits')
         with mock.patch('subprocess.Popen') as proc:
             p = proc.return_value = mock.MagicMock()
@@ -171,7 +171,7 @@ class TestBase(DigestorCase):
                                      'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic racen deccen elon elat',
                                      'ofmt=fits-basic',
                                      'out=specObj-dr14.stilts.fits'],
-                                     stderr=-1, stdout=-1)
+                                    stderr=-1, stdout=-1)
         self.assertLog(-1, 'STILTS STDERR = foobar')
 
     def test_map_columns(self):
@@ -192,7 +192,7 @@ class TestBase(DigestorCase):
                                             "description": "z",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "real", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},]
+                                            "principal": 0, "indexed": 0, "std": 0}]
         self.base.mapping = {'random_id': 'random_id', 'z': 'z'}
         with self.assertRaises(KeyError) as e:
             self.base.mapColumns()
@@ -238,18 +238,6 @@ class TestBase(DigestorCase):
                                             "datatype": "double", "size": 1,
                                             "principal": 0, "indexed": 0, "std": 0},
                                            {"table_name": self.table,
-                                            "column_name": "objid",
-                                            "description": "id",
-                                            "unit": "", "ucd": "", "utype": "",
-                                            "datatype": "bigint", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},
-                                           {"table_name": self.table,
-                                            "column_name": "bigobjid",
-                                            "description": "id",
-                                            "unit": "", "ucd": "", "utype": "",
-                                            "datatype": "bigint", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},
-                                           {"table_name": self.table,
                                             "column_name": "unsafe",
                                             "description": "unsafe",
                                             "unit": "", "ucd": "", "utype": "",
@@ -269,8 +257,6 @@ class TestBase(DigestorCase):
                           'nest4096': 'J',
                           'random_id': 'E',
                           'mag': '2E', 'magivar': '2E',
-                          'objid': '16A',
-                          'bigobjid': '20A',
                           'foobar': '16A',
                           'flags': '2J',
                           'unsafe': 'K'}
@@ -292,11 +278,9 @@ class TestBase(DigestorCase):
                         'random_id': np.ones((5,), dtype=np.float32),
                         'mag': np.ones((5, 2), dtype=np.float32),
                         'magivar': np.ones((5, 2), dtype=np.float32),
-                        'objid': np.array([' '*15 + '1']*4 + [' '*16], dtype='U16'),
-                        'bigobjid': np.array(['9223372036854775808']*3 + ['18446744073709551615']*2, dtype='U20'),
                         'foobar': np.array([' '*16]*5, dtype='U16'),
                         'flags': np.ones((5, 2), dtype=np.int32),
-                        'unsafe': np.ones((5,), dtype=np.int64),}
+                        'unsafe': np.ones((5,), dtype=np.int64)}
         #
         # Raise an unsafe error.
         #

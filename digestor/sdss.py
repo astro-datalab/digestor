@@ -14,6 +14,8 @@ from argparse import ArgumentParser
 
 from pkg_resources import resource_filename
 # from pytz import utc
+import numpy as np
+from astropy.table import Table
 
 from .base import Digestor
 
@@ -40,6 +42,7 @@ class SDSS(Digestor):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.NOFITS = dict()
 
     def parseSQL(self, filename):
         """Parse an entire SQL file.
@@ -161,6 +164,25 @@ class SDSS(Digestor):
                     rename = r
         return (p, rename)
 
+    def fixNOFITS(self, filename):
+        """Fix any missing data designated by ``--/F NOFITS`` using
+        the YAML configuration file `filename`.
+
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the YAML configuration file.
+
+        """
+        log = self.logName('sdss.SDSS.fixNOFITS')
+        config = self._getYAML(filename)
+        if config is not None:
+            try:
+                self.NOFITS = config[self.schema][self.table]['NOFITS']
+            except KeyError:
+                log.debug("No instructions found.")
+        return
+
     def mapColumns(self):
         """Complete mapping of FITS table columns to SQL columns.
 
@@ -170,6 +192,7 @@ class SDSS(Digestor):
             If an expected mapping cannot be found.
         """
         log = self.logName('sdss.SDSS.mapColumns')
+        drop = list()
         for sc in self.colNames:
             if sc in self.mapping:
                 #
@@ -213,10 +236,27 @@ class SDSS(Digestor):
                 if sc == 'random_id':
                     log.info("Skipping %s which will be added by FITS2DB.",
                              sc)
+                elif sc in self.NOFITS:
+                    if self.NOFITS[sc] == 'drop':
+                        log.info("Dropping %s as requested.")
+                        drop.append(sc)
+                    elif self.NOFITS[sc] == 'defer':
+                        log.info("Column %s will be added in post-processing.")
+                    else:
+                        msg = "Unknown NOFITS instruction: %s!"
+                        log.error(msg, sc)
+                        raise KeyError(msg % sc)
                 else:
                     msg = "Could not find a FITS column corresponding to %s!"
                     log.error(msg, sc)
                     raise KeyError(msg % sc)
+        #
+        # Remove SQL columns that were requested to be dropped.
+        #
+        for sc in drop:
+            i = self.columnIndex(sc)
+            log.debug("del self.tapSchema['columns'][%d]", i)
+            del self.tapSchema['columns'][i]
         #
         # Check for FITS columns that are NOT mapped to the SQL file.
         #
@@ -230,6 +270,133 @@ class SDSS(Digestor):
                 else:
                     log.warning("FITS column %s will be dropped from SQL!", col)
         return
+
+    def processFITS(self, hdu=1, overwrite=False):
+        """Convert a pre-processed FITS file into one ready for database loading.
+
+        Parameters
+        ----------
+        hdu : :class:`int`, optional
+            Read data from this HDU (default 1).
+        overwrite : :class:`bool`, optional
+            If ``True``, remove any existing file.
+
+        Returns
+        -------
+        :class:`str`
+            The name of the file written.
+
+        Raises
+        ------
+        :exc:`ValueError`
+            If the FITS data type cannot be converted to SQL.
+        """
+        log = self.logName('sdss.SDSS.processFITS')
+        out = "{0.schema}.{0.table}.fits".format(self)
+        if os.path.exists(out) and not overwrite:
+            log.info("Using existing file: %s.", out)
+            return out
+        if os.path.exists(out):
+            log.info("Removing existing file: %s.", out)
+            os.remove(out)
+        type_map = {'bigint': ('K', 'J', 'I', 'B'),
+                    'integer': ('J', 'I', 'B'),
+                    'smallint': ('I', 'B'),
+                    'double': ('D', 'E'),
+                    'real': ('E',),
+                    'character': ('A',)}
+        np_map = {'bigint': np.int64,
+                  'integer': np.int32,
+                  'smallint': np.int16,
+                  'double': np.float64,
+                  'real': np.float32}
+        safe_conversion = {('J', 'smallint'): 2**15}
+        rebase = re.compile(r'^(\d+)(\D+)')
+        columns = [c for c in self.tapSchema['columns']
+                   if c['table_name'] == self.table]
+        old = Table.read(self._inputFITS, hdu=hdu)
+        new = Table()
+        for col in columns:
+            if col['column_name'] == 'random_id':
+                log.info("Skipping %s which will be added by FITS2DB.",
+                         col['column_name'])
+                continue
+            if col['column_name'] in self.NOFITS:
+                log.info("Creating placeholder column %s for post-processing.",
+                         col['column_name'])
+                log.debug("new['%s'] = np.zeros((%d,), dtype=%s)",
+                          col['column_name'], len(old), str(np_map[col['datatype']]))
+                new[col['column_name']] = np.zeros((len(old),), dtype=np_map[col['datatype']])
+                continue
+            fcol = self.mapping[col['column_name']]
+            index = None
+            if '[' in fcol:
+                foo = fcol.split('[')
+                fcol = foo[0]
+                index = int(foo[1].strip(']'))
+            ftype = self.FITS[fcol]
+            fbasetype = rebase.sub(r'\2', ftype)
+            if fbasetype == type_map[col['datatype']][0]:
+                log.debug("Type match for %s -> %s.", fcol, col['column_name'])
+                if index is not None:
+                    log.debug("new['%s'] = old['%s'][:, %d]",
+                              col['column_name'], fcol, index)
+                    new[col['column_name']] = old[fcol][:, index]
+                else:
+                    log.debug("new['%s'] = old['%s']", col['column_name'], fcol)
+                    new[col['column_name']] = old[fcol]
+            elif fbasetype in type_map[col['datatype']]:
+                log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
+                          fcol, fbasetype, col['column_name'], col['datatype'])
+                if index is not None:
+                    log.debug("new['%s'] = old['%s'][:, %d].astype(%s)",
+                              col['column_name'], fcol, index,
+                              str(np_map[col['datatype']]))
+                    new[col['column_name']] = old[fcol][:, index].astype(np_map[col['datatype']])
+                else:
+                    log.debug("new['%s'] = old['%s'].astype(%s)",
+                              col['column_name'], fcol,
+                              str(np_map[col['datatype']]))
+                    new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
+            elif fbasetype == 'A' and col['datatype'] == 'bigint':
+                log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
+                width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
+                blank = ' '*width
+                w = np.nonzero(old[fcol] == blank)[0]
+                if len(w) > 0:
+                    log.debug("old['%s'][old['%s'] == blank] = blank[0:%d] + '0'",
+                              fcol, fcol, width - 1)
+                    old[fcol][w] = blank[0:(width-1)] + '0'
+                log.debug("new['%s'] = old['%s'].astype(np.int64)", col['column_name'], fcol)
+                try:
+                    new[col['column_name']] = old[fcol].astype(np.int64)
+                except OverflowError:
+                    uold = old[fcol].astype(np.uint64)
+                    hi = np.nonzero(uold >= 2**63)[0]
+                    lo = np.nonzero(uold < 2**63)[0]
+                    inew = np.zeros(uold.shape, dtype=np.int64)
+                    inew[lo] = uold[lo]
+                    inew[hi] = (uold[hi] - 2**63).astype(np.int64) - 2**63
+                    new[col['column_name']] = inew
+            else:
+                if (fbasetype, col['datatype']) in safe_conversion:
+                    limit = safe_conversion[(fbasetype, col['datatype'])]
+                    if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
+                        if index is not None:
+                            log.debug("new['%s'] = old['%s'][:, %d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+                            new[col['column_name']] = old[fcol][:, index].astype(np_map[col['datatype']])
+                        else:
+                            log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
+                            new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
+                else:
+                    msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
+                    log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
+                    raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
+            if fbasetype in ('D', 'E'):
+                new[col['column_name']][~np.isfinite(new[col['column_name']])] = -9999.0
+        log.debug("new.write('%s')", out)
+        new.write(out)
+        return out
 
 
 def get_options():
@@ -326,6 +493,7 @@ def main():
     #
     # Map the FITS columns to table columns.
     #
+    sdss.fixNOFITS(options.config)
     try:
         sdss.mapColumns()
     except KeyError as e:
