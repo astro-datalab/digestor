@@ -148,7 +148,7 @@ class SDSS(Digestor):
                 r = data[i + 5:j].strip()
                 if m == 'F':
                     if ' ' in r:
-                        r = "{0}[{1}]".format(*(r.split(' ')))
+                        r = "{0}[{1}]".format(*(re.split(r'\s+', r)))
                     r = r.upper()
                     if r == 'NOFITS':
                         log.warning("Column %s is not defined in the corresponding FITS file!", column)
@@ -238,10 +238,10 @@ class SDSS(Digestor):
                              sc)
                 elif sc in self.NOFITS:
                     if self.NOFITS[sc] == 'drop':
-                        log.info("Dropping %s as requested.")
+                        log.info("Dropping %s as requested.", sc)
                         drop.append(sc)
                     elif self.NOFITS[sc] == 'defer':
-                        log.info("Column %s will be added in post-processing.")
+                        log.info("Column %s will be added in post-processing.", sc)
                     else:
                         msg = "Unknown NOFITS instruction: %s!"
                         log.error(msg, sc)
