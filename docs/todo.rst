@@ -18,3 +18,4 @@ TO DO
   for example, ``(L, B)``  in photoObj files is equivalent to ``(glon, glat)``.
 * In row-matched files, like photoPlate and photoPosPlate, some rows may
   be blank placeholders.  We should not bother loading these.
+* Need to deal with ``FLAGS``, ``FLAGS2`` in photoObj-style data.

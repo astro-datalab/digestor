@@ -60,6 +60,7 @@ class Digestor(object):
         self._columnIndexCache = dict()
         self._inputFITS = None
         self._yamlCache = dict()
+        self._custom_stilts_command = list()
 
     @classmethod
     def configureLog(cls, debug=False):
@@ -340,10 +341,10 @@ class Digestor(object):
     def sortColumns(self):
         """Sort the SQL columns for best performance.
 
-        Raises
-        ------
-        :exc:`AssertionError`
-            If not all columns are sorted into the new order.
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the YAML configuration file.
         """
         new_columns = list()
         for o in self.ordered:
@@ -354,6 +355,24 @@ class Digestor(object):
         for i, c in enumerate(self.tapSchema['columns']):
             if c['table_name'] == self.table:
                 self.tapSchema['columns'][i] = new_columns.pop(0)
+        return
+
+    def customSTILTS(self, filename):
+        """Add (prepend) custom STILTS commands to the default command.
+
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the YAML configuration file.
+        """
+        log = self.logName('base.Digestor.customSTILTS')
+        config = self._getYAML(filename)
+        if config is not None:
+            try:
+                stilts = config[self.schema][self.table]['STILTS']
+            except KeyError:
+                return
+            self._custom_stilts_command += stilts
         return
 
     def addDLColumns(self, filename, ra='ra', overwrite=False,
@@ -396,6 +415,7 @@ class Digestor(object):
         fra = ra.lower()
         fdec = ra.lower().replace('ra', 'dec')
         command = ['stilts', 'tpipe', 'in={0}'.format(filename)]
+        command += self._custom_stilts_command
         command += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
         if ecliptic:
             command.append(self._stilts_ecliptic.format(ra=fra, dec=fdec))

@@ -30,6 +30,11 @@ sdss_dr14:
             zwarning_noqso:
                 datatype: integer
     photoplate:
+        STILTS:
+            #
+            # Add (prepend) these custom STILTS commands.
+            #
+            - cmd=select skyversion == 2
         mapping:
             #
             # Additional FITS to SQL column mappings that are not described
