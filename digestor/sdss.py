@@ -216,7 +216,7 @@ class SDSS(Digestor):
                     for fc in self.FITS:
                         for fcl in (fc.lower(), fc.lower().replace('_', ''),):
                             if fcl == mc.lower():
-                                log.debug("FITS: %s -> SQL: %s", fc, sc)
+                                log.debug("FITS: %s%s -> SQL: %s", fc, index, sc)
                                 self.mapping[sc] = fc + index
                                 verify_mapping = True
                 if not verify_mapping:
@@ -310,7 +310,8 @@ class SDSS(Digestor):
                   'smallint': np.int16,
                   'double': np.float64,
                   'real': np.float32}
-        safe_conversion = {('J', 'smallint'): 2**15}
+        safe_conversion = {('J', 'smallint'): 2**15,
+                           ('A', 'smallint'): 2**15}
         rebase = re.compile(r'^(\d+)(\D+)')
         columns = [c for c in self.tapSchema['columns']
                    if c['table_name'] == self.table]
@@ -381,13 +382,25 @@ class SDSS(Digestor):
             else:
                 if (fbasetype, col['datatype']) in safe_conversion:
                     limit = safe_conversion[(fbasetype, col['datatype'])]
-                    if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
+                    if fbasetype == 'A':
+                        test_old = old[fcol].astype(np.int64)
+                    else:
+                        if index is not None:
+                            test_old = old[fcol][:, index]
+                        else:
+                            test_old = old[fcol]
+                    if ((test_old >= -limit) & (test_old <= limit - 1)).all():
                         if index is not None:
                             log.debug("new['%s'] = old['%s'][:, %d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
                             new[col['column_name']] = old[fcol][:, index].astype(np_map[col['datatype']])
                         else:
                             log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
                             new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
+                    else:
+                        msg = "Values too large for safe data type conversion for %s (%s) -> %s (%s)!"
+                        log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
+                        raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
+
                 else:
                     msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
                     log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
@@ -496,8 +509,11 @@ def main():
     sdss.fixNOFITS(options.config)
     try:
         sdss.mapColumns()
-    except KeyError as e:
+    except KeyError as k:
         return 1
+    except Error as e:
+        print(str(e))
+        return 2
     #
     # Fix any table definition problems and sort the columns.
     #
