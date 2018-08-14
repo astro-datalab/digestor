@@ -346,9 +346,9 @@ class SDSS(Digestor):
                 stime = int(time.time())
                 log.debug('np.random.seed(%s)', stime)
                 np.random.seed(stime)
-                log.debug("new['%s'] = np.random.random((%d,), dtype=%s)",
+                log.debug("new['%s'] = np.random.random((%d,)).astype(%s)",
                           col['column_name'], len(old), str(np_map[col['datatype']]))
-                new[col['column_name']] = 100.0*np.random.random((len(old),), dtype=np_map[col['datatype']])
+                new[col['column_name']] = 100.0*np.random.random((len(old),)).astype(np_map[col['datatype']])
                 continue
             if col['column_name'] in self.NOFITS:
                 log.info("Creating placeholder column %s for post-processing.",
