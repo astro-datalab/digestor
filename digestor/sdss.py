@@ -9,6 +9,7 @@ Convert SDSS SQL (MS SQL Server) table definitions to Data Lab SQL (PostgreSQL).
 import os
 import re
 import sys
+import time
 # from datetime import datetime
 from argparse import ArgumentParser
 
@@ -572,7 +573,7 @@ def main():
                                   overwrite=(not options.keep))
     except ValueError as e:
         return 1
-    except Error as e:
-        print(str(e))
+    except Exception as e:
+        log.error(str(e))
         return 2
     return 0
