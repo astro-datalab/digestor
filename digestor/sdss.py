@@ -172,7 +172,6 @@ class SDSS(Digestor):
         ----------
         filename : :class:`str`
             Name of the YAML configuration file.
-
         """
         log = self.logName('sdss.SDSS.fixNOFITS')
         config = self._getYAML(filename)
@@ -181,6 +180,28 @@ class SDSS(Digestor):
                 self.NOFITS = config[self.schema][self.table]['NOFITS']
             except KeyError:
                 log.debug("No instructions found.")
+        return
+
+    def fixMapping(self, filename):
+        """Fix any FITS to SQL mapping problems using the YAML configuration
+        file `filename`.
+
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the YAML configuration file.
+        """
+        log = self.logName('sdss.SDSS.fixMapping')
+        config = self._getYAML(filename)
+        if config is not None:
+            try:
+                mapping = config[self.schema][self.table]['mapping']
+            except KeyError:
+                log.debug("No mappings found.")
+                return
+            for sc in mapping:
+                log.debug("self.mapping['%s'] = '%s'", sc, mapping[sc])
+                self.mapping[sc] = mapping[sc]
         return
 
     def mapColumns(self):
@@ -507,6 +528,7 @@ def main():
     # Map the FITS columns to table columns.
     #
     sdss.fixNOFITS(options.config)
+    sdss.fixMapping(options.config)
     try:
         sdss.mapColumns()
     except KeyError as k:

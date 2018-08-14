@@ -27,6 +27,13 @@ sdss_dr14:
             zwarning_noqso:
                 datatype: integer
     photoplate:
+        mapping:
+            #
+            # Additional FITS to SQL column mappings that are not described
+            # in the input SQL file.
+            #
+            glon: L
+            glat: B
         NOFITS:
             #
             # Instructions on how to deal with columns that are NOT defined
