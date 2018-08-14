@@ -16,3 +16,5 @@ TO DO
 * Post-load SQL.
 * Support pre-computed columns that are exactly equivalent to Data Lab columns,
   for example, ``(L, B)``  in photoObj files is equivalent to ``(glon, glat)``.
+* In row-matched files, like photoPlate and photoPosPlate, some rows may
+  be blank placeholders.  We should not bother loading these.
