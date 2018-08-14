@@ -1,6 +1,9 @@
 sdss_dr14:
     platex:
         columns:
+            #
+            # Fix problems with the output SQL definition.
+            #
             dateobs:
                 #
                 # Original SQL definition file has size 12, which is too small.

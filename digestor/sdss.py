@@ -450,9 +450,13 @@ def get_options():
                         metavar='TEXT',
                         default='Sloan Digital Sky Survey Data Relase 14',
                         help='Short description of the schema.')
+    parser.add_argument('-E', '--no-ecliptic', dest='ecliptic', action='store_false',
+                        help='Do not add ecliptic coordinates.')
     parser.add_argument('-e', '--extension', dest='hdu', metavar='N',
                         type=int, default=1,
                         help='Read data from FITS HDU N (default %(default)s).')
+    parser.add_argument('-G', '--no-galactic', dest='galactic', action='store_false',
+                        help='Do not add galactic coordinates.')
     parser.add_argument('-j', '--output-json', dest='output_json', metavar='FILE',
                         help='Write table metadata to FILE.')
     parser.add_argument('-k', '--keep', action='store_true',
@@ -515,7 +519,9 @@ def main():
     #
     try:
         dlfits = sdss.addDLColumns(options.fits, ra=options.ra,
-                                   overwrite=(not options.keep))
+                                   overwrite=(not options.keep),
+                                   ecliptic=options.ecliptic,
+                                   galactic=options.galactic)
     except ValueError as e:
         log.error(str(e))
         return 1

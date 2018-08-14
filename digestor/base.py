@@ -46,9 +46,9 @@ class Digestor(object):
     #
     _stilts_command = ['cmd=addcol htm9 (int)htmIndex(9,{ra},{dec})',
                        'cmd=addcol ring256 (int)healpixRingIndex(8,{ra},{dec})',
-                       'cmd=addcol nest4096 (int)healpixNestIndex(12,{ra},{dec})',
-                       'cmd=addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat',
-                       'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat']
+                       'cmd=addcol nest4096 (int)healpixNestIndex(12,{ra},{dec})']
+    _stilts_ecliptic = 'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat'
+    _stilts_galactic = 'cmd=addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat'
 
     def __init__(self, schema, table, description=None, merge=None):
         self.schema = schema
@@ -356,7 +356,8 @@ class Digestor(object):
                 self.tapSchema['columns'][i] = new_columns.pop(0)
         return
 
-    def addDLColumns(self, filename, ra='ra', overwrite=False):
+    def addDLColumns(self, filename, ra='ra', overwrite=False,
+                     ecliptic=True, galactic=True):
         """Add DL columns to FITS file prior to column reorganization.
 
         Parameters
@@ -367,6 +368,12 @@ class Digestor(object):
             Look for Right Ascension in this column (default 'ra').
         overwrite : :class:`bool`, optional
             If ``True``, remove any existing file.
+        ecliptic : :class:`bool`, optional
+            If ``False``, *don't* add ecliptic coordinates (probably because
+            they already exist).
+        galactic : :class:`bool`, optional
+            If ``False``, *don't* add galactic coordinates (probably because
+            they already exist).
 
         Returns
         -------
@@ -390,6 +397,10 @@ class Digestor(object):
         fdec = ra.lower().replace('ra', 'dec')
         command = ['stilts', 'tpipe', 'in={0}'.format(filename)]
         command += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
+        if ecliptic:
+            command.append(self._stilts_ecliptic.format(ra=fra, dec=fdec))
+        if galactic:
+            command.append(self._stilts_galactic.format(ra=fra, dec=fdec))
         command += ['ofmt=fits-basic', 'out={0}'.format(out)]
         log.debug(' '.join(command))
         proc = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
