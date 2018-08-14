@@ -34,7 +34,7 @@ sdss_dr14:
             #
             # Add (prepend) these custom STILTS commands.
             #
-            - cmd=select skyversion == 2
+            - cmd=select skyversion==2
         mapping:
             #
             # Additional FITS to SQL column mappings that are not described
