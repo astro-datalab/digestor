@@ -411,6 +411,15 @@ class SDSS(Digestor):
                 if (fbasetype, col['datatype']) in safe_conversion:
                     limit = safe_conversion[(fbasetype, col['datatype'])]
                     if fbasetype == 'A':
+                        log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
+                        width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
+                        blank = ' '*width
+                        w = np.nonzero(old[fcol] == blank)[0]
+                        if len(w) > 0:
+                            log.debug("old['%s'][old['%s'] == blank] = blank[0:%d] + '0'",
+                                      fcol, fcol, width - 1)
+                            old[fcol][w] = blank[0:(width-1)] + '0'
+                        log.debug("test_old = old['%s'].astype(np.int64)", fcol)
                         test_old = old[fcol].astype(np.int64)
                     else:
                         if index is not None:
@@ -428,7 +437,6 @@ class SDSS(Digestor):
                         msg = "Values too large for safe data type conversion for %s (%s) -> %s (%s)!"
                         log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
                         raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
-
                 else:
                     msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
                     log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
