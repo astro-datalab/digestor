@@ -523,6 +523,7 @@ def main():
     #
     # Preprocess the FITS file.
     #
+    sdss.customSTILTS(options.config)
     try:
         dlfits = sdss.addDLColumns(options.fits, ra=options.ra,
                                    overwrite=(not options.keep),
