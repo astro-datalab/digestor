@@ -26,3 +26,6 @@ General Data Lab Database Loading Notes
     fits2db --sql=postgres --truncate --rid=random_id -B \
         -t sdss_dr14.specobjall sdss_dr14.specobjall.fits | \
         psql tapdb datalab
+
+* When :command:`FITS2DB` adds the ``random_id`` column, it does not
+  obey the ordering of the FITS file or the SQL file.

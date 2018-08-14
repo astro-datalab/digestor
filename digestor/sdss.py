@@ -340,8 +340,14 @@ class SDSS(Digestor):
         new = Table()
         for col in columns:
             if col['column_name'] == 'random_id':
-                log.info("Skipping %s which will be added by FITS2DB.",
+                log.info("Creating %s column using numpy.random.random().",
                          col['column_name'])
+                stime = int(time.time())
+                log.debug('np.random.seed(%s)', stime)
+                np.random.seed(stime)
+                log.debug("new['%s'] = np.random.random((%d,), dtype=%s)",
+                          col['column_name'], len(old), str(np_map[col['datatype']]))
+                new[col['column_name']] = 100.0*np.random.random((len(old),), dtype=np_map[col['datatype']])
                 continue
             if col['column_name'] in self.NOFITS:
                 log.info("Creating placeholder column %s for post-processing.",
@@ -539,9 +545,6 @@ def main():
         sdss.mapColumns()
     except KeyError as k:
         return 1
-    except Error as e:
-        print(str(e))
-        return 2
     #
     # Fix any table definition problems and sort the columns.
     #
@@ -568,4 +571,7 @@ def main():
                                   overwrite=(not options.keep))
     except ValueError as e:
         return 1
+    except Error as e:
+        print(str(e))
+        return 2
     return 0
