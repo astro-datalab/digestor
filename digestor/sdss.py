@@ -476,6 +476,8 @@ def get_options():
                         help='Write table metadata to FILE.')
     parser.add_argument('-k', '--keep', action='store_true',
                         help='Do not overwrite any existing intermediate files.')
+    parser.add_argument('-l', '--log', dest='log', metavar='FILE',
+                        help='Log operations to FILE.')
     parser.add_argument('-m', '--merge', dest='merge_json', metavar='FILE',
                         help='Merge metadata in FILE into final metadata output.')
     parser.add_argument('-o', '--output-sql', dest='output_sql', metavar='FILE',
@@ -510,6 +512,8 @@ def main():
                                           "%s.%s.sql" % (options.schema, options.table))
     if options.output_json is None:
         options.output_json = options.output_sql.replace('sql', 'json')
+    if options.log is None:
+        options.log = options.output_sql.replace('sql', 'log')
     try:
         sdss = SDSS(options.schema, options.table,
                     description=options.description,
@@ -520,7 +524,7 @@ def main():
         #
         print(str(e))
         return 1
-    sdss.configureLog(options.verbose)
+    sdss.configureLog(options.log, options.verbose)
     log = sdss.logName('sdss.main')
     # ts = datetime.utcnow().replace(tzinfo=utc).strftime('%Y-%m-%dT%H:%M:%S %Z')
     log.debug("options.fits = '%s'", options.fits)
@@ -529,6 +533,7 @@ def main():
     log.debug("options.table = '%s'", options.table)
     log.debug("options.output_sql = '%s'", options.output_sql)
     log.debug("options.output_json = '%s'", options.output_json)
+    log.debug("options.log = '%s'", options.log)
     #
     # Preprocess the FITS file.
     #

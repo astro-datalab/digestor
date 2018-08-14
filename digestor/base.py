@@ -63,15 +63,18 @@ class Digestor(object):
         self._custom_stilts_command = list()
 
     @classmethod
-    def configureLog(cls, debug=False):
+    def configureLog(cls, filename, debug=False):
         """Set up logging for the module.
 
         Parameters
         ----------
+        filename : :class:`str`
+            Name of the log file.
         debug : :class:`bool`, optional
             If ``True``, set log level to DEBUG.
         """
-        ch = logging.StreamHandler(sys.stdout)
+        # ch = logging.StreamHandler(sys.stdout)
+        ch = logging.FileHandler(filename)
         formatter = logging.Formatter('%(levelname)s:%(name)s:%(lineno)s: %(message)s')
         ch.setFormatter(formatter)
         log = logging.getLogger(cls.rootLogger)
