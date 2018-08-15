@@ -387,7 +387,8 @@ class SDSS(Digestor):
                   'real': np.float32}
         safe_conversion = {('J', 'smallint'): 2**15,
                            ('A', 'smallint'): 2**15,
-                           ('A', 'integer'): 2**31}
+                           ('A', 'integer'): 2**31,
+                           ('A', 'bigint'): 2**63}
         rebase = re.compile(r'^(\d+)(\D+)')
         columns = [c for c in self.tapSchema['columns']
                    if c['table_name'] == self.table]
@@ -447,26 +448,6 @@ class SDSS(Digestor):
                               col['column_name'], fcol,
                               str(np_map[col['datatype']]))
                     new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
-            elif fbasetype == 'A' and col['datatype'] == 'bigint':
-                log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
-                width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
-                blank = ' '*width
-                w = np.nonzero(old[fcol] == blank)[0]
-                if len(w) > 0:
-                    log.debug("old['%s'][old['%s'] == blank] = blank[0:%d] + '0'",
-                              fcol, fcol, width - 1)
-                    old[fcol][w] = blank[0:(width-1)] + '0'
-                log.debug("new['%s'] = old['%s'].astype(np.int64)", col['column_name'], fcol)
-                try:
-                    new[col['column_name']] = old[fcol].astype(np.int64)
-                except OverflowError:
-                    uold = old[fcol].astype(np.uint64)
-                    hi = np.nonzero(uold >= 2**63)[0]
-                    lo = np.nonzero(uold < 2**63)[0]
-                    inew = np.zeros(uold.shape, dtype=np.int64)
-                    inew[lo] = uold[lo]
-                    inew[hi] = (uold[hi] - 2**63).astype(np.int64) - 2**63
-                    new[col['column_name']] = inew
             else:
                 if (fbasetype, col['datatype']) in safe_conversion:
                     limit = safe_conversion[(fbasetype, col['datatype'])]
@@ -480,19 +461,33 @@ class SDSS(Digestor):
                                       fcol, fcol, width - 1)
                             old[fcol][w] = blank[0:(width-1)] + '0'
                         log.debug("test_old = old['%s'].astype(np.int64)", fcol)
-                        test_old = old[fcol].astype(np.int64)
+                        try:
+                            test_old = old[fcol].astype(np.int64)
+                        except OverflowError:
+                            log.debug("Attempting string to quasi-unsigned integer conversion for %s -> %s.",
+                                      fcol, col['column_name'])
+                            uold = old[fcol].astype(np.uint64)
+                            hi = np.nonzero(uold >= 2**63)[0]
+                            lo = np.nonzero(uold < 2**63)[0]
+                            test_old = np.zeros(uold.shape, dtype=np.int64)
+                            test_old[lo] = uold[lo]
+                            test_old[hi] = (uold[hi] - 2**63).astype(np.int64) - 2**63
                     else:
                         if index is not None:
                             test_old = old[fcol][:, index]
                         else:
                             test_old = old[fcol]
                     if ((test_old >= -limit) & (test_old <= limit - 1)).all():
-                        if index is not None:
-                            log.debug("new['%s'] = old['%s'][:, %d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
-                            new[col['column_name']] = old[fcol][:, index].astype(np_map[col['datatype']])
+                        if (fbasetype, col['datatype']) == ('A', 'bigint'):
+                            log.debug("new['%s'] = test_old  # quasi-unsigned integer", col['column_name'])
+                            new[col['column_name']] = test_old
                         else:
-                            log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
-                            new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
+                            if index is not None:
+                                log.debug("new['%s'] = old['%s'][:, %d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+                                new[col['column_name']] = old[fcol][:, index].astype(np_map[col['datatype']])
+                            else:
+                                log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
+                                new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
                     else:
                         msg = "Values too large for safe data type conversion for %s (%s) -> %s (%s)!"
                         log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
