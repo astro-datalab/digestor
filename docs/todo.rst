@@ -12,10 +12,7 @@ TO DO
   - The conversion is SDSS specific, but currently happens in the base digestor class.
 
 * SQL functions for ``specObjID``, etc.
-* Need instructions for indexing DL-specific tables.
 * Post-load SQL.
-* Support pre-computed columns that are exactly equivalent to Data Lab columns,
-  for example, ``(L, B)``  in photoObj files is equivalent to ``(glon, glat)``.
 * In row-matched files, like photoPlate and photoPosPlate, some rows may
   be blank placeholders.  We should not bother loading these.
-* Need to deal with ``FLAGS``, ``FLAGS2`` in photoObj-style data.
+  In addition, some non-blank rows may be duplicated.

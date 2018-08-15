@@ -2,7 +2,7 @@
 SDSS Loading Notes
 ==================
 
-Example post-load SQL code::
+Example pre-load SQL code::
 
     CREATE SCHEMA IF NOT EXISTS sdss_dr14;
     GRANT USAGE ON SCHEMA sdss_dr14 TO dlquery;
@@ -31,6 +31,40 @@ Example post-load SQL code::
         END IF;
     END;
     $$ LANGUAGE plpgsql IMMUTABLE;
+    --
+    -- Create a SDSS (photo)objID for tables that do not have one.
+    --
+    CREATE OR REPLACE FUNCTION sdss_dr14.objid(rerun text, run smallint, camcol smallint, field smallint, objnum smallint) RETURNS bigint AS $$
+    DECLARE
+        skyversion CONSTANT bigint := 2;
+        firstfield CONSTANT bigint := 0;
+    BEGIN
+        RETURN ((skyversion << 59) |
+                (CAST(rerun AS bigint) << 48) |
+                (CAST(run AS bigint) << 32) |
+                (CAST(camcol AS bigint) << 29) |
+                (firstfield << 28) |
+                (CAST(field AS bigint) << 16) |
+                CAST(objnum AS bigint));
+    END;
+    $$ LANGUAGE plpgsql IMMUTABLE;
+    CREATE OR REPLACE FUNCTION sdss_dr14.objid(rerun smallint, run smallint, camcol smallint, field smallint, objnum smallint) RETURNS bigint AS $$
+    DECLARE
+        skyversion CONSTANT bigint := 2;
+        firstfield CONSTANT bigint := 0;
+    BEGIN
+        RETURN ((skyversion << 59) |
+                (CAST(rerun AS bigint) << 48) |
+                (CAST(run AS bigint) << 32) |
+                (CAST(camcol AS bigint) << 29) |
+                (firstfield << 28) |
+                (CAST(field AS bigint) << 16) |
+                CAST(objnum AS bigint));
+    END;
+    $$ LANGUAGE plpgsql IMMUTABLE;
+
+Example post-load SQL code::
+
     ---
     --- platex
     ---
