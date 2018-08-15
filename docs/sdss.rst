@@ -59,3 +59,14 @@ Example post-load SQL code::
     GRANT SELECT ON sdss_dr14.seguespecobjall TO dlquery;
     GRANT SELECT ON sdss_dr14.segue1specobjall TO dlquery;
     GRANT SELECT ON sdss_dr14.segue2specobjall TO dlquery;
+    --
+    -- photoplate
+    --
+    CREATE INDEX photoplate_q3c_ang2ipix ON sdss_dr14.photoplate (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CLUSTER photoplate_q3c_ang2ipix ON sdss_dr14.photoplate;
+    UPDATE TABLE sdss_dr14.photoplate SET dered_u = u - extinction_u;
+    UPDATE TABLE sdss_dr14.photoplate SET dered_g = g - extinction_g;
+    UPDATE TABLE sdss_dr14.photoplate SET dered_r = r - extinction_r;
+    UPDATE TABLE sdss_dr14.photoplate SET dered_i = i - extinction_i;
+    UPDATE TABLE sdss_dr14.photoplate SET dered_z = z - extinction_z;
+    GRANT SELECT ON sdss_dr14.photoplate TO dlquery;
