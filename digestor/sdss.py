@@ -327,7 +327,7 @@ class SDSS(Digestor):
                 #
                 band = 'ugriz'.index(g)
                 assert column['datatype'] == 'bigint'
-                assert self.mapping[column['column_name']].lower() == 'flags'
+                assert self.mapping[column['column_name']].lower() == 'flags[{0:d}]'.format(band)
                 assert 'FLAGS' in table.colnames
                 assert 'FLAGS2' in table.colnames
                 log.debug("np.left_shift(table['FLAGS2'][:, %d].astype(np.int64), 32) | table['FLAGS'][:, %d].astype(np.int64)", band, band)
