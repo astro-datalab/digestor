@@ -645,7 +645,7 @@ def main():
                                   overwrite=(not options.keep))
     except ValueError as e:
         return 1
-    except Exception as e:
-        log.error(str(e))
-        return 2
+    # except Exception as e:
+    #     log.error(str(e))
+    #     return 2
     return 0
