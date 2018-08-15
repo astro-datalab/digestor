@@ -317,6 +317,7 @@ class SDSS(Digestor):
         :exc:`AssertionError`
             If the required columns are not present in the FITS file.
         """
+        log = self.logName('sdss.SDSS._photoFlag')
         m = self._flagre.match(column['column_name'])
         if m is not None:
             g = m.groups()[0].replace('_', '')
@@ -329,8 +330,9 @@ class SDSS(Digestor):
                 assert self.mapping[column['column_name']].lower() == 'flags'
                 assert 'FLAGS' in table.colnames
                 assert 'FLAGS2' in table.colnames
+                log.debug("np.left_shift(table['FLAGS2'][:, %d].astype(np.int64), 32) | table['FLAGS'][:, %d].astype(np.int64)", band, band)
                 return (np.left_shift(table['FLAGS2'][:, band].astype(np.int64), 32) |
-                        table['OBJC_FLAGS'][:, band].astype(np.int64))
+                        table['FLAGS'][:, band].astype(np.int64))
             else:
                 #
                 # Ensure OBJC_FLAGS and OBJC_FLAGS2 are present.
@@ -339,6 +341,7 @@ class SDSS(Digestor):
                 assert self.mapping[column['column_name']].lower() == 'objc_flags'
                 assert 'OBJC_FLAGS' in table.colnames
                 assert 'OBJC_FLAGS2' in table.colnames
+                log.debug("np.left_shift(table['OBJC_FLAGS2'].astype(np.int64), 32) | table['OBJC_FLAGS'].astype(np.int64)")
                 return (np.left_shift(table['OBJC_FLAGS2'].astype(np.int64), 32) |
                         table['OBJC_FLAGS'].astype(np.int64))
         return None
