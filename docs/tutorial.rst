@@ -6,7 +6,8 @@ Provenance
 ----------
 
 This file is based on ``/net/dl1/users/datalab/ingest_party/Tutorial.txt``,
-used for the Data Ingest Tutorial on 27 September 2017.
+used for the Data Ingest Tutorial on 27 September 2017, and subsequently
+revised 14 August 2018.
 
 Outline
 -------
@@ -30,8 +31,8 @@ Input Table Formats
 - NOTE:
 
   * Tables may not have coherent schema or descriptions
-  * Tables may not be uniform
-  * Tools may not exist to read data into DB
+  * Tables may not be uniform (*e.g.* variable string lengths)
+  * Tools may not exist to read data of a particular type into DB
 
 A Reasonable "Standard" Schema
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,10 +71,10 @@ DL-Standard Additional Columns
 - Object ID (some services like SCS require primary ID)
 - Spatial indices::
 
-    HTM9       HTM order 9
-    PIX256     Healpix (Ring, k=8, nside=256)
-    PIX4096    Healpix (Nest, k=12, nside=4096)
-    RANDOM_ID  Random float 0.0 -> 100.0 for sampling
+    htm9       HTM order 9
+    ring256    Healpix (Ring, k=8, nside=256)
+    nest4096   Healpix (Nest, k=12, nside=4096)
+    random_id  Random float 0.0 -> 100.0 for sampling
 
 - Coordinates::
 
@@ -95,11 +96,12 @@ Steps to Create a TAP DB
 2. Transfom data as needed to "ingestible format"
 3. Create tables in the database
 4. Load the data into the database
-5. Cluster or type order as needed
-6. Index columns
-7. Create any table views needed
-8. Set permissions on schema / tables
-9. Create and load TAP Schema
+5. Type order for optimal storage
+6. Cluster data
+7. Index columns
+8. Create any table views needed
+9. Set permissions on schema / tables
+10. Create and load TAP Schema
 
 
 1 Data Transfer
@@ -148,13 +150,17 @@ For example, a command file (called '_cmd_all') such as::
 
     explodeall;
     addcol htm9 "(int)htmIndex(9,ra,dec)";
-    addcol pix256 "(int)healpixRingIndex(8,ra,dec)";
-    addcol pix4096 "(int)healpixNestIndex(12,ra,dec)";
+    addcol ring256 "(int)healpixRingIndex(8,ra,dec)";
+    addcol nest4096 "(int)healpixNestIndex(12,ra,dec)";
     addskycoords -inunit deg -outunit deg icrs galactic ra dec glon glat;
     addskycoords -inunit deg -outunit deg icrs ecliptic ra dec elon elat;
 
-Can be used to add standard Data Lab columns to a FITS table using the
-command::
+Additional columns can be added for converted fluxes/colors, to delete or
+rename columns, or to do other forms of table processing (see the STILTS
+'tpipe' documentation).
+
+This command file can be used to add standard Data Lab columns to a FITS
+table using the command::
 
     % stilts tpipe in=indata.fits \
         cmd='@_cmd_all' ofmt='fits-basic' out=outdata.fits
@@ -205,7 +211,7 @@ once it is loaded::
     ) with (fillfactor=100);
 
 However, this statement is almost never generated optimally from
-the input data files, so the usual tactic is to generate the statement
+the input data files, so the recommended tactic is to generate the statement
 as best as possible and then modify it by hand.  Tools that can be used:
 
 CSVSQL - Create DB tables from CSV files
@@ -287,6 +293,9 @@ in order to use the binary option:
 - the columns in the FITS file MUST be in the same order as the
   database table
 - the bintable CANNOT contain array columns
+- use of the ``--rid`` flag only works when the task creates the table
+  from a single file, or when appending an existing table with a
+  random_id column following the data
 
 When ingest small tables that require no transformation, creating and
 loading the table can be done using a command such as::
@@ -311,7 +320,7 @@ default ascii output can be used to create INSERT statements so the
 FITS table order doesn't need to match the DB.  The ingestion process
 is the same as above, just without the ``-B`` binary flag.
 
-See ``fits2db --help`` for addition details and examples (needs updating).
+See ``fits2db --help`` for addition details and examples (still needs updating).
 
 STILTS
 ++++++
@@ -348,7 +357,28 @@ on output to settle on FITS2DB as a standard tool.
 "Foreign data" extensions also exist in some versions of PostgreSQL that
 may be worth investigating as well.  I defer questions on these to Adam.
 
-5 Cluster or type order as needed
+
+5 Type order for optimal storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Type-ordering the table involves re-writing the table so the columns
+are stored with the largest datatype sizes (*e.g.* bigint, double) first,
+followed by real/int, then shorts, and then char strings.  If the table
+was created with the proper type order before loading then this step can be
+skipped, otherwise the table can be rewritten using something like::
+
+    CREATE TABLE <new_name> WITH (fillfactor=100) AS (
+      SELECT
+         ....list columns in type order
+      FROM <load_name>
+    );
+    DROP TABLE <orig_name>;
+    ALTER TABLE <new_name> RENAME TO <orig_name>
+
+This step can also be used as an opportunity to drop/rename columns or
+to create joined tables.
+
+6 Cluster or type order as needed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Clustering data (in Postgres) means a table is physically re-written so
@@ -369,7 +399,7 @@ These two steps CANNOT be parallelized (but can be run in the background
 from a script).  Depending on the size of the table, this step may take
 hours to days to complete before you can proceed.
 
-6 Index columns
+7 Index columns
 ~~~~~~~~~~~~~~~
 
 Once a table has been clustered, other indices can be computed on the
@@ -382,7 +412,7 @@ rather than from an SQL script, *e.g.* ::
     alias P "psql tapdb datalab -c"
 
     P "create index on main(coadd_object_id) with (fillfactor=100)" &
-    P "create index on main(hpix4096) with (fillfactor=100)" &
+    P "create index on main(nest4096) with (fillfactor=100)" &
          "      "    "        "        "        "
 
     # wait for jobs to complete before processing next index set
@@ -395,7 +425,7 @@ rather than from an SQL script, *e.g.* ::
 be executed at time to help minimize impact on the system performance.**
 
 
-7 Create any table views needed
+8 Create any table views needed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Table views can be created as *e.g.* ::
@@ -408,7 +438,7 @@ Once create, select permissions must be granted to the view and it
 can be moved to the schema as described below.
 
 
-8 Set permissions on schema / tables
+9 Set permissions on schema / tables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Database tables are created using the 'datalab' user account which has
@@ -429,7 +459,7 @@ views may be moved to the schema::
     ALTER TABLE mydata SET SCHEMA myschema;
     ALTER VIEW myview SET SCHEMA myschema;
 
-9 Create and load TAP Schema
+10 Create and load TAP Schema
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The final stage of data ingestion is to make the new schema/tables visible
@@ -465,6 +495,11 @@ the following steps:
 Note we're assumimg the TAP service itself has already been configured for
 the machine (-- the content of the TAP service is dynamically driven by
 what's in the tap_schema tables).
+
+The 'mkjson' and 'tap_schema.py' tasks mentioned here can typically
+be found in the /home/datalab/TapSchema directory on a GP machine
+running a TAP service (gp01/2/3/4).  The TapSchema is also available
+from GitLab.
 
 Step 1: Create a template JSON file for your new schema
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++

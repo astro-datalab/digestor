@@ -42,8 +42,7 @@ class SDSS(Digestor):
     #
     # Identify columns that contain photometric flags
     #
-    _flagre = {'sql': re.compile(r'flags(|_[ugriz])$', re.I),
-               'fits': re.compile(r'(objc_|)flags$', re.I)}
+    _flagre = re.compile(r'flags(|_[ugriz])$', re.I)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
