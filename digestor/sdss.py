@@ -29,7 +29,6 @@ class SDSS(Digestor):
     #
     _SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
               'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')}
-
     #
     # Map SQL Server data types to PostgreSQL.
     #
@@ -40,6 +39,11 @@ class SDSS(Digestor):
     # Ignore columns that are specific to the SDSS CAS system.
     #
     _skip_columns = ('htmid', 'loadversion')
+    #
+    # Identify columns that contain photometric flags
+    #
+    _flagre = {'sql': re.compile(r'flags(|_[ugriz])$', re.I),
+               'fits': re.compile(r'(objc_|)flags$', re.I)}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -293,6 +297,53 @@ class SDSS(Digestor):
                     log.warning("FITS column %s will be dropped from SQL!", col)
         return
 
+    def _photoFlag(self, column, table):
+        """Handle photometric flags in SDSS data.
+
+        Parameters
+        ----------
+        column : :class:`dict`
+            A TapSchema column definition.
+        table : :class:`astropy.table.Table`
+            Table containing the input data.
+
+        Returns
+        -------
+        :class:`numpy.ndarray`
+            The combined flags and flags2 data, or ``None`` if the
+            column did not match.
+
+        Raises
+        ------
+        :exc:`AssertionError`
+            If the required columns are not present in the FITS file.
+        """
+        m = self._flagre.match(column['column_name'])
+        if m is not None:
+            g = m.groups()[0].replace('_', '')
+            if g:
+                #
+                # Ensure FLAGS and FLAGS2 are present.
+                #
+                band = 'ugriz'.index(g)
+                assert column['datatype'] == 'bigint'
+                assert self.mapping[column['column_name']].lower() == 'flags'
+                assert 'FLAGS' in table.colnames
+                assert 'FLAGS2' in table.colnames
+                return (np.left_shift(table['FLAGS2'][:, band].astype(np.int64), 32) |
+                        table['OBJC_FLAGS'][:, band].astype(np.int64))
+            else:
+                #
+                # Ensure OBJC_FLAGS and OBJC_FLAGS2 are present.
+                #
+                assert column['datatype'] == 'bigint'
+                assert self.mapping[column['column_name']].lower() == 'objc_flags'
+                assert 'OBJC_FLAGS' in table.colnames
+                assert 'OBJC_FLAGS2' in table.colnames
+                return (np.left_shift(table['OBJC_FLAGS2'].astype(np.int64), 32) |
+                        table['OBJC_FLAGS'].astype(np.int64))
+        return None
+
     def processFITS(self, hdu=1, overwrite=False):
         """Convert a pre-processed FITS file into one ready for database loading.
 
@@ -357,6 +408,12 @@ class SDSS(Digestor):
                           col['column_name'], len(old), str(np_map[col['datatype']]))
                 new[col['column_name']] = np.zeros((len(old),), dtype=np_map[col['datatype']])
                 continue
+            if 'flags' in col['column_name']:
+                flags64 = self._photoFlag(col, old)
+                if flags64 is not None:
+                    log.info("Combining photo flags for %s", col['column_name'])
+                    new[col['column_name']] = flags64
+                    continue
             fcol = self.mapping[col['column_name']]
             index = None
             if '[' in fcol:
