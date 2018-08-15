@@ -62,6 +62,29 @@ Example pre-load SQL code::
                 CAST(objnum AS bigint));
     END;
     $$ LANGUAGE plpgsql IMMUTABLE;
+    --
+    -- Create a SDSS specObjID for tables that do not have one.
+    --
+    CREATE OR REPLACE FUNCTION sdss_dr14.specobjid(plate smallint, fiber smallint, mjd integer, run2d text) RETURNS bigint AS $$
+    DECLARE
+        rmjd bigint;
+        irun bigint;
+        mjd_offset CONSTANT bigint := 50000;
+    BEGIN
+        rmjd := CAST(mjd AS bigint) - mjd_offset;
+        IF run2d LIKE 'v%' THEN
+            irun := (10000*(CAST(substring(run2d from 'v(\d+)_\d+_\d+') AS bigint) - 5) +
+                        100*CAST(substring(run2d from 'v\d+_(\d+)_\d+') AS bigint) +
+                            CAST(substring(run2d from 'v\d+_\d+_(\d+)') AS bigint));
+        ELSE
+            irun := CAST(run2d AS bigint);
+        END IF;
+        RETURN ((CAST(plate AS bigint) << 50) |
+                (CAST(fiber AS bigint) << 38) |
+                (rmjd << 24) |
+                (irun << 10));
+    END;
+    $$ LANGUAGE plpgsql IMMUTABLE;
 
 Example post-load SQL code::
 

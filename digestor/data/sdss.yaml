@@ -60,3 +60,20 @@ sdss_dr14:
             dered_r: defer
             dered_i: defer
             dered_z: defer
+    photoposplate:
+        STILTS:
+            - cmd=select skyversion==2
+        columns:
+            parentid:
+                datatype: bigint
+        mapping:
+            glon: L
+            glat: B
+        NOFITS:
+            insidemask: drop
+            specobjid: drop
+            dered_u: defer
+            dered_g: defer
+            dered_r: defer
+            dered_i: defer
+            dered_z: defer
