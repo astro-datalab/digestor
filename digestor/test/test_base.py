@@ -4,6 +4,7 @@
 """
 import unittest
 import unittest.mock as mock
+import os
 import logging
 import json
 from tempfile import NamedTemporaryFile
@@ -29,10 +30,11 @@ class TestBase(DigestorCase):
     def test_configure_log(self):
         """Test the logging configuration.
         """
-        Digestor.configureLog(True)
+        Digestor.configureLog('test.log', True)
         root_logger = logging.getLogger('digestor')
         self.assertEqual(len(root_logger.handlers), 2)
-        self.assertIsInstance(root_logger.handlers[1], logging.StreamHandler)
+        self.assertIsInstance(root_logger.handlers[1], logging.FileHandler)
+        os.remove('test.log')
 
     def test_init_metadata(self):
         """Test metadata initialization.
@@ -67,6 +69,23 @@ class TestBase(DigestorCase):
                             description=self.description,
                             merge=f.name)
             self.assertEqual(base.tapSchema['tables'][1]['table_name'], self.table)
+
+    def test_get_yaml(self):
+        """Test grabbing and caching YAML configuration.
+        """
+        yaml = """sdss:
+    spectra:
+        columns:
+            veldispnpix:
+                datatype: real
+        """
+        with NamedTemporaryFile('w+') as f:
+            f.write(yaml)
+            f.seek(0)
+            foo = self.base._getYAML(f.name)
+            self.assertIn('sdss', foo)
+        bar = self.base._getYAML(f.name)
+        self.assertIn('sdss', foo)
 
     def test_table_index(self):
         """Test the table index search function.
@@ -122,6 +141,27 @@ class TestBase(DigestorCase):
         self.assertListEqual(types, ['double', 'double', 'double', 'double',
                                      'integer', 'integer', 'integer', 'real'])
 
+    def test_custom_stilts(self):
+        """Test adding custom STILTS commands.
+        """
+        yaml = """sdss:
+    spectra:
+        STILTS:
+            - cmd=select skyversion==2
+"""
+        with NamedTemporaryFile('w+') as f:
+            f.write(yaml)
+            f.seek(0)
+            self.base.customSTILTS(f.name)
+            self.assertListEqual(self.base._custom_stilts_command, ['cmd=select skyversion==2'])
+        self.base._custom_stilts_command = []
+        self.base.table = 'photo'
+        with NamedTemporaryFile('w+') as f:
+            f.write(yaml)
+            f.seek(0)
+            self.base.customSTILTS(f.name)
+            self.assertListEqual(self.base._custom_stilts_command, [])
+
     def test_add_dl_columns(self):
         """Test adding STILTS columns.
         """
@@ -144,8 +184,8 @@ class TestBase(DigestorCase):
                                      'cmd=addcol htm9 (int)htmIndex(9,plug_ra,plug_dec)',
                                      'cmd=addcol ring256 (int)healpixRingIndex(8,plug_ra,plug_dec)',
                                      'cmd=addcol nest4096 (int)healpixNestIndex(12,plug_ra,plug_dec)',
-                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic plug_ra plug_dec glon glat',
                                      'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic plug_ra plug_dec elon elat',
+                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic plug_ra plug_dec glon glat',
                                      'ofmt=fits-basic',
                                      'out=specObj-dr14.stilts.fits'],
                                     stderr=-1, stdout=-1)
@@ -167,8 +207,8 @@ class TestBase(DigestorCase):
                                      'cmd=addcol htm9 (int)htmIndex(9,racen,deccen)',
                                      'cmd=addcol ring256 (int)healpixRingIndex(8,racen,deccen)',
                                      'cmd=addcol nest4096 (int)healpixNestIndex(12,racen,deccen)',
-                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic racen deccen glon glat',
                                      'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic racen deccen elon elat',
+                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic racen deccen glon glat',
                                      'ofmt=fits-basic',
                                      'out=specObj-dr14.stilts.fits'],
                                     stderr=-1, stdout=-1)

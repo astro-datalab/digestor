@@ -460,7 +460,7 @@ views may be moved to the schema::
     ALTER VIEW myview SET SCHEMA myschema;
 
 10 Create and load TAP Schema
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The final stage of data ingestion is to make the new schema/tables visible
 to the TAP service.  This is done by populating the 'tap_schema' tables

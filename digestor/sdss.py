@@ -386,7 +386,8 @@ class SDSS(Digestor):
                   'double': np.float64,
                   'real': np.float32}
         safe_conversion = {('J', 'smallint'): 2**15,
-                           ('A', 'smallint'): 2**15}
+                           ('A', 'smallint'): 2**15,
+                           ('A', 'integer'): 2**31}
         rebase = re.compile(r'^(\d+)(\D+)')
         columns = [c for c in self.tapSchema['columns']
                    if c['table_name'] == self.table]

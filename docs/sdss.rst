@@ -40,6 +40,12 @@ Example post-load SQL code::
     -- CREATE INDEX platex_elon_q3c_ang2ipix ON sdss_dr14.platex (q3c_ang2ipix(elon, elat)) WITH (fillfactor=100);
     ALTER TABLE sdss_dr14.platex ADD PRIMARY KEY (plateid);
     CREATE UNIQUE INDEX platex_uint64_plateid ON sdss_dr14.platex (sdss_dr14.uint64(plateid)) WITH (fillfactor=100);
+    CREATE INDEX platex_ra ON sdss_dr14.platex (ra) WITH (fillfactor=100);
+    CREATE INDEX platex_dec ON sdss_dr14.platex (dec) WITH (fillfactor=100);
+    CREATE INDEX platex_htm9 ON sdss_dr14.platex (htm9) WITH (fillfactor=100);
+    CREATE INDEX platex_ring256 ON sdss_dr14.platex (ring256) WITH (fillfactor=100);
+    CREATE INDEX platex_nest4096 ON sdss_dr14.platex (nest4096) WITH (fillfactor=100);
+    CREATE INDEX platex_random_id ON sdss_dr14.platex (random_id) WITH (fillfactor=100);
     GRANT SELECT ON sdss_dr14.platex TO dlquery;
     --
     -- specobjall
@@ -49,6 +55,12 @@ Example post-load SQL code::
     ALTER TABLE sdss_dr14.specobjall ADD PRIMARY KEY (specobjid);
     CREATE UNIQUE INDEX specobjall_uint64_specobjid ON sdss_dr14.specobjall (sdss_dr14.uint64(specobjid)) WITH (fillfactor=100);
     CREATE INDEX specobjall_uint64_plateid ON sdss_dr14.specobjall (sdss_dr14.uint64(plateid)) WITH (fillfactor=100);
+    CREATE INDEX specobjall_ra ON sdss_dr14.specobjall (ra) WITH (fillfactor=100);
+    CREATE INDEX specobjall_dec ON sdss_dr14.specobjall (dec) WITH (fillfactor=100);
+    CREATE INDEX specobjall_htm9 ON sdss_dr14.specobjall (htm9) WITH (fillfactor=100);
+    CREATE INDEX specobjall_ring256 ON sdss_dr14.specobjall (ring256) WITH (fillfactor=100);
+    CREATE INDEX specobjall_nest4096 ON sdss_dr14.specobjall (nest4096) WITH (fillfactor=100);
+    CREATE INDEX specobjall_random_id ON sdss_dr14.specobjall (random_id) WITH (fillfactor=100);
     ALTER TABLE sdss_dr14.specobjall ADD CONSTRAINT specobjall_platex_fx FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
     CREATE VIEW sdss_dr14.specobj AS SELECT s.* FROM sdss_dr14.specobjall AS s WHERE s.scienceprimary = 1;
     CREATE VIEW sdss_dr14.seguespecobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%';
@@ -64,6 +76,13 @@ Example post-load SQL code::
     --
     CREATE INDEX photoplate_q3c_ang2ipix ON sdss_dr14.photoplate (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
     CLUSTER photoplate_q3c_ang2ipix ON sdss_dr14.photoplate;
+    ALTER TABLE sdss_dr14.photoplate ADD PRIMARY KEY (objid);
+    CREATE INDEX photoplate_ra ON sdss_dr14.photoplate (ra) WITH (fillfactor=100);
+    CREATE INDEX photoplate_dec ON sdss_dr14.photoplate (dec) WITH (fillfactor=100);
+    CREATE INDEX photoplate_htm9 ON sdss_dr14.photoplate (htm9) WITH (fillfactor=100);
+    CREATE INDEX photoplate_ring256 ON sdss_dr14.photoplate (ring256) WITH (fillfactor=100);
+    CREATE INDEX photoplate_nest4096 ON sdss_dr14.photoplate (nest4096) WITH (fillfactor=100);
+    CREATE INDEX photoplate_random_id ON sdss_dr14.photoplate (random_id) WITH (fillfactor=100);
     UPDATE TABLE sdss_dr14.photoplate SET dered_u = u - extinction_u;
     UPDATE TABLE sdss_dr14.photoplate SET dered_g = g - extinction_g;
     UPDATE TABLE sdss_dr14.photoplate SET dered_r = r - extinction_r;
