@@ -225,7 +225,7 @@ class Digestor(object):
         :class:`dict`
             A column definition in TapSchema format.
         """
-        p = {'table_name': self.table,
+        p = {'table_name': self.stable,
              'column_name': column,
              'description': '',
              'unit': '',
@@ -251,11 +251,11 @@ class Digestor(object):
             If the table is not found.
         """
         try:
-            return self._tableIndexCache[(self.schema, self.table)]
+            return self._tableIndexCache[self.stable]
         except KeyError:
             for i, t in enumerate(self.tapSchema['tables']):
                 if t['schema_name'] == self.schema and t['table_name'] == self.table:
-                    self._tableIndexCache[(self.schema, self.table)] = i
+                    self._tableIndexCache[self.stable] = i
                     return i
         raise ValueError("Table {0.table} was not found in schema {0.schema}!".format(self))
 
@@ -268,20 +268,26 @@ class Digestor(object):
             If the column is not found.
         """
         try:
-            return self._columnIndexCache[(self.schema, self.table, column)]
+            return self._columnIndexCache[(self.stable, column)]
         except KeyError:
             for i, c in enumerate(self.tapSchema['columns']):
-                if c['table_name'] == self.table and c['column_name'] == column:
-                    self._columnIndexCache[(self.schema, self.table, column)] = i
+                if c['table_name'] == self.stable and c['column_name'] == column:
+                    self._columnIndexCache[(self.stable, column)] = i
                     return i
-        raise ValueError("Column {0} was not found in {1.schema}.{1.table}!".format(column, self))
+        raise ValueError("Column {0} was not found in {1.stable}!".format(column, self))
+
+    @property
+    def stable(self):
+        """Schema-qualified table name.
+        """
+        return "{0.schema}.{0.table}".format(self)
 
     @property
     def colNames(self):
         """List of columns in the table.
         """
         return [c['column_name'] for c in self.tapSchema['columns']
-                if c['table_name'] == self.table]
+                if c['table_name'] == self.stable]
 
     @property
     def nColumns(self):
@@ -352,11 +358,11 @@ class Digestor(object):
         new_columns = list()
         for o in self.ordered:
             for c in self.tapSchema['columns']:
-                if c['table_name'] == self.table and c['datatype'] == o:
+                if c['table_name'] == self.stable and c['datatype'] == o:
                     new_columns.append(c)
         assert len(new_columns) == self.nColumns
         for i, c in enumerate(self.tapSchema['columns']):
-            if c['table_name'] == self.table:
+            if c['table_name'] == self.stable:
                 self.tapSchema['columns'][i] = new_columns.pop(0)
         return
 
@@ -498,7 +504,7 @@ class Digestor(object):
         safe_conversion = {('J', 'smallint'): 2**15}
         rebase = re.compile(r'^(\d+)(\D+)')
         columns = [c for c in self.tapSchema['columns']
-                   if c['table_name'] == self.table]
+                   if c['table_name'] == self.stable]
         old = Table.read(self._inputFITS, hdu=hdu)
         new = Table()
         for col in columns:
@@ -576,7 +582,7 @@ class Digestor(object):
         # log = self.logName('base.Digestor.createSQL')
         sql = [r"CREATE TABLE IF NOT EXISTS {0.schema}.{0.table} (".format(self)]
         for c in self.tapSchema['columns']:
-            if c['table_name'] == self.table:
+            if c['table_name'] == self.stable:
                 typ = c['datatype']
                 if typ == 'double':
                     typ = 'double precision'

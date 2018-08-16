@@ -63,7 +63,7 @@ class TestBase(DigestorCase):
         with NamedTemporaryFile('w+') as f:
             json.dump({'schemas': [{'schema_name': self.schema}],
                        'tables': [{'table_name': 'foobar'}],
-                       'columns': [{'table_name': 'foobar', 'column_name': 'baz'}]}, f)
+                       'columns': [{'table_name': self.schema + '.foobar', 'column_name': 'baz'}]}, f)
             f.seek(0)
             base = Digestor(self.schema, self.table,
                             description=self.description,
@@ -109,7 +109,7 @@ class TestBase(DigestorCase):
     def test_fix_columns(self):
         """Test "by hand" fixes to table definition.
         """
-        self.base.tapSchema['columns'] += [{"table_name": self.table,
+        self.base.tapSchema['columns'] += [{"table_name": "{0.schema}.{0.table}".format(self),
                                             "column_name": "veldispnpix",
                                             "description": "number of pixels",
                                             "unit": "", "ucd": "", "utype": "",
@@ -227,7 +227,7 @@ class TestBase(DigestorCase):
                          'elon': 'elon', 'elat': 'elat',
                          'random_id': 'random_id'}
         self.assertDictEqual(self.base.mapping, final_mapping)
-        self.base.tapSchema['columns'] += [{"table_name": self.table,
+        self.base.tapSchema['columns'] += [{"table_name": "{0.schema}.{0.table}".format(self),
                                             "column_name": "z",
                                             "description": "z",
                                             "unit": "", "ucd": "", "utype": "",
@@ -253,37 +253,37 @@ class TestBase(DigestorCase):
     def test_process_fits(self):
         """Test processing of FITS file for loading.
         """
-        self.base.tapSchema['columns'] += [{"table_name": self.table,
+        self.base.tapSchema['columns'] += [{"table_name": "{0.schema}.{0.table}".format(self),
                                             "column_name": "mag_u",
                                             "description": "u Magnitude",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "real", "size": 1,
                                             "principal": 0, "indexed": 0, "std": 0},
-                                           {"table_name": self.table,
+                                           {"table_name": "{0.schema}.{0.table}".format(self),
                                             "column_name": "mag_g",
                                             "description": "g Magnitude",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "real", "size": 1,
                                             "principal": 0, "indexed": 0, "std": 0},
-                                           {"table_name": self.table,
+                                           {"table_name": "{0.schema}.{0.table}".format(self),
                                             "column_name": "magivar_u",
                                             "description": "u ivar",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "double", "size": 1,
                                             "principal": 0, "indexed": 0, "std": 0},
-                                           {"table_name": self.table,
+                                           {"table_name": "{0.schema}.{0.table}".format(self),
                                             "column_name": "magivar_g",
                                             "description": "g ivar",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "double", "size": 1,
                                             "principal": 0, "indexed": 0, "std": 0},
-                                           {"table_name": self.table,
+                                           {"table_name": "{0.schema}.{0.table}".format(self),
                                             "column_name": "unsafe",
                                             "description": "unsafe",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "integer", "size": 1,
                                             "principal": 0, "indexed": 0, "std": 0},
-                                           {"table_name": self.table,
+                                           {"table_name": "{0.schema}.{0.table}".format(self),
                                             "column_name": "flags_0",
                                             "description": "unsafe",
                                             "unit": "", "ucd": "", "utype": "",
@@ -368,19 +368,19 @@ class TestBase(DigestorCase):
     def test_create_sql(self):
         """Test SQL output.
         """
-        self.base.tapSchema['columns'] = [{"table_name": self.base.table,
+        self.base.tapSchema['columns'] = [{"table_name": "{0.schema}.{0.table}".format(self),
                                            "column_name": "htm9",
                                            "description": "",
                                            "unit": "", "ucd": "", "utype": "",
                                            "datatype": "integer", "size": 1,
                                            "principal": 0, "indexed": 1, "std": 0},
-                                          {"table_name": self.base.table,
+                                          {"table_name": "{0.schema}.{0.table}".format(self),
                                            "column_name": "foo",
                                            "description": "",
                                            "unit": "", "ucd": "", "utype": "",
                                            "datatype": "double", "size": 1,
                                            "principal": 0, "indexed": 1, "std": 0},
-                                          {"table_name": self.base.table,
+                                          {"table_name": "{0.schema}.{0.table}".format(self),
                                            "column_name": "bar",
                                            "description": "",
                                            "unit": "", "ucd": "", "utype": "",

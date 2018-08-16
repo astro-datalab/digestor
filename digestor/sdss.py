@@ -100,7 +100,7 @@ class SDSS(Digestor):
                     log.debug("    %s %s %s,", col, post_type, g[2])
                     log.debug("metadata = '%s'", g[3])
                     p, r = self.parseColumnMetadata(col, g[3])
-                    p['table_name'] = self.table
+                    p['table_name'] = self.stable
                     if post_type == 'double precision':
                         p['datatype'] = 'double'
                     elif post_type.startswith('varchar'):
@@ -391,7 +391,7 @@ class SDSS(Digestor):
                            ('A', 'bigint'): 2**63}
         rebase = re.compile(r'^(\d+)(\D+)')
         columns = [c for c in self.tapSchema['columns']
-                   if c['table_name'] == self.table]
+                   if c['table_name'] == self.stable]
         old = Table.read(self._inputFITS, hdu=hdu)
         new = Table()
         for col in columns:
