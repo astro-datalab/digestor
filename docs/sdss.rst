@@ -143,11 +143,11 @@ Example post-load SQL code::
     CREATE INDEX photoplate_ring256 ON sdss_dr14.photoplate (ring256) WITH (fillfactor=100);
     CREATE INDEX photoplate_nest4096 ON sdss_dr14.photoplate (nest4096) WITH (fillfactor=100);
     CREATE INDEX photoplate_random_id ON sdss_dr14.photoplate (random_id) WITH (fillfactor=100);
-    UPDATE TABLE sdss_dr14.photoplate SET dered_u = u - extinction_u;
-    UPDATE TABLE sdss_dr14.photoplate SET dered_g = g - extinction_g;
-    UPDATE TABLE sdss_dr14.photoplate SET dered_r = r - extinction_r;
-    UPDATE TABLE sdss_dr14.photoplate SET dered_i = i - extinction_i;
-    UPDATE TABLE sdss_dr14.photoplate SET dered_z = z - extinction_z;
+    UPDATE sdss_dr14.photoplate SET dered_u = u - extinction_u;
+    UPDATE sdss_dr14.photoplate SET dered_g = g - extinction_g;
+    UPDATE sdss_dr14.photoplate SET dered_r = r - extinction_r;
+    UPDATE sdss_dr14.photoplate SET dered_i = i - extinction_i;
+    UPDATE sdss_dr14.photoplate SET dered_z = z - extinction_z;
     GRANT SELECT ON sdss_dr14.photoplate TO dlquery;
 
 Files

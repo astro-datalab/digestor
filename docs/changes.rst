@@ -2,10 +2,10 @@
 Digestor Change Log
 ===================
 
-0.3.0 (unreleased)
+0.2.1 (2018-08-16)
 ------------------
 
-* No changes yet.
+* Store fully-qualified table name in column descriptions.
 
 0.2.0 (2018-08-16)
 ------------------
