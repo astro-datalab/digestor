@@ -59,6 +59,7 @@ class DigestorCase(unittest.TestCase):
         while len(root_logger.handlers) > 0:
             h = root_logger.handlers[0]
             h.flush()
+            h.close()
             root_logger.removeHandler(h)
         if self.cache_handler is not None:
             root_logger.addHandler(self.cache_handler)

@@ -4,6 +4,7 @@
 """
 import unittest
 import unittest.mock as mock
+import os
 import logging
 import json
 from tempfile import NamedTemporaryFile
@@ -29,10 +30,11 @@ class TestBase(DigestorCase):
     def test_configure_log(self):
         """Test the logging configuration.
         """
-        Digestor.configureLog(True)
+        Digestor.configureLog('test.log', True)
         root_logger = logging.getLogger('digestor')
         self.assertEqual(len(root_logger.handlers), 2)
-        self.assertIsInstance(root_logger.handlers[1], logging.StreamHandler)
+        self.assertIsInstance(root_logger.handlers[1], logging.FileHandler)
+        os.remove('test.log')
 
     def test_init_metadata(self):
         """Test metadata initialization.
@@ -68,6 +70,23 @@ class TestBase(DigestorCase):
                             merge=f.name)
             self.assertEqual(base.tapSchema['tables'][1]['table_name'], self.table)
 
+    def test_get_yaml(self):
+        """Test grabbing and caching YAML configuration.
+        """
+        yaml = """sdss:
+    spectra:
+        columns:
+            veldispnpix:
+                datatype: real
+        """
+        with NamedTemporaryFile('w+') as f:
+            f.write(yaml)
+            f.seek(0)
+            foo = self.base._getYAML(f.name)
+            self.assertIn('sdss', foo)
+        bar = self.base._getYAML(f.name)
+        self.assertIn('sdss', foo)
+
     def test_table_index(self):
         """Test the table index search function.
         """
@@ -95,7 +114,7 @@ class TestBase(DigestorCase):
                                             "description": "number of pixels",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "integer", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},]
+                                            "principal": 0, "indexed": 0, "std": 0}]
         self.base.fixColumns('no_such_file.yaml')
         yaml = """sdss:
     spectra:
@@ -122,6 +141,27 @@ class TestBase(DigestorCase):
         self.assertListEqual(types, ['double', 'double', 'double', 'double',
                                      'integer', 'integer', 'integer', 'real'])
 
+    def test_custom_stilts(self):
+        """Test adding custom STILTS commands.
+        """
+        yaml = """sdss:
+    spectra:
+        STILTS:
+            - cmd=select skyversion==2
+"""
+        with NamedTemporaryFile('w+') as f:
+            f.write(yaml)
+            f.seek(0)
+            self.base.customSTILTS(f.name)
+            self.assertListEqual(self.base._custom_stilts_command, ['cmd=select skyversion==2'])
+        self.base._custom_stilts_command = []
+        self.base.table = 'photo'
+        with NamedTemporaryFile('w+') as f:
+            f.write(yaml)
+            f.seek(0)
+            self.base.customSTILTS(f.name)
+            self.assertListEqual(self.base._custom_stilts_command, [])
+
     def test_add_dl_columns(self):
         """Test adding STILTS columns.
         """
@@ -144,11 +184,11 @@ class TestBase(DigestorCase):
                                      'cmd=addcol htm9 (int)htmIndex(9,plug_ra,plug_dec)',
                                      'cmd=addcol ring256 (int)healpixRingIndex(8,plug_ra,plug_dec)',
                                      'cmd=addcol nest4096 (int)healpixNestIndex(12,plug_ra,plug_dec)',
-                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic plug_ra plug_dec glon glat',
                                      'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic plug_ra plug_dec elon elat',
+                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic plug_ra plug_dec glon glat',
                                      'ofmt=fits-basic',
                                      'out=specObj-dr14.stilts.fits'],
-                                     stderr=-1, stdout=-1)
+                                    stderr=-1, stdout=-1)
         self.assertEqual(out, 'specObj-dr14.stilts.fits')
         with mock.patch('subprocess.Popen') as proc:
             p = proc.return_value = mock.MagicMock()
@@ -167,11 +207,11 @@ class TestBase(DigestorCase):
                                      'cmd=addcol htm9 (int)htmIndex(9,racen,deccen)',
                                      'cmd=addcol ring256 (int)healpixRingIndex(8,racen,deccen)',
                                      'cmd=addcol nest4096 (int)healpixNestIndex(12,racen,deccen)',
-                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic racen deccen glon glat',
                                      'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic racen deccen elon elat',
+                                     'cmd=addskycoords -inunit deg -outunit deg icrs galactic racen deccen glon glat',
                                      'ofmt=fits-basic',
                                      'out=specObj-dr14.stilts.fits'],
-                                     stderr=-1, stdout=-1)
+                                    stderr=-1, stdout=-1)
         self.assertLog(-1, 'STILTS STDERR = foobar')
 
     def test_map_columns(self):
@@ -192,7 +232,7 @@ class TestBase(DigestorCase):
                                             "description": "z",
                                             "unit": "", "ucd": "", "utype": "",
                                             "datatype": "real", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},]
+                                            "principal": 0, "indexed": 0, "std": 0}]
         self.base.mapping = {'random_id': 'random_id', 'z': 'z'}
         with self.assertRaises(KeyError) as e:
             self.base.mapColumns()
@@ -238,18 +278,6 @@ class TestBase(DigestorCase):
                                             "datatype": "double", "size": 1,
                                             "principal": 0, "indexed": 0, "std": 0},
                                            {"table_name": self.table,
-                                            "column_name": "objid",
-                                            "description": "id",
-                                            "unit": "", "ucd": "", "utype": "",
-                                            "datatype": "bigint", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},
-                                           {"table_name": self.table,
-                                            "column_name": "bigobjid",
-                                            "description": "id",
-                                            "unit": "", "ucd": "", "utype": "",
-                                            "datatype": "bigint", "size": 1,
-                                            "principal": 0, "indexed": 0, "std": 0},
-                                           {"table_name": self.table,
                                             "column_name": "unsafe",
                                             "description": "unsafe",
                                             "unit": "", "ucd": "", "utype": "",
@@ -269,8 +297,6 @@ class TestBase(DigestorCase):
                           'nest4096': 'J',
                           'random_id': 'E',
                           'mag': '2E', 'magivar': '2E',
-                          'objid': '16A',
-                          'bigobjid': '20A',
                           'foobar': '16A',
                           'flags': '2J',
                           'unsafe': 'K'}
@@ -292,11 +318,9 @@ class TestBase(DigestorCase):
                         'random_id': np.ones((5,), dtype=np.float32),
                         'mag': np.ones((5, 2), dtype=np.float32),
                         'magivar': np.ones((5, 2), dtype=np.float32),
-                        'objid': np.array([' '*15 + '1']*4 + [' '*16], dtype='U16'),
-                        'bigobjid': np.array(['9223372036854775808']*3 + ['18446744073709551615']*2, dtype='U20'),
                         'foobar': np.array([' '*16]*5, dtype='U16'),
                         'flags': np.ones((5, 2), dtype=np.int32),
-                        'unsafe': np.ones((5,), dtype=np.int64),}
+                        'unsafe': np.ones((5,), dtype=np.int64)}
         #
         # Raise an unsafe error.
         #

@@ -5,7 +5,7 @@ Digestor Change Log
 0.2.0 (unreleased)
 ------------------
 
-* No changes yet.
+* Support processing of SDSS photometric data (PR #3).
 
 0.1.0 (2018-08-09)
 ------------------

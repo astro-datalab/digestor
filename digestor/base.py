@@ -46,9 +46,9 @@ class Digestor(object):
     #
     _stilts_command = ['cmd=addcol htm9 (int)htmIndex(9,{ra},{dec})',
                        'cmd=addcol ring256 (int)healpixRingIndex(8,{ra},{dec})',
-                       'cmd=addcol nest4096 (int)healpixNestIndex(12,{ra},{dec})',
-                       'cmd=addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat',
-                       'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat']
+                       'cmd=addcol nest4096 (int)healpixNestIndex(12,{ra},{dec})']
+    _stilts_ecliptic = 'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat'
+    _stilts_galactic = 'cmd=addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat'
 
     def __init__(self, schema, table, description=None, merge=None):
         self.schema = schema
@@ -59,17 +59,22 @@ class Digestor(object):
         self._tableIndexCache = dict()
         self._columnIndexCache = dict()
         self._inputFITS = None
+        self._yamlCache = dict()
+        self._custom_stilts_command = list()
 
     @classmethod
-    def configureLog(cls, debug=False):
+    def configureLog(cls, filename, debug=False):
         """Set up logging for the module.
 
         Parameters
         ----------
+        filename : :class:`str`
+            Name of the log file.
         debug : :class:`bool`, optional
             If ``True``, set log level to DEBUG.
         """
-        ch = logging.StreamHandler(sys.stdout)
+        # ch = logging.StreamHandler(sys.stdout)
+        ch = logging.FileHandler(filename)
         formatter = logging.Formatter('%(levelname)s:%(name)s:%(lineno)s: %(message)s')
         ch.setFormatter(formatter)
         log = logging.getLogger(cls.rootLogger)
@@ -120,12 +125,12 @@ class Digestor(object):
             metadata = dict()
             metadata['schemas'] = [{'schema_name': self.schema,
                                     'description': description,
-                                    'utype': ''},]
+                                    'utype': ''}]
             metadata['tables'] = [{'schema_name': self.schema,
                                    'table_name': self.table,
                                    'table_type': 'table',
                                    'utype': '',
-                                   'description': ''},]
+                                   'description': ''}]
             metadata['columns'] = self._dlColumns()
             metadata['keys'] = [{"key_id": "",
                                  "from_table": "",
@@ -183,6 +188,29 @@ class Digestor(object):
                 self.tapColumn('elat',
                                description="Ecliptic Longitude",
                                datatype='double', unit='deg', indexed=1)]
+
+    def _getYAML(self, filename):
+        """Cache reads of YAML configuration files.
+
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the YAML configuration file.
+
+        Returns
+        -------
+        :class:`dict`
+            The contents of `filename`, or ``None`` if there is no such file.
+        """
+        log = self.logName('base.Digestor._getYAML')
+        if filename in self._yamlCache:
+            return self._yamlCache[filename]
+        if os.path.exists(filename):
+            log.debug("Opening %s.", filename)
+            with open(filename) as f:
+                self._yamlCache[filename] = yaml.load(f)
+            return self._yamlCache[filename]
+        return None
 
     def tapColumn(self, column, **kwargs):
         """Create a TapSchema-compatible column definition.
@@ -299,12 +327,10 @@ class Digestor(object):
             If the configuration file contains an unknown column.
         """
         log = self.logName('base.Digestor.fixColumns')
-        if os.path.exists(filename):
-            log.debug("Opening %s.", filename)
-            with open(filename) as f:
-                conf = yaml.load(f)
+        config = self._getYAML(filename)
+        if config is not None:
             try:
-                col_fix = conf[self.schema][self.table]['columns']
+                col_fix = config[self.schema][self.table]['columns']
             except KeyError:
                 return
             for col in col_fix:
@@ -318,10 +344,10 @@ class Digestor(object):
     def sortColumns(self):
         """Sort the SQL columns for best performance.
 
-        Raises
-        ------
-        :exc:`AssertionError`
-            If not all columns are sorted into the new order.
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the YAML configuration file.
         """
         new_columns = list()
         for o in self.ordered:
@@ -334,7 +360,26 @@ class Digestor(object):
                 self.tapSchema['columns'][i] = new_columns.pop(0)
         return
 
-    def addDLColumns(self, filename, ra='ra', overwrite=False):
+    def customSTILTS(self, filename):
+        """Add (prepend) custom STILTS commands to the default command.
+
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the YAML configuration file.
+        """
+        log = self.logName('base.Digestor.customSTILTS')
+        config = self._getYAML(filename)
+        if config is not None:
+            try:
+                stilts = config[self.schema][self.table]['STILTS']
+            except KeyError:
+                return
+            self._custom_stilts_command += stilts
+        return
+
+    def addDLColumns(self, filename, ra='ra', overwrite=False,
+                     ecliptic=True, galactic=True):
         """Add DL columns to FITS file prior to column reorganization.
 
         Parameters
@@ -345,6 +390,12 @@ class Digestor(object):
             Look for Right Ascension in this column (default 'ra').
         overwrite : :class:`bool`, optional
             If ``True``, remove any existing file.
+        ecliptic : :class:`bool`, optional
+            If ``False``, *don't* add ecliptic coordinates (probably because
+            they already exist).
+        galactic : :class:`bool`, optional
+            If ``False``, *don't* add galactic coordinates (probably because
+            they already exist).
 
         Returns
         -------
@@ -367,7 +418,12 @@ class Digestor(object):
         fra = ra.lower()
         fdec = ra.lower().replace('ra', 'dec')
         command = ['stilts', 'tpipe', 'in={0}'.format(filename)]
+        command += self._custom_stilts_command
         command += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
+        if ecliptic:
+            command.append(self._stilts_ecliptic.format(ra=fra, dec=fdec))
+        if galactic:
+            command.append(self._stilts_galactic.format(ra=fra, dec=fdec))
         command += ['ofmt=fits-basic', 'out={0}'.format(out)]
         log.debug(' '.join(command))
         proc = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
@@ -399,6 +455,9 @@ class Digestor(object):
 
     def processFITS(self, hdu=1, overwrite=False):
         """Convert a pre-processed FITS file into one ready for database loading.
+
+        This method may be overridden in subclasses with survey-specific
+        requirements.
 
         Parameters
         ----------
@@ -458,9 +517,9 @@ class Digestor(object):
             if fbasetype == type_map[col['datatype']][0]:
                 log.debug("Type match for %s -> %s.", fcol, col['column_name'])
                 if index is not None:
-                    log.debug("new['%s'] = old['%s'][:,%d]",
+                    log.debug("new['%s'] = old['%s'][:, %d]",
                               col['column_name'], fcol, index)
-                    new[col['column_name']] = old[fcol][:,index]
+                    new[col['column_name']] = old[fcol][:, index]
                 else:
                     log.debug("new['%s'] = old['%s']", col['column_name'], fcol)
                     new[col['column_name']] = old[fcol]
@@ -468,42 +527,22 @@ class Digestor(object):
                 log.debug("Safe type conversion possible for %s (%s) -> %s (%s).",
                           fcol, fbasetype, col['column_name'], col['datatype'])
                 if index is not None:
-                    log.debug("new['%s'] = old['%s'][:,%d].astype(%s)",
+                    log.debug("new['%s'] = old['%s'][:, %d].astype(%s)",
                               col['column_name'], fcol, index,
                               str(np_map[col['datatype']]))
-                    new[col['column_name']] = old[fcol][:,index].astype(np_map[col['datatype']])
+                    new[col['column_name']] = old[fcol][:, index].astype(np_map[col['datatype']])
                 else:
                     log.debug("new['%s'] = old['%s'].astype(%s)",
                               col['column_name'], fcol,
                               str(np_map[col['datatype']]))
                     new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
-            elif fbasetype == 'A' and col['datatype'] == 'bigint':
-                log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
-                width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
-                blank = ' '*width
-                w = np.nonzero(old[fcol] == blank)[0]
-                if len(w) > 0:
-                    log.debug("old['%s'][old['%s'] == blank] = blank[0:%d] + '0'",
-                              fcol, fcol, width - 1)
-                    old[fcol][w] = blank[0:(width-1)] + '0'
-                log.debug("new['%s'] = old['%s'].astype(np.int64)", col['column_name'], fcol)
-                try:
-                    new[col['column_name']] = old[fcol].astype(np.int64)
-                except OverflowError:
-                    uold = old[fcol].astype(np.uint64)
-                    hi = np.nonzero(uold >= 2**63)[0]
-                    lo = np.nonzero(uold < 2**63)[0]
-                    inew = np.zeros(uold.shape, dtype=np.int64)
-                    inew[lo] = uold[lo]
-                    inew[hi] = (uold[hi] - 2**63).astype(np.int64) - 2**63
-                    new[col['column_name']] = inew
             else:
                 if (fbasetype, col['datatype']) in safe_conversion:
                     limit = safe_conversion[(fbasetype, col['datatype'])]
                     if ((old[fcol] >= -limit) & (old[fcol] <= limit - 1)).all():
                         if index is not None:
-                            log.debug("new['%s'] = old['%s'][:,%d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
-                            new[col['column_name']] = old[fcol][:,index].astype(np_map[col['datatype']])
+                            log.debug("new['%s'] = old['%s'][:, %d].astype(%s)", col['column_name'], fcol, index, str(np_map[col['datatype']]))
+                            new[col['column_name']] = old[fcol][:, index].astype(np_map[col['datatype']])
                         else:
                             log.debug("new['%s'] = old['%s'].astype(%s)", col['column_name'], fcol, str(np_map[col['datatype']]))
                             new[col['column_name']] = old[fcol].astype(np_map[col['datatype']])
@@ -511,8 +550,6 @@ class Digestor(object):
                     msg = "No safe data type conversion possible for %s (%s) -> %s (%s)!"
                     log.error(msg, fcol, fbasetype, col['column_name'], col['datatype'])
                     raise ValueError(msg % (fcol, fbasetype, col['column_name'], col['datatype']))
-            if fbasetype in ('D', 'E'):
-                new[col['column_name']][~np.isfinite(new[col['column_name']])] = -9999.0
         log.debug("new.write('%s')", out)
         new.write(out)
         return out
