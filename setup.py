@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function
 import glob
 import os
 import sys
+from importlib import import_module
 #
 # setuptools' sdist command ignores MANIFEST.in
 #
@@ -22,7 +23,13 @@ setup_keywords['author'] = 'NOAO Data Lab Project'
 setup_keywords['author_email'] = 'datalab@noao.edu'
 setup_keywords['license'] = 'MIT'
 setup_keywords['url'] = 'http://gitlab.noao.edu/weaver/digestor'
-setup_keywords['version'] = '0.2.0.dev82'
+# setup_keywords['version'] = '0.2.0.dev82'
+#
+# Get version from __init__.py.
+#
+sys.path.insert(0, os.path.abspath('.'))
+package = import_module(setup_keywords['name'])
+setup_keywords['version'] = package.__version__
 #
 # Use README.rst as long_description.
 #
