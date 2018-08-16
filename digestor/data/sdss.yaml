@@ -35,6 +35,8 @@ sdss_dr14:
             # Add (prepend) these custom STILTS commands.
             #
             - cmd=select skyversion==2
+            - cmd=sort parseLong(objid)
+            - cmd=uniq objid
         columns:
             parentid:
                 #
@@ -53,23 +55,6 @@ sdss_dr14:
             # Instructions on how to deal with columns that are NOT defined
             # in the FITS file, and that are not dropped or deferred by default.
             #
-            insidemask: drop
-            specobjid: drop
-            dered_u: defer
-            dered_g: defer
-            dered_r: defer
-            dered_i: defer
-            dered_z: defer
-    photoposplate:
-        STILTS:
-            - cmd=select skyversion==2
-        columns:
-            parentid:
-                datatype: bigint
-        mapping:
-            glon: L
-            glat: B
-        NOFITS:
             insidemask: drop
             specobjid: drop
             dered_u: defer

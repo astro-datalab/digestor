@@ -2,6 +2,9 @@
 SDSS Loading Notes
 ==================
 
+SQL
+---
+
 Example pre-load SQL code::
 
     CREATE SCHEMA IF NOT EXISTS sdss_dr14;
@@ -146,3 +149,24 @@ Example post-load SQL code::
     UPDATE TABLE sdss_dr14.photoplate SET dered_i = i - extinction_i;
     UPDATE TABLE sdss_dr14.photoplate SET dered_z = z - extinction_z;
     GRANT SELECT ON sdss_dr14.photoplate TO dlquery;
+
+Files
+-----
+
+Dealing with photoPlate Files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. ``setenv _JAVA_OPTIONS -Djava.io.tmpdir=/data0/tmp``
+#. Concatenate the photoPlate and photoPosPlate files, *e.g.* ::
+
+    stilts tcat in=photoPlate-dr14.fits in=photoPosPlate-dr14.fits out=photoPlate-dr14.concat.fits
+
+#. Remove blank and duplicate rows (add equivalent statements to sdss.yaml file)::
+
+    stilts tpipe in=photoPlate-dr14.concat.fits cmd='select skyversion==2' \
+        cmd='sort parseLong(objid)' cmd='uniq objid' \
+        ofmt=fits-basic out=photoPlate-dr14.uniq.fits
+
+#. Proceed with normal processing::
+
+    sdss2dl -G -t photoplate -v photoPlate-dr14.uniq.fits photoObjAll.sql
