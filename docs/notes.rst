@@ -30,3 +30,5 @@ General Data Lab Database Loading Notes
 * When :command:`FITS2DB` adds the ``random_id`` column, it does not
   obey the ordering of the FITS file or the SQL file.
 * `TAP Standard <http://www.ivoa.net/documents/TAP/20180416/PR-TAP-1.1-20180416.html>`_.
+* `UCD Standard <http://www.ivoa.net/documents/latest/UCD.html>`_
+  * `UCD Values <http://www.ivoa.net/documents/UCD1+/index.html>`_
