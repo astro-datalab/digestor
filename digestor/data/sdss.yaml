@@ -2,7 +2,7 @@ sdss_dr14:
     platex:
         columns:
             #
-            # Fix problems with the output SQL definition.
+            # Fix problems with the output SQL definition and TAP metadata.
             #
             dateobs:
                 #
@@ -10,18 +10,55 @@ sdss_dr14:
                 # Consider converting this to timestamp.
                 #
                 size: 32
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            ha:
+                ucd: pos.eq.ha
+            mjddesign:
+                ucd: time.epoch;instr.setup
+                unit: days
             nturnoff:
                 datatype: integer
+            plateid:
+                indexed: 1
+                ucd: meta.id;instr
+            ra:
+                ucd: pos.eq.ra
+                indexed: 1
+            theta:
+                ucd: phys.angSize;instr.setup
     specobjall:
         columns:
+            bestobjid:
+                ucd: meta.id;src
             class_person:
                 datatype: smallint
+            cx:
+                ucd: pos.cartesian.x
+            cy:
+                ucd: pos.cartesian.y
+            cz:
+                ucd: pos.cartesian.z
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
             dof:
                 datatype: integer
             elodiedof:
                 datatype: integer
+            fluxobjid:
+                ucd: meta.id;src
             npoly:
                 datatype: integer
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+            targetobjid:
+                ucd: meta.id;src
             veldispnpix:
                 #
                 # This obvious integer is stored as a real number in the FITS file.
@@ -38,11 +75,21 @@ sdss_dr14:
             - cmd=sort parseLong(objid)
             - cmd=uniq objid
         columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            objid:
+                indexed: 1
+                ucd: meta.id;src
             parentid:
                 #
                 # Original SQL definition has smallint.
                 #
                 datatype: bigint
+                ucd: meta.id.parent;src
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
         mapping:
             #
             # Additional FITS to SQL column mappings that are not described
