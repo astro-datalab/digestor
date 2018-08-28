@@ -350,7 +350,7 @@ class Digestor(object):
                 for k in col_fix[col]:
                     log.debug("self.tapSchema['columns'][%d]['%s'] = col_fix['%s']['%s'] = '%s'",
                               i, k, col, k, col_fix[col][k])
-                self.tapSchema['columns'][i][k] = col_fix[col][k]
+                    self.tapSchema['columns'][i][k] = col_fix[col][k]
         return
 
     def sortColumns(self):
