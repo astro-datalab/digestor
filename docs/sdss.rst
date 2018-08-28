@@ -121,7 +121,7 @@ Example post-load SQL code::
     CREATE INDEX specobjall_ring256 ON sdss_dr14.specobjall (ring256) WITH (fillfactor=100);
     CREATE INDEX specobjall_nest4096 ON sdss_dr14.specobjall (nest4096) WITH (fillfactor=100);
     CREATE INDEX specobjall_random_id ON sdss_dr14.specobjall (random_id) WITH (fillfactor=100);
-    ALTER TABLE sdss_dr14.specobjall ADD CONSTRAINT specobjall_platex_fx FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
+    ALTER TABLE sdss_dr14.specobjall ADD CONSTRAINT specobjall_platex_fk FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
     CREATE VIEW sdss_dr14.specobj AS SELECT s.* FROM sdss_dr14.specobjall AS s WHERE s.scienceprimary = 1;
     CREATE VIEW sdss_dr14.seguespecobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%';
     CREATE VIEW sdss_dr14.segue1specobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%' AND p.programname NOT LIKE 'segue2%';

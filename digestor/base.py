@@ -127,7 +127,7 @@ class Digestor(object):
                                     'description': description,
                                     'utype': ''}]
             metadata['tables'] = [{'schema_name': self.schema,
-                                   'table_name': self.table,
+                                   'table_name': self.stable,
                                    'table_type': 'table',
                                    'utype': '',
                                    'description': ''}]
@@ -146,10 +146,10 @@ class Digestor(object):
             if metadata['schemas'][0]['schema_name'] != self.schema:
                 raise ValueError("You are attempting to merge schema={0} into schema={1}!".format(self.schema, metadata['schemas'][0]['schema_name']))
             for t in metadata['tables']:
-                if t['table_name'] == self.table:
-                    raise ValueError("Table {0} is already defined!".format(self.table))
+                if t['table_name'] == self.stable:
+                    raise ValueError("Table {0} is already defined!".format(self.stable))
             metadata['tables'].append({'schema_name': self.schema,
-                                       'table_name': self.table,
+                                       'table_name': self.stable,
                                        'table_type': 'table',
                                        'utype': '',
                                        'description': ''})
