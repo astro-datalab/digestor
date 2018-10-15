@@ -2,6 +2,10 @@
 digestor
 ========
 
+.. image:: digestor.jpg
+    :target: https://github.com/noaodatalab/digestor
+    :alt: Digestor
+
 Introduction
 ------------
 
