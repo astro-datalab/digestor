@@ -20,6 +20,7 @@ class TestSDSS(DigestorCase):
         super().setUp()
         self.schema = 'sdss'
         self.table = 'spectra'
+        self.stable = "{0.schema}.{0.table}".format(self)
         self.description = 'sdss spectra'
         self.sdss = SDSS(self.schema, self.table,
                          description=self.description)

@@ -153,7 +153,10 @@ class Digestor(object):
                                        'table_type': 'table',
                                        'utype': '',
                                        'description': ''})
-            metadata['columns'] += self._dlColumns()
+            try:
+                metadata['columns'] += self._dlColumns()
+            except KeyError:
+                metadata['columns'] = self._dlColumns()
         return metadata
 
     def _dlColumns(self):
@@ -260,7 +263,7 @@ class Digestor(object):
             return self._tableIndexCache[self.stable]
         except KeyError:
             for i, t in enumerate(self.tapSchema['tables']):
-                if t['schema_name'] == self.schema and t['table_name'] == self.table:
+                if t['schema_name'] == self.schema and t['table_name'] == self.stable:
                     self._tableIndexCache[self.stable] = i
                     return i
         raise ValueError("Table {0.table} was not found in schema {0.schema}!".format(self))

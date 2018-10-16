@@ -23,6 +23,7 @@ class TestBase(DigestorCase):
         super().setUp()
         self.schema = 'sdss'
         self.table = 'spectra'
+        self.stable = "{0.schema}.{0.table}".format(self)
         self.description = 'sdss schema'
         self.base = Digestor(self.schema, self.table,
                              description=self.description)
@@ -41,7 +42,7 @@ class TestBase(DigestorCase):
         """
         self.assertEqual(self.base.tapSchema['schemas'][0]['schema_name'], self.schema)
         self.assertEqual(self.base.tapSchema['schemas'][0]['description'], self.description)
-        self.assertEqual(self.base.tapSchema['tables'][0]['table_name'], self.table)
+        self.assertEqual(self.base.tapSchema['tables'][0]['table_name'], self.stable)
         with NamedTemporaryFile('w+') as f:
             json.dump({'schemas': [{'schema_name': 'sdss_dr13'}]}, f)
             f.seek(0)
