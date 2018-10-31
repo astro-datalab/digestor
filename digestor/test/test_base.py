@@ -23,6 +23,7 @@ class TestBase(DigestorCase):
         super().setUp()
         self.schema = 'sdss'
         self.table = 'spectra'
+        self.stable = "{0.schema}.{0.table}".format(self)
         self.description = 'sdss schema'
         self.base = Digestor(self.schema, self.table,
                              description=self.description)
@@ -41,7 +42,7 @@ class TestBase(DigestorCase):
         """
         self.assertEqual(self.base.tapSchema['schemas'][0]['schema_name'], self.schema)
         self.assertEqual(self.base.tapSchema['schemas'][0]['description'], self.description)
-        self.assertEqual(self.base.tapSchema['tables'][0]['table_name'], self.table)
+        self.assertEqual(self.base.tapSchema['tables'][0]['table_name'], self.stable)
         with NamedTemporaryFile('w+') as f:
             json.dump({'schemas': [{'schema_name': 'sdss_dr13'}]}, f)
             f.seek(0)
@@ -52,14 +53,21 @@ class TestBase(DigestorCase):
             self.assertEqual(str(e.exception),
                              "You are attempting to merge schema={0.schema} into schema=sdss_dr13!".format(self))
         with NamedTemporaryFile('w+') as f:
-            json.dump({'schemas': [{'schema_name': self.schema}], 'tables': [{'table_name': self.table}]}, f)
+            json.dump({'schemas': [{'schema_name': self.schema}], 'tables': [{'table_name': self.stable}]}, f)
             f.seek(0)
             with self.assertRaises(ValueError) as e:
                 base = Digestor(self.schema, self.table,
                                 description=self.description,
                                 merge=f.name)
             self.assertEqual(str(e.exception),
-                             "Table {0.table} is already defined!".format(self))
+                             "Table {0.stable} is already defined!".format(self))
+        with NamedTemporaryFile('w+') as f:
+            json.dump({'schemas': [{'schema_name': self.schema}], 'tables': [{'table_name': 'foobar'}]}, f)
+            f.seek(0)
+            base = Digestor(self.schema, self.table,
+                            description=self.description,
+                            merge=f.name)
+            self.assertEqual(base.tapSchema['columns'][0]['column_name'], 'htm9')
         with NamedTemporaryFile('w+') as f:
             json.dump({'schemas': [{'schema_name': self.schema}],
                        'tables': [{'table_name': 'foobar'}],
@@ -68,7 +76,7 @@ class TestBase(DigestorCase):
             base = Digestor(self.schema, self.table,
                             description=self.description,
                             merge=f.name)
-            self.assertEqual(base.tapSchema['tables'][1]['table_name'], self.table)
+            self.assertEqual(base.tapSchema['tables'][1]['table_name'], self.stable)
 
     def test_get_yaml(self):
         """Test grabbing and caching YAML configuration.
