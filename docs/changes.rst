@@ -5,7 +5,9 @@ Digestor Change Log
 0.3.0 (unreleased)
 ------------------
 
-* No changes yet.
+* Fix some test problems (PR `#4`_).
+
+.. _`#4`: https://github.com/noaodatalab/digestor/pull/4
 
 0.2.1 (2018-08-16)
 ------------------
