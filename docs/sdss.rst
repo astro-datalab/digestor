@@ -149,6 +149,28 @@ Example post-load SQL code::
     UPDATE sdss_dr14.photoplate SET dered_i = i - extinction_i;
     UPDATE sdss_dr14.photoplate SET dered_z = z - extinction_z;
     GRANT SELECT ON sdss_dr14.photoplate TO dlquery;
+    --
+    -- dr14q
+    --
+    CREATE INDEX dr14q_q3c_ang2ipix ON sdss_dr14.dr14q (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CLUSTER dr14q_q3c_ang2ipix ON sdss_dr14.dr14q;
+    ALTER TABLE sdss_dr14.dr14q ADD PRIMARY KEY (qsoid);
+    ALTER TABLE sdss_dr14.dr14q ADD CONSTRAINT dr14_platex_fk FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
+    ALTER TABLE sdss_dr14.dr14q ADD CONSTRAINT dr14_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14.specobjall (specobjid);
+    CREATE INDEX dr14q_ra ON sdss_dr14.dr14q (ra) WITH (fillfactor=100);
+    CREATE INDEX dr14q_dec ON sdss_dr14.dr14q (dec) WITH (fillfactor=100);
+    CREATE INDEX dr14q_htm9 ON sdss_dr14.dr14q (htm9) WITH (fillfactor=100);
+    CREATE INDEX dr14q_ring256 ON sdss_dr14.dr14q (ring256) WITH (fillfactor=100);
+    CREATE INDEX dr14q_nest4096 ON sdss_dr14.dr14q (nest4096) WITH (fillfactor=100);
+    CREATE INDEX dr14q_random_id ON sdss_dr14.dr14q (random_id) WITH (fillfactor=100);
+    GRANT SELECT ON sdss_dr14.dr14q TO dlquery;
+    --
+    -- dr14q_duplicates
+    --
+    ALTER TABLE sdss_dr14.dr14q_duplicates ADD CONSTRAINT dr14_duplicates_primary_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14.specobjall (specobjid);
+    ALTER TABLE sdss_dr14.dr14q_duplicates ADD CONSTRAINT dr14_duplicates_specobjall_fk FOREIGN KEY (dupspecobjid) REFERENCES sdss_dr14.specobjall (specobjid);
+    GRANT SELECT ON sdss_dr14.dr14q_duplicates TO dlquery;
+
 
 Files
 -----
