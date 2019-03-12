@@ -109,7 +109,7 @@ CREATE TABLE dr14q (
     w4snr              real NOT NULL, --/D S/N in W4 band
     w4chi2             real NOT NULL, --/D chi-squared in W4 band
     cc_flags           varchar(4) NOT NULL, --/D WISE contamination and confusion flag
-    ph_flag            varchar(4) NOT NULL, --/D WISE photometric quality flag
+    ph_flags           varchar(4) NOT NULL, --/D WISE photometric quality flag
     sdss2wise_sep      real NOT NULL, --/U arcsec --/D SDSS-WISE separation
     ukidss_matched     smallint NOT NULL, --/D UKIDSS matching flag
     yflux              real NOT NULL, --/U W/m2/Hz --/D Y-band flux density from UKIDSS
