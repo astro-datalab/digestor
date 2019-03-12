@@ -109,21 +109,14 @@ sdss_dr14:
             dered_r: defer
             dered_i: defer
             dered_z: defer
-    qso:
+    dr14q:
         columns:
             dec:
                 indexed: 1
                 ucd: pos.eq.dec
-            galex_matched:
-                #
-                # This obvious integer is stored as a real number in the FITS file.
-                #
-                datatype: real
             ra:
                 indexed: 1
                 ucd: pos.eq.ra
-            ukidss_matched:
-                #
-                # This obvious integer is stored as a real number in the FITS file.
-                #
-                datatype: real
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src

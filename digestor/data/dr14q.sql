@@ -6,7 +6,6 @@ CREATE TABLE dr14q (
 --/T data release, as documented in Pâris et al. (2018). It contains photometric
 --/T and spectroscopic information of about half million quasars.
 -------------------------------------------------------------------------------
-    qsoID              bigint NOT NULL, --/D Unique, arbitrary database ID.
     specObjID          bigint NOT NULL, --/D Unique database ID based on PLATE, MJD, FIBERID, RUN2D --/K ID_CATALOG
     plateID            bigint NOT NULL, --/D Database ID of Plate
     sdssName           varchar(18) NOT NULL, --/D SDSS-DR14 designation - hhmmss.ss+ddmmss.s (J2000)

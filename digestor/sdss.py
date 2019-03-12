@@ -560,10 +560,20 @@ def main():
         An integer suitable for passing to :func:`sys.exit`.
     """
     options = get_options()
+    if not os.path.exists(options.fits):
+        print("%s does not exist!" % options.fits, file=sys.stderr)
+        return 1
+    if not os.path.exists(options.sql):
+        p = resource_filename('digestor', 'data/' + options.sql)
+        if os.path.exists(p):
+            options.sql = p
+        else:
+            print("%s does not exist!" % options.sql, file=sys.stderr)
+            return 1
     if options.table is None:
-        options.table = os.path.splitext(os.path.basename(options.sql))[0]
+        options.table = os.path.splitext(os.path.basename(options.fits))[0]
     if options.output_sql is None:
-        options.output_sql = os.path.join(os.path.dirname(options.sql),
+        options.output_sql = os.path.join(os.path.dirname(options.fits),
                                           "%s.%s.sql" % (options.schema, options.table))
     if options.output_json is None:
         options.output_json = options.output_sql.replace('sql', 'json')

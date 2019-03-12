@@ -154,7 +154,7 @@ Example post-load SQL code::
     --
     CREATE INDEX dr14q_q3c_ang2ipix ON sdss_dr14.dr14q (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
     CLUSTER dr14q_q3c_ang2ipix ON sdss_dr14.dr14q;
-    ALTER TABLE sdss_dr14.dr14q ADD PRIMARY KEY (qsoid);
+    ALTER TABLE sdss_dr14.dr14q ADD PRIMARY KEY (specobjid);
     ALTER TABLE sdss_dr14.dr14q ADD CONSTRAINT dr14_platex_fk FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
     ALTER TABLE sdss_dr14.dr14q ADD CONSTRAINT dr14_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14.specobjall (specobjid);
     CREATE INDEX dr14q_ra ON sdss_dr14.dr14q (ra) WITH (fillfactor=100);
@@ -192,3 +192,42 @@ Dealing with photoPlate Files
 #. Proceed with normal processing::
 
     sdss2dl -G -t photoplate -v photoPlate-dr14.uniq.fits photoObjAll.sql
+
+DR14Q
+~~~~~
+
+Problems
+^^^^^^^^
+
+The final version of the DR14 QSO catalog, ``v4_4`` has several problems:
+
+* Columns that are supposed to be integers in the set ``0, 1`` are actually
+  floating-point and include some values that are ``2`` or ``NaN``
+  (``GALEX_MATCHED``, ``UKIDSS_MATCHED``).
+* Columns that are supposed to be pointers to the photometric data are
+  complete garbage (``RUN_NUMBER``, ``RERUN_NUMBER``, ``COL_NUMBER``,
+  ``FIELD_NUMBER``, ``OBJ_ID``).
+* The duplicates columns, which are array-valued, contain spurious zero
+  values. For example::
+
+    >>> w = dr14q3['N_SPEC'] == 3
+    >>> dr14q3['PLATE_DUPLICATE'][w, :6]
+    array([[   0, 6110,    0, 6879,    0, 7595],
+           [   0, 6279,    0, 6880,    0, 7663],
+           [   0,  689,    0, 4220,    0, 7855],
+           ...,
+           [   0, 5025,    0, 5026,    0, 7581],
+           [   0, 6290,    0, 6308,    0, 6588],
+           [   0, 6117,    0, 6127,    0, 7598]], dtype=int32)
+
+Solutions
+^^^^^^^^^
+
+* Version ``v3_0`` seems to have good values of ``GALEX_MATCHED`` and
+  ``UKIDSS_MATCHED``.  *However*, in ``v3_0``, *all* values are zero.
+  Just forcibly convert to integer, coerce ``NaN`` to zero, and document.
+* Ignore the photometric information entirely.  That can be obtained by
+  matching to the ``specobj`` view.
+* Move duplicates to a separate "join" table which maps primary ``specObjID``
+  to duplicate ``specObjID``.  Not every duplicate will be included, unfortunately,
+  but the vast majority will.
