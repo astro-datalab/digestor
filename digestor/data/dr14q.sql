@@ -24,7 +24,7 @@ CREATE TABLE dr14q (
     zPipeErr           real NOT NULL, --/D Error on SDSS pipeline redshift estimate
     zWarning           int NOT NULL, --/D Quality flag on SDSS pipeline redshift measurement
     zPCA               real NOT NULL, --/D PCA redshift (homogeneous over the full sample)
-    zPCAErr            real NOT NULL, --/D Error on PCA redshift
+    zPCAErr            real NOT NULL, --/D Error on PCA redshift --/F z_pca_er
     zMgII              real NOT NULL, --/D Redshift of the MgII emission line
     boss_target1       bigint NOT NULL, --/D BOSS target selection flag for main survey
     ancillary_target1  bigint NOT NULL, --/D BOSS target selection flag for ancillary programs
