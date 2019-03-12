@@ -32,8 +32,8 @@ CREATE TABLE dr14q (
     eboss_target0      bigint NOT NULL, --/D Target selection flag for the eBOSS pilot survey
     eboss_target1      bigint NOT NULL, --/D eBOSS target selection flag
     eboss_target2      bigint NOT NULL, --/D eBOSS target selection flag
-    nspec_sdss         smallint NOT NULL, --/D Number of additional spectra available in SDSS-I/II
-    nspec_boss         smallint NOT NULL, --/D Number of additional spectra available in SDSS-III/IV
+    n_spec_sdss        smallint NOT NULL, --/D Number of additional spectra available in SDSS-I/II
+    n_spec_boss        smallint NOT NULL, --/D Number of additional spectra available in SDSS-III/IV
     n_spec             smallint NOT NULL, --/D Number of additional spectra available in SDSS-I/II/III/IV
     bi_civ             real NOT NULL, --/U km/s --/D BALnicity Index of CIV absorption trough
     err_bi_civ         real NOT NULL, --/U km/s --/D Error on the Balnicity index of CIV trough
