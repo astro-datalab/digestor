@@ -28,7 +28,7 @@ class SDSS(Digestor):
     # Match lines in SQL definition files.
     #
     _SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
-              'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')}
+              'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),?\s*(--.*)$')}
     #
     # Map SQL Server data types to PostgreSQL.
     #

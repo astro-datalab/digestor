@@ -7,7 +7,6 @@ CREATE TABLE dr14q (
 --/T and spectroscopic information of about half million quasars.
 -------------------------------------------------------------------------------
     specObjID          bigint NOT NULL, --/D Unique database ID based on PLATE, MJD, FIBERID, RUN2D --/K ID_CATALOG
-    plateID            bigint NOT NULL, --/D Database ID of Plate
     sdssName           varchar(18) NOT NULL, --/D SDSS-DR14 designation - hhmmss.ss+ddmmss.s (J2000)
     ra                 float NOT NULL, --/U deg --/D Right Ascension in decimal degrees(J2000)
     dec                float NOT NULL, --/U deg --/D Declination in decimal degrees(J2000)

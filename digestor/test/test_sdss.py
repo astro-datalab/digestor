@@ -89,7 +89,7 @@ class TestSDSS(DigestorCase):
         self.assertEqual(self.sdss.tapSchema['columns'][-1]['description'], 'Column description')
         self.sdss.parseLine('    loadVersion  int NOT NULL, --/D Load Version --/K ID_TRACER --/F NOFITS')
         # self.sdss.parseLine('    z real NOT NULL, --/D Redshift')
-        self.sdss.parseLine('    snMedian_u real NOT NULL, --/D S/N --/F sn_median 0')
+        self.sdss.parseLine('    snMedian_u real NOT NULL --/D S/N --/F sn_median 0')
         self.assertEqual(self.sdss.mapping['snmedian_u'], 'SN_MEDIAN[0]')
         self.sdss.parseLine('  ); ')
 
