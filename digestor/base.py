@@ -40,7 +40,7 @@ class Digestor(object):
     #
     # Order columns for disk efficiency.
     #
-    ordered = ('bigint', 'double', 'integer', 'real', 'smallint', 'character')
+    ordered = ('bigint', 'double', 'integer', 'real', 'smallint', 'boolean', 'character')
     #
     # Defer some pre-processing to STILTS.
     #
@@ -358,11 +358,6 @@ class Digestor(object):
 
     def sortColumns(self):
         """Sort the SQL columns for best performance.
-
-        Parameters
-        ----------
-        filename : :class:`str`
-            Name of the YAML configuration file.
         """
         new_columns = list()
         for o in self.ordered:
