@@ -497,12 +497,14 @@ class Digestor(object):
         type_map = {'bigint': ('K', 'J', 'I', 'B'),
                     'integer': ('J', 'I', 'B'),
                     'smallint': ('I', 'B'),
+                    'boolean': ('L'),
                     'double': ('D', 'E'),
                     'real': ('E',),
                     'character': ('A',)}
         np_map = {'bigint': np.int64,
                   'integer': np.int32,
                   'smallint': np.int16,
+                  'boolean': np.bool,
                   'double': np.float64,
                   'real': np.float32}
         safe_conversion = {('J', 'smallint'): 2**15}
