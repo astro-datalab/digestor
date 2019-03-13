@@ -11,6 +11,7 @@ CREATE TABLE dr14q (
     ra                 float NOT NULL, --/U deg --/D Right Ascension in decimal degrees(J2000)
     dec                float NOT NULL, --/U deg --/D Declination in decimal degrees(J2000)
     thing_id           int NOT NULL, --/D Unique SDSS source identifier
+    run2d              varchar(32) NOT NULL, --/D 2D Reduction version of spectrum
     plate              smallint NOT NULL, --/D Spectroscopic plate number
     mjd                int NOT NULL, --/U days --/D Modified Julian Day of the spectroscopic observation
     fiberID            smallint NOT NULL, --/D Spectroscopic fiber number

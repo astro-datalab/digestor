@@ -221,6 +221,9 @@ The final version of the DR14 QSO catalog, ``v4_4`` has several problems:
            [   0, 6290,    0, 6308,    0, 6588],
            [   0, 6117,    0, 6127,    0, 7598]], dtype=int32)
 
+* Not every duplicate is present in the specobjall table, although the
+  files still may be present on disk.
+
 Solutions
 ^^^^^^^^^
 
@@ -232,6 +235,8 @@ Solutions
 * Move duplicates to a separate "join" table which maps primary ``specObjID``
   to duplicate ``specObjID``.  Not every duplicate will be included, unfortunately,
   but the vast majority will.
+* Also include plate, mjd, fiber in duplicates.  Flag duplicates that may
+  only exist on disk.
 
 Notes
 ^^^^^
