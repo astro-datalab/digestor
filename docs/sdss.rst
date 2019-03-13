@@ -167,6 +167,7 @@ Example post-load SQL code::
     --
     -- dr14q_duplicates
     --
+    COPY sdss_dr14.dr14q_duplicates FROM '/net/dl2/data/sdss_dr14/dr14q_duplicates.csv' DELIMITER ',' CSV HEADER;
     ALTER TABLE sdss_dr14.dr14q_duplicates ADD CONSTRAINT dr14_duplicates_primary_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14.specobjall (specobjid);
     ALTER TABLE sdss_dr14.dr14q_duplicates ADD CONSTRAINT dr14_duplicates_specobjall_fk FOREIGN KEY (dupspecobjid) REFERENCES sdss_dr14.specobjall (specobjid);
     GRANT SELECT ON sdss_dr14.dr14q_duplicates TO dlquery;
@@ -231,3 +232,11 @@ Solutions
 * Move duplicates to a separate "join" table which maps primary ``specObjID``
   to duplicate ``specObjID``.  Not every duplicate will be included, unfortunately,
   but the vast majority will.
+
+Notes
+^^^^^
+
+* Be careful when computing ``specObjID``, there are some SEGUE spectra.
+* Binary loading still doesn't work as of March 2019::
+
+    fits2db --sql=postgres --truncate -t sdss_dr14.dr14q sdss_dr14.dr14q.fits | psql tapdb datalab
