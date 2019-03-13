@@ -155,8 +155,8 @@ Example post-load SQL code::
     CREATE INDEX dr14q_q3c_ang2ipix ON sdss_dr14.dr14q (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
     CLUSTER dr14q_q3c_ang2ipix ON sdss_dr14.dr14q;
     ALTER TABLE sdss_dr14.dr14q ADD PRIMARY KEY (specobjid);
-    ALTER TABLE sdss_dr14.dr14q ADD CONSTRAINT dr14_platex_fk FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
-    ALTER TABLE sdss_dr14.dr14q ADD CONSTRAINT dr14_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14.specobjall (specobjid);
+    UPDATE sdss_dr14.dr14q SET disk_only = TRUE WHERE specobjid IN
+        (SELECT d.specobjid FROM sdss_dr14.dr14q AS d LEFT JOIN sdss_dr14.specobjall AS s ON d.specobjid = s.specobjid WHERE s.specobjid IS NULL);
     CREATE INDEX dr14q_ra ON sdss_dr14.dr14q (ra) WITH (fillfactor=100);
     CREATE INDEX dr14q_dec ON sdss_dr14.dr14q (dec) WITH (fillfactor=100);
     CREATE INDEX dr14q_htm9 ON sdss_dr14.dr14q (htm9) WITH (fillfactor=100);
@@ -170,6 +170,8 @@ Example post-load SQL code::
     COPY sdss_dr14.dr14q_duplicates FROM '/net/dl2/data/sdss_dr14/dr14q_duplicates.csv' DELIMITER ',' CSV HEADER;
     ALTER TABLE sdss_dr14.dr14q_duplicates ADD CONSTRAINT dr14_duplicates_primary_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14.specobjall (specobjid);
     ALTER TABLE sdss_dr14.dr14q_duplicates ADD CONSTRAINT dr14_duplicates_specobjall_fk FOREIGN KEY (dupspecobjid) REFERENCES sdss_dr14.specobjall (specobjid);
+    UPDATE sdss_dr14.dr14q_duplicates SET disk_only = TRUE WHERE dupspecobjid IN
+        (SELECT d.dupspecobjid FROM sdss_dr14.dr14q_duplicates AS d LEFT JOIN sdss_dr14.specobjall AS s ON d.dupspecobjid = s.specobjid WHERE s.specobjid IS NULL);
     GRANT SELECT ON sdss_dr14.dr14q_duplicates TO dlquery;
 
 
@@ -223,6 +225,7 @@ The final version of the DR14 QSO catalog, ``v4_4`` has several problems:
 
 * Not every duplicate is present in the specobjall table, although the
   files still may be present on disk.
+* Not every "primary" entry in DR14Q is in the specobjall table either.
 
 Solutions
 ^^^^^^^^^
@@ -237,6 +240,7 @@ Solutions
   but the vast majority will.
 * Also include plate, mjd, fiber in duplicates.  Flag duplicates that may
   only exist on disk.
+* Flag "primary" entries that only exist on disk.
 
 Notes
 ^^^^^

@@ -33,7 +33,7 @@ class SDSS(Digestor):
     # Map SQL Server data types to PostgreSQL.
     #
     _server2post = {'float': 'double precision', 'int': 'integer',
-                    'tinyint': 'smallint'}
+                    'tinyint': 'smallint', 'bit': 'boolean'}
 
     #
     # Ignore columns that are specific to the SDSS CAS system.

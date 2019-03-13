@@ -123,5 +123,6 @@ CREATE TABLE dr14q (
     first_matched      smallint NOT NULL, --/D FIRST matching flag
     first_flux         real NOT NULL, --/U mJy --/D FIRST peak flux density at 20 cm
     first_snr          real NOT NULL, --/D S/N of the FIRST flux density
-    sdss2first_sep     real NOT NULL --/U arcsec --/D SDSS-FIRST separation
+    sdss2first_sep     real NOT NULL, --/U arcsec --/D SDSS-FIRST separation
+    disk_only          bit NOT NULL --/D TRUE if the object is not listed in specobjall.
 );
