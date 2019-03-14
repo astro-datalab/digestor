@@ -155,6 +155,7 @@ Example post-load SQL code::
     CREATE INDEX dr14q_q3c_ang2ipix ON sdss_dr14_new.dr14q (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
     CLUSTER dr14q_q3c_ang2ipix ON sdss_dr14_new.dr14q;
     ALTER TABLE sdss_dr14_new.dr14q ADD PRIMARY KEY (specobjid);
+    CREATE UNIQUE INDEX dr14q_uint64_specobjid ON sdss_dr14_new.dr14q (sdss_dr14_new.uint64(specobjid)) WITH (fillfactor=100);
     UPDATE sdss_dr14_new.dr14q SET disk_only = TRUE WHERE specobjid IN
         (SELECT d.specobjid FROM sdss_dr14_new.dr14q AS d LEFT JOIN sdss_dr14_new.specobjall AS s ON d.specobjid = s.specobjid WHERE s.specobjid IS NULL);
     CREATE INDEX dr14q_ra ON sdss_dr14_new.dr14q (ra) WITH (fillfactor=100);
@@ -174,6 +175,12 @@ Example post-load SQL code::
         (SELECT d.dupspecobjid FROM sdss_dr14_new.dr14q_duplicates AS d LEFT JOIN sdss_dr14_new.specobjall AS s ON d.dupspecobjid = s.specobjid WHERE s.specobjid IS NULL);
     GRANT SELECT ON sdss_dr14_new.dr14q_duplicates TO dlquery;
 
+
+TO DO
+-----
+
+* Need to figure out the best way to index glon, glat, elon, elat.  These
+  are marked in TapSchema as indexed but are not currently indexed.
 
 Files
 -----
