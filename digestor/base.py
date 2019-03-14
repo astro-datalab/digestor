@@ -234,7 +234,7 @@ class Digestor(object):
         :class:`dict`
             A column definition in TapSchema format.
         """
-        p = {'table_name': self.stable,
+        p = {'table_name': self.table,
              'column_name': column,
              'description': '',
              'unit': '',

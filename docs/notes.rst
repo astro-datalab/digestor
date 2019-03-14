@@ -24,7 +24,7 @@ General Data Lab Database Loading Notes
 * Example :command:`fits2db`::
 
     fits2db --sql=postgres --truncate --rid=random_id -B \
-        -t sdss_dr14.specobjall sdss_dr14.specobjall.fits | \
+        -t sdss_dr14_new.specobjall sdss_dr14_new.specobjall.fits | \
         psql tapdb datalab
 
 * When :command:`FITS2DB` adds the ``random_id`` column, it does not
