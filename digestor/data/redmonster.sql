@@ -4,16 +4,11 @@ CREATE TABLE redmonster (
 --
 --/T This table contains a summary of the redmonster outputs for all spectra.
 -------------------------------------------------------------------------------
-    qsoID              bigint NOT NULL, --/D Unique, arbitrary database ID.
     specObjID          bigint NOT NULL, --/D Unique database ID based on PLATE, MJD, FIBERID, RUN2D --/K ID_CATALOG
-    plateID            bigint NOT NULL, --/D Database ID of Plate
     fiberID            smallint NOT NULL, --/D Spectroscopic fiber number (0-based)
     plate              smallint NOT NULL, --/D Spectroscopic plate number
     mjd                int NOT NULL, --/U days --/D Modified Julian Day of the spectroscopic observation
     dof                int NOT NULL, --/D Degrees of freedom for best fit
-    boss_target1       bigint NOT NULL, --/D BOSS survey primary target selection flag
-    eboss_target0      bigint NOT NULL, --/D SEQUELS survey primary target selection flag
-    eboss_target1      bigint NOT NULL, --/D eBOSS survey primary target selection flag
     z                  real NOT NULL, --/D Redshift
     zErr               real NOT NULL, --/D Redshift error estimate
     class              varchar(15) NOT NULL, --/D Object type classification
