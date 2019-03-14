@@ -127,7 +127,7 @@ class Digestor(object):
                                     'description': description,
                                     'utype': ''}]
             metadata['tables'] = [{'schema_name': self.schema,
-                                   'table_name': self.stable,
+                                   'table_name': self.table,
                                    'table_type': 'table',
                                    'utype': '',
                                    'description': ''}]
@@ -146,10 +146,10 @@ class Digestor(object):
             if metadata['schemas'][0]['schema_name'] != self.schema:
                 raise ValueError("You are attempting to merge schema={0} into schema={1}!".format(self.schema, metadata['schemas'][0]['schema_name']))
             for t in metadata['tables']:
-                if t['table_name'] == self.stable:
+                if t['table_name'] == self.table:
                     raise ValueError("Table {0} is already defined!".format(self.stable))
             metadata['tables'].append({'schema_name': self.schema,
-                                       'table_name': self.stable,
+                                       'table_name': self.table,
                                        'table_type': 'table',
                                        'utype': '',
                                        'description': ''})
@@ -260,11 +260,11 @@ class Digestor(object):
             If the table is not found.
         """
         try:
-            return self._tableIndexCache[self.stable]
+            return self._tableIndexCache[self.table]
         except KeyError:
             for i, t in enumerate(self.tapSchema['tables']):
-                if t['schema_name'] == self.schema and t['table_name'] == self.stable:
-                    self._tableIndexCache[self.stable] = i
+                if t['schema_name'] == self.schema and t['table_name'] == self.table:
+                    self._tableIndexCache[self.table] = i
                     return i
         raise ValueError("Table {0.table} was not found in schema {0.schema}!".format(self))
 
@@ -277,11 +277,11 @@ class Digestor(object):
             If the column is not found.
         """
         try:
-            return self._columnIndexCache[(self.stable, column)]
+            return self._columnIndexCache[(self.table, column)]
         except KeyError:
             for i, c in enumerate(self.tapSchema['columns']):
-                if c['table_name'] == self.stable and c['column_name'] == column:
-                    self._columnIndexCache[(self.stable, column)] = i
+                if c['table_name'] == self.table and c['column_name'] == column:
+                    self._columnIndexCache[(self.table, column)] = i
                     return i
         raise ValueError("Column {0} was not found in {1.stable}!".format(column, self))
 
@@ -296,7 +296,7 @@ class Digestor(object):
         """List of columns in the table.
         """
         return [c['column_name'] for c in self.tapSchema['columns']
-                if c['table_name'] == self.stable]
+                if c['table_name'] == self.table]
 
     @property
     def nColumns(self):
@@ -362,11 +362,11 @@ class Digestor(object):
         new_columns = list()
         for o in self.ordered:
             for c in self.tapSchema['columns']:
-                if c['table_name'] == self.stable and c['datatype'] == o:
+                if c['table_name'] == self.table and c['datatype'] == o:
                     new_columns.append(c)
         assert len(new_columns) == self.nColumns
         for i, c in enumerate(self.tapSchema['columns']):
-            if c['table_name'] == self.stable:
+            if c['table_name'] == self.table:
                 self.tapSchema['columns'][i] = new_columns.pop(0)
         return
 
@@ -510,7 +510,7 @@ class Digestor(object):
         safe_conversion = {('J', 'smallint'): 2**15}
         rebase = re.compile(r'^(\d+)(\D+)')
         columns = [c for c in self.tapSchema['columns']
-                   if c['table_name'] == self.stable]
+                   if c['table_name'] == self.table]
         old = Table.read(self._inputFITS, hdu=hdu)
         new = Table()
         for col in columns:
@@ -588,7 +588,7 @@ class Digestor(object):
         # log = self.logName('base.Digestor.createSQL')
         sql = [r"CREATE TABLE IF NOT EXISTS {0.schema}.{0.table} (".format(self)]
         for c in self.tapSchema['columns']:
-            if c['table_name'] == self.stable:
+            if c['table_name'] == self.table:
                 typ = c['datatype']
                 if typ == 'double':
                     typ = 'double precision'
