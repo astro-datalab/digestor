@@ -264,6 +264,8 @@ Firefly
 ~~~~~~~
 
 * Remove ``--/U no unit`` from input SQL file.
+* For no obvious reason, these columns were left out of the original SQL definition file:
+  ``Chabrier_ELODIE_stellar_mass``, ``Chabrier_STELIB_stellar_mass``, ``Salpeter_STELIB_stellar_mass``.
 
 SPIDERS
 ~~~~~~~

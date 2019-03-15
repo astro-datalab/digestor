@@ -122,10 +122,10 @@ sdss_dr14_new:
                 ucd: meta.id;src
     sdssebossfirefly:
         columns:
-            dec:
+            plug_dec:
                 indexed: 1
                 ucd: pos.eq.dec
-            ra:
+            plug_ra:
                 indexed: 1
                 ucd: pos.eq.ra
             specobjid:
