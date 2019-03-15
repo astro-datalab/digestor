@@ -177,7 +177,7 @@ Example post-load SQL code::
     --
     -- sdssebossfirefly
     --
-    
+
 
 TO DO
 -----
@@ -259,3 +259,13 @@ Notes
 * Binary loading still doesn't work as of March 2019::
 
     fits2db --sql=postgres --truncate -t sdss_dr14_new.dr14q sdss_dr14_new.dr14q.fits | psql tapdb datalab
+
+Firefly
+~~~~~~~
+
+* Remove ``--/U no unit`` from input SQL file.
+
+SPIDERS
+~~~~~~~
+
+* Need to add units to input SQL file.
