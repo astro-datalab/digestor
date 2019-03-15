@@ -584,7 +584,9 @@ def main():
     try:
         sdss = SDSS(options.schema, options.table,
                     description=options.description,
-                    merge=options.merge_json)
+                    merge=options.merge_json,
+                    ecliptic=options.ecliptic,
+                    galactic=options.galactic)
     except ValueError as e:
         #
         # ValueError indicates failure to process a merge file.

@@ -32,6 +32,12 @@ class Digestor(object):
         A short description of `schema`.
     merge : :class:`str`, optional
         Name of a JSON file containing existing TapSchema metadata.
+    ecliptic : :class:`bool`, optional
+        If ``False``, *don't* add ecliptic coordinates (probably because
+        they already exist).
+    galactic : :class:`bool`, optional
+        If ``False``, *don't* add galactic coordinates (probably because
+        they already exist).
     """
     #
     # Name of the root logger provided by Digestor.
@@ -50,10 +56,13 @@ class Digestor(object):
     _stilts_ecliptic = 'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat'
     _stilts_galactic = 'cmd=addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat'
 
-    def __init__(self, schema, table, description=None, merge=None):
+    def __init__(self, schema, table, description=None, merge=None,
+                 ecliptic=True, galactic=True):
         self.schema = schema
         self.table = table
-        self.tapSchema = self._initTapSchema(description, merge)
+        self.tapSchema = self._initTapSchema(description, merge,
+                                             ecliptic=ecliptic,
+                                             galactic=galactic)
         self.mapping = dict()
         self.FITS = dict()
         self._tableIndexCache = dict()
@@ -100,7 +109,8 @@ class Digestor(object):
         """
         return logging.getLogger(self.rootLogger + '.' + method)
 
-    def _initTapSchema(self, description='', merge=None):
+    def _initTapSchema(self, description='', merge=None,
+                       ecliptic=True, galactic=True):
         """Create a dictionary compatible with TapSchema.
 
         Parameters
@@ -109,6 +119,12 @@ class Digestor(object):
             A short description of `schema`.
         merge : :class:`str`, optional
             Name of a JSON file containing existing TapSchema metadata.
+        ecliptic : :class:`bool`, optional
+            If ``False``, *don't* add ecliptic coordinates (probably because
+            they already exist).
+        galactic : :class:`bool`, optional
+            If ``False``, *don't* add galactic coordinates (probably because
+            they already exist).
 
         Returns
         -------
@@ -131,7 +147,8 @@ class Digestor(object):
                                    'table_type': 'table',
                                    'utype': '',
                                    'description': ''}]
-            metadata['columns'] = self._dlColumns()
+            metadata['columns'] = self._dlColumns(ecliptic=ecliptic,
+                                                  galactic=galactic)
             metadata['keys'] = [{"key_id": "",
                                  "from_table": "",
                                  "target_table": "",
@@ -154,49 +171,63 @@ class Digestor(object):
                                        'utype': '',
                                        'description': ''})
             try:
-                metadata['columns'] += self._dlColumns()
+                metadata['columns'] += self._dlColumns(ecliptic=ecliptic,
+                                                       galactic=galactic)
             except KeyError:
-                metadata['columns'] = self._dlColumns()
+                metadata['columns'] = self._dlColumns(ecliptic=ecliptic,
+                                                      galactic=galactic)
         return metadata
 
-    def _dlColumns(self):
+    def _dlColumns(self, ecliptic=True, galactic=True):
         """Add SQL column definitions of Data Lab-added columns.
+
+        Parameters
+        ----------
+        ecliptic : :class:`bool`, optional
+            If ``False``, *don't* add ecliptic coordinates (probably because
+            they already exist).
+        galactic : :class:`bool`, optional
+            If ``False``, *don't* add galactic coordinates (probably because
+            they already exist).
 
         Returns
         -------
         :class:`list`
             A list suitable for appending to an existing list of columns.
         """
-        return [self.tapColumn('htm9',
-                               description="HTM index (order 9 => ~10 arcmin size)",
-                               datatype='integer', indexed=1, ucd='pos.HTM'),
-                self.tapColumn('ring256',
-                               description="HEALPIX index (Nsides 256, Ring scheme => ~14 arcmin size)",
-                               datatype='integer', indexed=1,
-                               ucd='pos.healpix'),
-                self.tapColumn('nest4096',
-                               description="HEALPIX index (Nsides 4096, Nest scheme => ~52 arcsec size",
-                               datatype='integer', indexed=1,
-                               ucd='pos.healpix'),
-                self.tapColumn('random_id',
-                               description="Random ID in the range 0.0 => 100.0",
-                               datatype='real', indexed=1),
-                self.tapColumn('glon',
-                               description="Galactic Longitude",
-                               datatype='double', unit='deg', indexed=1,
-                               ucd='pos.galactic.lon'),
-                self.tapColumn('glat',
-                               description="Galactic Latitude",
-                               datatype='double', unit='deg', indexed=1,
-                               ucd='pos.galactic.lat'),
-                self.tapColumn('elon',
-                               description="Ecliptic Longitude",
-                               datatype='double', unit='deg', indexed=1,
-                               ucd='pos.ecliptic.lon'),
-                self.tapColumn('elat',
-                               description="Ecliptic Latitude",
-                               datatype='double', unit='deg', indexed=1,
-                               ucd='pos.ecliptic.lat')]
+        r = [self.tapColumn('htm9',
+                            description="HTM index (order 9 => ~10 arcmin size)",
+                            datatype='integer', indexed=1, ucd='pos.HTM'),
+             self.tapColumn('ring256',
+                            description="HEALPIX index (Nsides 256, Ring scheme => ~14 arcmin size)",
+                            datatype='integer', indexed=1,
+                            ucd='pos.healpix'),
+             self.tapColumn('nest4096',
+                            description="HEALPIX index (Nsides 4096, Nest scheme => ~52 arcsec size",
+                            datatype='integer', indexed=1,
+                            ucd='pos.healpix'),
+             self.tapColumn('random_id',
+                            description="Random ID in the range 0.0 => 100.0",
+                            datatype='real', indexed=1)]
+        if galactic:
+            r += [self.tapColumn('glon',
+                                 description="Galactic Longitude",
+                                 datatype='double', unit='deg', indexed=1,
+                                 ucd='pos.galactic.lon'),
+                  self.tapColumn('glat',
+                                 description="Galactic Latitude",
+                                 datatype='double', unit='deg', indexed=1,
+                                 ucd='pos.galactic.lat')]
+        if ecliptic:
+            r += [self.tapColumn('elon',
+                                 description="Ecliptic Longitude",
+                                 datatype='double', unit='deg', indexed=1,
+                                 ucd='pos.ecliptic.lon'),
+                  self.tapColumn('elat',
+                                 description="Ecliptic Latitude",
+                                 datatype='double', unit='deg', indexed=1,
+                                 ucd='pos.ecliptic.lat')]
+        return r
 
     def _getYAML(self, filename):
         """Cache reads of YAML configuration files.
