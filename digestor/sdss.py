@@ -454,6 +454,7 @@ class SDSS(Digestor):
                 if (fbasetype, col['datatype']) in safe_conversion:
                     limit = safe_conversion[(fbasetype, col['datatype'])]
                     if fbasetype == 'A':
+                        old[fcol].fill_value = b'0'
                         log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
                         width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
                         blank = ' '*width
