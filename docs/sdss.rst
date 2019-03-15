@@ -168,15 +168,28 @@ Example post-load SQL code::
     --
     -- dr14q_duplicates
     --
-    COPY sdss_dr14_new.dr14q_duplicates FROM '/net/dl2/data/sdss_dr14_new/dr14q_duplicates.csv' DELIMITER ',' CSV HEADER;
-    ALTER TABLE sdss_dr14_new.dr14q_duplicates ADD CONSTRAINT dr14_duplicates_primary_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
-    ALTER TABLE sdss_dr14_new.dr14q_duplicates ADD CONSTRAINT dr14_duplicates_specobjall_fk FOREIGN KEY (dupspecobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
+    COPY sdss_dr14_new.dr14q_duplicates FROM '/net/dl2/data/sdss_dr14/dr14q_duplicates.csv' DELIMITER ',' CSV HEADER;
+    ALTER TABLE sdss_dr14_new.dr14q_duplicates ADD CONSTRAINT dr14q_duplicates_primary_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
+    -- ALTER TABLE sdss_dr14_new.dr14q_duplicates ADD CONSTRAINT dr14q_duplicates_specobjall_fk FOREIGN KEY (dupspecobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
     UPDATE sdss_dr14_new.dr14q_duplicates SET disk_only = TRUE WHERE dupspecobjid IN
         (SELECT d.dupspecobjid FROM sdss_dr14_new.dr14q_duplicates AS d LEFT JOIN sdss_dr14_new.specobjall AS s ON d.dupspecobjid = s.specobjid WHERE s.specobjid IS NULL);
     GRANT SELECT ON sdss_dr14_new.dr14q_duplicates TO dlquery;
     --
     -- sdssebossfirefly
     --
+    COPY sdss_dr14_new.sdssebossfirefly FROM '/net/dl2/data/sdss_dr14/sdss_dr14_new.sdssebossfirefly.csv' DELIMITER ',' CSV HEADER;
+    CREATE INDEX sdssebossfirefly_q3c_ang2ipix ON sdss_dr14_new.sdssebossfirefly (q3c_ang2ipix(plug_ra, plug_dec)) WITH (fillfactor=100);
+    CLUSTER sdssebossfirefly_q3c_ang2ipix ON sdss_dr14_new.sdssebossfirefly;
+    ALTER TABLE sdss_dr14_new.sdssebossfirefly ADD PRIMARY KEY (specobjid);
+    CREATE UNIQUE INDEX sdssebossfirefly_uint64_specobjid ON sdss_dr14_new.sdssebossfirefly (sdss_dr14_new.uint64(specobjid)) WITH (fillfactor=100);
+    ALTER TABLE sdss_dr14_new.sdssebossfirefly ADD CONSTRAINT sdssebossfirefly_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
+    CREATE INDEX sdssebossfirefly_plug_ra ON sdss_dr14_new.sdssebossfirefly (plug_ra) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_plug_dec ON sdss_dr14_new.sdssebossfirefly (plug_dec) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_htm9 ON sdss_dr14_new.sdssebossfirefly (htm9) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_ring256 ON sdss_dr14_new.sdssebossfirefly (ring256) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_nest4096 ON sdss_dr14_new.sdssebossfirefly (nest4096) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_random_id ON sdss_dr14_new.sdssebossfirefly (random_id) WITH (fillfactor=100);
+    GRANT SELECT ON sdss_dr14_new.sdssebossfirefly TO dlquery;
 
 
 TO DO
@@ -266,6 +279,15 @@ Firefly
 * Remove ``--/U no unit`` from input SQL file.
 * For no obvious reason, these columns were left out of the original SQL definition file:
   ``Chabrier_ELODIE_stellar_mass``, ``Chabrier_STELIB_stellar_mass``, ``Salpeter_STELIB_stellar_mass``.
+* ``fits2db`` might be choking on long column names plus ``double precision``::
+
+    COPY sdss_dr14_new.sdssebossfirefly (specobjid,bestobjid,plug_ra,plug_dec,sn_median_all,
+        chabrier_miles_age_lightw,chabrier_miles_age_lightw_up,chabrier_miles_age_lightw_low,
+        chabrier_miles_metallicity_lightdouble precision,chabrier_miles_metallicity_lightdouble precision,
+        chabrier_miles_metallicity_lightdouble precision,chabrier_miles_stellar_mass,
+        chabrier_miles_stellar_mass_up,chabrier_miles_stellar_mass_low,chabrier_miles_spm_ebv,
+        chabrier_miles_ncomponentsssp,chabrier_miles_c ...
+
 
 SPIDERS
 ~~~~~~~

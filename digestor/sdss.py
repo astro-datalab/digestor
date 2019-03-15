@@ -521,7 +521,7 @@ def get_options():
                         help='Read table-specific configuration from FILE.')
     parser.add_argument('-d', '--schema-description', dest='description',
                         metavar='TEXT',
-                        default='Sloan Digital Sky Survey Data Relase 14',
+                        default='Sloan Digital Sky Survey Data Release 14',
                         help='Short description of the schema.')
     parser.add_argument('-E', '--no-ecliptic', dest='ecliptic', action='store_false',
                         help='Do not add ecliptic coordinates.')
