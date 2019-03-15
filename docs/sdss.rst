@@ -174,7 +174,10 @@ Example post-load SQL code::
     UPDATE sdss_dr14_new.dr14q_duplicates SET disk_only = TRUE WHERE dupspecobjid IN
         (SELECT d.dupspecobjid FROM sdss_dr14_new.dr14q_duplicates AS d LEFT JOIN sdss_dr14_new.specobjall AS s ON d.dupspecobjid = s.specobjid WHERE s.specobjid IS NULL);
     GRANT SELECT ON sdss_dr14_new.dr14q_duplicates TO dlquery;
-
+    --
+    -- sdssebossfirefly
+    --
+    
 
 TO DO
 -----

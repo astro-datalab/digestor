@@ -120,3 +120,14 @@ sdss_dr14_new:
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
+    sdssebossfirefly:
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
