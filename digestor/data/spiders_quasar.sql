@@ -23,9 +23,9 @@ CREATE TABLE spiders_quasar (
   plate   				tinyint NOT NULL,			--/D SDSS plate number.
   MJD     				int NOT NULL,			--/D MJD that the SDSS spectrum was taken.
   fiberID  				tinyint NOT NULL,			--/D SDSS fibre identification.
-  DR14_RUN2D   			varchar(32) NOT NULL,		--/D Spectroscopic reprocessing number.
-  DR14_PLUG_RA          float NOT NULL,				--/U deg --/D Right ascension of the drilled fibre position.
-  DR14_PLUG_DEC   	     float NOT NULL,				--/U deg --/D Declination of the drilled fibre position.
+  RUN2D   			varchar(32) NOT NULL,		--/D Spectroscopic reprocessing number. --/F DR14_RUN2D
+  PLUG_RA          float NOT NULL,				--/U deg --/D Right ascension of the drilled fibre position. --/F DR14_PLUG_RA
+  PLUG_DEC   	     float NOT NULL,				--/U deg --/D Declination of the drilled fibre position. --/F DR14_PLUG_DEC
   redshift      		real NOT NULL,				--/D Source redshift based on the visual inspection results.
   CLASS_BEST   			varchar(32) NOT NULL,		--/D Source classification based on visual inspection results.
   CONF_BEST   			tinyint NOT NULL,			--/D Visual inspection redshift and classification confidence flag.
