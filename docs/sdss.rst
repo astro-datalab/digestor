@@ -190,6 +190,24 @@ Example post-load SQL code::
     CREATE INDEX sdssebossfirefly_nest4096 ON sdss_dr14_new.sdssebossfirefly (nest4096) WITH (fillfactor=100);
     CREATE INDEX sdssebossfirefly_random_id ON sdss_dr14_new.sdssebossfirefly (random_id) WITH (fillfactor=100);
     GRANT SELECT ON sdss_dr14_new.sdssebossfirefly TO dlquery;
+    --
+    -- spiders_quasar
+    --
+    CREATE INDEX spiders_quasar_q3c_ang2ipix ON sdss_dr14_new.spiders_quasar (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_plug_q3c_ang2ipix ON sdss_dr14_new.spiders_quasar (q3c_ang2ipix(plug_ra, plug_dec)) WITH (fillfactor=100);
+    CLUSTER spiders_quasar_q3c_ang2ipix ON sdss_dr14_new.spiders_quasar;
+    -- ALTER TABLE sdss_dr14_new.spiders_quasar ADD PRIMARY KEY (specobjid);
+    ALTER TABLE sdss_dr14_new.spiders_quasar ADD CONSTRAINT spiders_quasar_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
+    CREATE INDEX spiders_quasar_ra ON sdss_dr14_new.spiders_quasar (ra) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_dec ON sdss_dr14_new.spiders_quasar (dec) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_plug_ra ON sdss_dr14_new.spiders_quasar (plug_ra) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_plug_dec ON sdss_dr14_new.spiders_quasar (plug_dec) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_htm9 ON sdss_dr14_new.spiders_quasar (htm9) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_ring256 ON sdss_dr14_new.spiders_quasar (ring256) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_nest4096 ON sdss_dr14_new.spiders_quasar (nest4096) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_random_id ON sdss_dr14_new.spiders_quasar (random_id) WITH (fillfactor=100);
+    GRANT SELECT ON sdss_dr14_new.spiders_quasar TO dlquery;
+
 
 
 TO DO
