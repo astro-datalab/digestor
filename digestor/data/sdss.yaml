@@ -131,3 +131,20 @@ sdss_dr14_new:
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
+    spiders_quasar:
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            plug_dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            plug_ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            ra:
+                indexed: 1
+                ucd: pos.eq.dec
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
