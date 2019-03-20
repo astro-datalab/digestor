@@ -5,8 +5,10 @@ Digestor Change Log
 0.3.0 (unreleased)
 ------------------
 
+* Support for SDSS DR14 VACs (PR `#7`_).
 * Fix some test problems (PR `#4`_).
 
+.. _`#7`: https://github.com/noaodatalab/digestor/pull/7
 .. _`#4`: https://github.com/noaodatalab/digestor/pull/4
 
 0.2.1 (2018-08-16)
