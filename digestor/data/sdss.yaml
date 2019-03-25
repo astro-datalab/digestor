@@ -1,4 +1,4 @@
-sdss_dr14:
+sdss_dr14_new:
     platex:
         columns:
             #
@@ -109,3 +109,42 @@ sdss_dr14:
             dered_r: defer
             dered_i: defer
             dered_z: defer
+    dr14q:
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+    sdssebossfirefly:
+        columns:
+            plug_dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            plug_ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+    spiders_quasar:
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            plug_dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            plug_ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            ra:
+                indexed: 1
+                ucd: pos.eq.dec
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src

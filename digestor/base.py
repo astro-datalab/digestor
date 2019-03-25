@@ -32,6 +32,12 @@ class Digestor(object):
         A short description of `schema`.
     merge : :class:`str`, optional
         Name of a JSON file containing existing TapSchema metadata.
+    ecliptic : :class:`bool`, optional
+        If ``False``, *don't* add ecliptic coordinates (probably because
+        they already exist).
+    galactic : :class:`bool`, optional
+        If ``False``, *don't* add galactic coordinates (probably because
+        they already exist).
     """
     #
     # Name of the root logger provided by Digestor.
@@ -40,7 +46,7 @@ class Digestor(object):
     #
     # Order columns for disk efficiency.
     #
-    ordered = ('bigint', 'double', 'integer', 'real', 'smallint', 'character')
+    ordered = ('bigint', 'double', 'integer', 'real', 'smallint', 'boolean', 'character')
     #
     # Defer some pre-processing to STILTS.
     #
@@ -50,9 +56,12 @@ class Digestor(object):
     _stilts_ecliptic = 'cmd=addskycoords -inunit deg -outunit deg icrs ecliptic {ra} {dec} elon elat'
     _stilts_galactic = 'cmd=addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat'
 
-    def __init__(self, schema, table, description=None, merge=None):
+    def __init__(self, schema, table, description=None, merge=None,
+                 ecliptic=True, galactic=True):
         self.schema = schema
         self.table = table
+        self.ecliptic = ecliptic
+        self.galactic = galactic
         self.tapSchema = self._initTapSchema(description, merge)
         self.mapping = dict()
         self.FITS = dict()
@@ -127,7 +136,7 @@ class Digestor(object):
                                     'description': description,
                                     'utype': ''}]
             metadata['tables'] = [{'schema_name': self.schema,
-                                   'table_name': self.stable,
+                                   'table_name': self.table,
                                    'table_type': 'table',
                                    'utype': '',
                                    'description': ''}]
@@ -146,10 +155,10 @@ class Digestor(object):
             if metadata['schemas'][0]['schema_name'] != self.schema:
                 raise ValueError("You are attempting to merge schema={0} into schema={1}!".format(self.schema, metadata['schemas'][0]['schema_name']))
             for t in metadata['tables']:
-                if t['table_name'] == self.stable:
+                if t['table_name'] == self.table:
                     raise ValueError("Table {0} is already defined!".format(self.stable))
             metadata['tables'].append({'schema_name': self.schema,
-                                       'table_name': self.stable,
+                                       'table_name': self.table,
                                        'table_type': 'table',
                                        'utype': '',
                                        'description': ''})
@@ -167,36 +176,39 @@ class Digestor(object):
         :class:`list`
             A list suitable for appending to an existing list of columns.
         """
-        return [self.tapColumn('htm9',
-                               description="HTM index (order 9 => ~10 arcmin size)",
-                               datatype='integer', indexed=1, ucd='pos.HTM'),
-                self.tapColumn('ring256',
-                               description="HEALPIX index (Nsides 256, Ring scheme => ~14 arcmin size)",
-                               datatype='integer', indexed=1,
-                               ucd='pos.healpix'),
-                self.tapColumn('nest4096',
-                               description="HEALPIX index (Nsides 4096, Nest scheme => ~52 arcsec size",
-                               datatype='integer', indexed=1,
-                               ucd='pos.healpix'),
-                self.tapColumn('random_id',
-                               description="Random ID in the range 0.0 => 100.0",
-                               datatype='real', indexed=1),
-                self.tapColumn('glon',
-                               description="Galactic Longitude",
-                               datatype='double', unit='deg', indexed=1,
-                               ucd='pos.galactic.lon'),
-                self.tapColumn('glat',
-                               description="Galactic Latitude",
-                               datatype='double', unit='deg', indexed=1,
-                               ucd='pos.galactic.lat'),
-                self.tapColumn('elon',
-                               description="Ecliptic Longitude",
-                               datatype='double', unit='deg', indexed=1,
-                               ucd='pos.ecliptic.lon'),
-                self.tapColumn('elat',
-                               description="Ecliptic Latitude",
-                               datatype='double', unit='deg', indexed=1,
-                               ucd='pos.ecliptic.lat')]
+        r = [self.tapColumn('htm9',
+                            description="HTM index (order 9 => ~10 arcmin size)",
+                            datatype='integer', indexed=1, ucd='pos.HTM'),
+             self.tapColumn('ring256',
+                            description="HEALPIX index (Nsides 256, Ring scheme => ~14 arcmin size)",
+                            datatype='integer', indexed=1,
+                            ucd='pos.healpix'),
+             self.tapColumn('nest4096',
+                            description="HEALPIX index (Nsides 4096, Nest scheme => ~52 arcsec size",
+                            datatype='integer', indexed=1,
+                            ucd='pos.healpix'),
+             self.tapColumn('random_id',
+                            description="Random ID in the range 0.0 => 100.0",
+                            datatype='real', indexed=1)]
+        if self.galactic:
+            r += [self.tapColumn('glon',
+                                 description="Galactic Longitude",
+                                 datatype='double', unit='deg', indexed=1,
+                                 ucd='pos.galactic.lon'),
+                  self.tapColumn('glat',
+                                 description="Galactic Latitude",
+                                 datatype='double', unit='deg', indexed=1,
+                                 ucd='pos.galactic.lat')]
+        if self.ecliptic:
+            r += [self.tapColumn('elon',
+                                 description="Ecliptic Longitude",
+                                 datatype='double', unit='deg', indexed=1,
+                                 ucd='pos.ecliptic.lon'),
+                  self.tapColumn('elat',
+                                 description="Ecliptic Latitude",
+                                 datatype='double', unit='deg', indexed=1,
+                                 ucd='pos.ecliptic.lat')]
+        return r
 
     def _getYAML(self, filename):
         """Cache reads of YAML configuration files.
@@ -234,7 +246,7 @@ class Digestor(object):
         :class:`dict`
             A column definition in TapSchema format.
         """
-        p = {'table_name': self.stable,
+        p = {'table_name': self.table,
              'column_name': column,
              'description': '',
              'unit': '',
@@ -260,11 +272,11 @@ class Digestor(object):
             If the table is not found.
         """
         try:
-            return self._tableIndexCache[self.stable]
+            return self._tableIndexCache[self.table]
         except KeyError:
             for i, t in enumerate(self.tapSchema['tables']):
-                if t['schema_name'] == self.schema and t['table_name'] == self.stable:
-                    self._tableIndexCache[self.stable] = i
+                if t['schema_name'] == self.schema and t['table_name'] == self.table:
+                    self._tableIndexCache[self.table] = i
                     return i
         raise ValueError("Table {0.table} was not found in schema {0.schema}!".format(self))
 
@@ -277,11 +289,11 @@ class Digestor(object):
             If the column is not found.
         """
         try:
-            return self._columnIndexCache[(self.stable, column)]
+            return self._columnIndexCache[(self.table, column)]
         except KeyError:
             for i, c in enumerate(self.tapSchema['columns']):
-                if c['table_name'] == self.stable and c['column_name'] == column:
-                    self._columnIndexCache[(self.stable, column)] = i
+                if c['table_name'] == self.table and c['column_name'] == column:
+                    self._columnIndexCache[(self.table, column)] = i
                     return i
         raise ValueError("Column {0} was not found in {1.stable}!".format(column, self))
 
@@ -296,7 +308,7 @@ class Digestor(object):
         """List of columns in the table.
         """
         return [c['column_name'] for c in self.tapSchema['columns']
-                if c['table_name'] == self.stable]
+                if c['table_name'] == self.table]
 
     @property
     def nColumns(self):
@@ -358,20 +370,15 @@ class Digestor(object):
 
     def sortColumns(self):
         """Sort the SQL columns for best performance.
-
-        Parameters
-        ----------
-        filename : :class:`str`
-            Name of the YAML configuration file.
         """
         new_columns = list()
         for o in self.ordered:
             for c in self.tapSchema['columns']:
-                if c['table_name'] == self.stable and c['datatype'] == o:
+                if c['table_name'] == self.table and c['datatype'] == o:
                     new_columns.append(c)
         assert len(new_columns) == self.nColumns
         for i, c in enumerate(self.tapSchema['columns']):
-            if c['table_name'] == self.stable:
+            if c['table_name'] == self.table:
                 self.tapSchema['columns'][i] = new_columns.pop(0)
         return
 
@@ -393,8 +400,7 @@ class Digestor(object):
             self._custom_stilts_command += stilts
         return
 
-    def addDLColumns(self, filename, ra='ra', overwrite=False,
-                     ecliptic=True, galactic=True):
+    def addDLColumns(self, filename, ra='ra', overwrite=False):
         """Add DL columns to FITS file prior to column reorganization.
 
         Parameters
@@ -405,12 +411,6 @@ class Digestor(object):
             Look for Right Ascension in this column (default 'ra').
         overwrite : :class:`bool`, optional
             If ``True``, remove any existing file.
-        ecliptic : :class:`bool`, optional
-            If ``False``, *don't* add ecliptic coordinates (probably because
-            they already exist).
-        galactic : :class:`bool`, optional
-            If ``False``, *don't* add galactic coordinates (probably because
-            they already exist).
 
         Returns
         -------
@@ -435,9 +435,9 @@ class Digestor(object):
         command = ['stilts', 'tpipe', 'in={0}'.format(filename)]
         command += self._custom_stilts_command
         command += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
-        if ecliptic:
+        if self.ecliptic:
             command.append(self._stilts_ecliptic.format(ra=fra, dec=fdec))
-        if galactic:
+        if self.galactic:
             command.append(self._stilts_galactic.format(ra=fra, dec=fdec))
         command += ['ofmt=fits-basic', 'out={0}'.format(out)]
         log.debug(' '.join(command))
@@ -502,18 +502,20 @@ class Digestor(object):
         type_map = {'bigint': ('K', 'J', 'I', 'B'),
                     'integer': ('J', 'I', 'B'),
                     'smallint': ('I', 'B'),
+                    'boolean': ('L'),
                     'double': ('D', 'E'),
                     'real': ('E',),
                     'character': ('A',)}
         np_map = {'bigint': np.int64,
                   'integer': np.int32,
                   'smallint': np.int16,
+                  'boolean': np.bool,
                   'double': np.float64,
                   'real': np.float32}
         safe_conversion = {('J', 'smallint'): 2**15}
         rebase = re.compile(r'^(\d+)(\D+)')
         columns = [c for c in self.tapSchema['columns']
-                   if c['table_name'] == self.stable]
+                   if c['table_name'] == self.table]
         old = Table.read(self._inputFITS, hdu=hdu)
         new = Table()
         for col in columns:
@@ -591,7 +593,7 @@ class Digestor(object):
         # log = self.logName('base.Digestor.createSQL')
         sql = [r"CREATE TABLE IF NOT EXISTS {0.schema}.{0.table} (".format(self)]
         for c in self.tapSchema['columns']:
-            if c['table_name'] == self.stable:
+            if c['table_name'] == self.table:
                 typ = c['datatype']
                 if typ == 'double':
                     typ = 'double precision'

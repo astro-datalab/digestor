@@ -28,12 +28,12 @@ class SDSS(Digestor):
     # Match lines in SQL definition files.
     #
     _SQLre = {'comment': re.compile(r'\s*--/(H|T)\s+(.*)$'),
-              'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),\s*(.*)$')}
+              'column': re.compile(r'\s*(\S+)\s+(\S+)\s*([^,]+),?\s*(--.*)$')}
     #
     # Map SQL Server data types to PostgreSQL.
     #
     _server2post = {'float': 'double precision', 'int': 'integer',
-                    'tinyint': 'smallint'}
+                    'tinyint': 'smallint', 'bit': 'boolean'}
 
     #
     # Ignore columns that are specific to the SDSS CAS system.
@@ -100,7 +100,7 @@ class SDSS(Digestor):
                     log.debug("    %s %s %s,", col, post_type, g[2])
                     log.debug("metadata = '%s'", g[3])
                     p, r = self.parseColumnMetadata(col, g[3])
-                    p['table_name'] = self.stable
+                    p['table_name'] = self.table
                     if post_type == 'double precision':
                         p['datatype'] = 'double'
                     elif post_type.startswith('varchar'):
@@ -377,12 +377,14 @@ class SDSS(Digestor):
         type_map = {'bigint': ('K', 'J', 'I', 'B'),
                     'integer': ('J', 'I', 'B'),
                     'smallint': ('I', 'B'),
+                    'boolean': ('L'),
                     'double': ('D', 'E'),
                     'real': ('E',),
                     'character': ('A',)}
         np_map = {'bigint': np.int64,
                   'integer': np.int32,
                   'smallint': np.int16,
+                  'boolean': np.bool,
                   'double': np.float64,
                   'real': np.float32}
         safe_conversion = {('J', 'smallint'): 2**15,
@@ -391,7 +393,7 @@ class SDSS(Digestor):
                            ('A', 'bigint'): 2**63}
         rebase = re.compile(r'^(\d+)(\D+)')
         columns = [c for c in self.tapSchema['columns']
-                   if c['table_name'] == self.stable]
+                   if c['table_name'] == self.table]
         old = Table.read(self._inputFITS, hdu=hdu)
         new = Table()
         for col in columns:
@@ -452,6 +454,10 @@ class SDSS(Digestor):
                 if (fbasetype, col['datatype']) in safe_conversion:
                     limit = safe_conversion[(fbasetype, col['datatype'])]
                     if fbasetype == 'A':
+                        try:
+                            old[fcol].fill_value = b'0'
+                        except AttributeError:  # This can happen during testing.
+                            pass
                         log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
                         width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
                         blank = ' '*width
@@ -518,7 +524,7 @@ def get_options():
                         help='Read table-specific configuration from FILE.')
     parser.add_argument('-d', '--schema-description', dest='description',
                         metavar='TEXT',
-                        default='Sloan Digital Sky Survey Data Relase 14',
+                        default='Sloan Digital Sky Survey Data Release 14',
                         help='Short description of the schema.')
     parser.add_argument('-E', '--no-ecliptic', dest='ecliptic', action='store_false',
                         help='Do not add ecliptic coordinates.')
@@ -540,7 +546,7 @@ def get_options():
     parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
                         help='Right Ascension is in COLUMN.')
     parser.add_argument('-s', '--schema', metavar='SCHEMA',
-                        default='sdss_dr14',
+                        default='sdss_dr14_new',
                         help='Define table with this schema.')
     parser.add_argument('-t', '--table', metavar='TABLE',
                         help='Set the table name.')
@@ -560,10 +566,20 @@ def main():
         An integer suitable for passing to :func:`sys.exit`.
     """
     options = get_options()
+    if not os.path.exists(options.fits):
+        print("%s does not exist!" % options.fits, file=sys.stderr)
+        return 1
+    if not os.path.exists(options.sql):
+        p = resource_filename('digestor', 'data/' + options.sql)
+        if os.path.exists(p):
+            options.sql = p
+        else:
+            print("%s does not exist!" % options.sql, file=sys.stderr)
+            return 1
     if options.table is None:
-        options.table = os.path.splitext(os.path.basename(options.sql))[0]
+        options.table = os.path.splitext(os.path.basename(options.fits))[0]
     if options.output_sql is None:
-        options.output_sql = os.path.join(os.path.dirname(options.sql),
+        options.output_sql = os.path.join(os.path.dirname(options.fits),
                                           "%s.%s.sql" % (options.schema, options.table))
     if options.output_json is None:
         options.output_json = options.output_sql.replace('sql', 'json')
@@ -572,7 +588,9 @@ def main():
     try:
         sdss = SDSS(options.schema, options.table,
                     description=options.description,
-                    merge=options.merge_json)
+                    merge=options.merge_json,
+                    ecliptic=options.ecliptic,
+                    galactic=options.galactic)
     except ValueError as e:
         #
         # ValueError indicates failure to process a merge file.
@@ -595,9 +613,7 @@ def main():
     sdss.customSTILTS(options.config)
     try:
         dlfits = sdss.addDLColumns(options.fits, ra=options.ra,
-                                   overwrite=(not options.keep),
-                                   ecliptic=options.ecliptic,
-                                   galactic=options.galactic)
+                                   overwrite=(not options.keep))
     except ValueError as e:
         log.error(str(e))
         return 1

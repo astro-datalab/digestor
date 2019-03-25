@@ -16,7 +16,6 @@ Welcome to Digestor's documentation!
    notes
    sdss
    tutorial
-   todo
 
 Indices and tables
 ==================

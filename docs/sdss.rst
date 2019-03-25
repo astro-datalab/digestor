@@ -7,13 +7,13 @@ SQL
 
 Example pre-load SQL code::
 
-    CREATE SCHEMA IF NOT EXISTS sdss_dr14;
-    GRANT USAGE ON SCHEMA sdss_dr14 TO dlquery;
+    CREATE SCHEMA IF NOT EXISTS sdss_dr14_new;
+    GRANT USAGE ON SCHEMA sdss_dr14_new TO dlquery;
     --
     -- Version for FITS-style unsigned integers.  This function is no
     -- longer required.
     --
-    -- CREATE OR REPLACE FUNCTION sdss_dr14.uint64(id bigint) RETURNS numeric(20,0) AS $$
+    -- CREATE OR REPLACE FUNCTION sdss_dr14_new.uint64(id bigint) RETURNS numeric(20,0) AS $$
     -- DECLARE
     --     tzero CONSTANT numeric(20,0) := 9223372036854775808;
     -- BEGIN
@@ -23,7 +23,7 @@ Example pre-load SQL code::
     --
     -- Version for bitwise-correct signed to unsigned conversion.
     --
-    CREATE OR REPLACE FUNCTION sdss_dr14.uint64(id bigint) RETURNS numeric(20,0) AS $$
+    CREATE OR REPLACE FUNCTION sdss_dr14_new.uint64(id bigint) RETURNS numeric(20,0) AS $$
     DECLARE
         tzero CONSTANT numeric(20,0) := 18446744073709551616;
     BEGIN
@@ -37,7 +37,7 @@ Example pre-load SQL code::
     --
     -- Create a SDSS (photo)objID for tables that do not have one.
     --
-    CREATE OR REPLACE FUNCTION sdss_dr14.objid(rerun text, run smallint, camcol smallint, field smallint, objnum smallint) RETURNS bigint AS $$
+    CREATE OR REPLACE FUNCTION sdss_dr14_new.objid(rerun text, run smallint, camcol smallint, field smallint, objnum smallint) RETURNS bigint AS $$
     DECLARE
         skyversion CONSTANT bigint := 2;
         firstfield CONSTANT bigint := 0;
@@ -51,7 +51,7 @@ Example pre-load SQL code::
                 CAST(objnum AS bigint));
     END;
     $$ LANGUAGE plpgsql IMMUTABLE;
-    CREATE OR REPLACE FUNCTION sdss_dr14.objid(rerun smallint, run smallint, camcol smallint, field smallint, objnum smallint) RETURNS bigint AS $$
+    CREATE OR REPLACE FUNCTION sdss_dr14_new.objid(rerun smallint, run smallint, camcol smallint, field smallint, objnum smallint) RETURNS bigint AS $$
     DECLARE
         skyversion CONSTANT bigint := 2;
         firstfield CONSTANT bigint := 0;
@@ -68,7 +68,7 @@ Example pre-load SQL code::
     --
     -- Create a SDSS specObjID for tables that do not have one.
     --
-    CREATE OR REPLACE FUNCTION sdss_dr14.specobjid(plate smallint, fiber smallint, mjd integer, run2d text) RETURNS bigint AS $$
+    CREATE OR REPLACE FUNCTION sdss_dr14_new.specobjid(plate smallint, fiber smallint, mjd integer, run2d text) RETURNS bigint AS $$
     DECLARE
         rmjd bigint;
         irun bigint;
@@ -94,61 +94,127 @@ Example post-load SQL code::
     ---
     --- platex
     ---
-    CREATE INDEX platex_q3c_ang2ipix ON sdss_dr14.platex (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
-    CLUSTER platex_q3c_ang2ipix ON sdss_dr14.platex;
-    -- CREATE INDEX platex_glon_q3c_ang2ipix ON sdss_dr14.platex (q3c_ang2ipix(glon, glat)) WITH (fillfactor=100);
-    -- CREATE INDEX platex_elon_q3c_ang2ipix ON sdss_dr14.platex (q3c_ang2ipix(elon, elat)) WITH (fillfactor=100);
-    ALTER TABLE sdss_dr14.platex ADD PRIMARY KEY (plateid);
-    CREATE UNIQUE INDEX platex_uint64_plateid ON sdss_dr14.platex (sdss_dr14.uint64(plateid)) WITH (fillfactor=100);
-    CREATE INDEX platex_ra ON sdss_dr14.platex (ra) WITH (fillfactor=100);
-    CREATE INDEX platex_dec ON sdss_dr14.platex (dec) WITH (fillfactor=100);
-    CREATE INDEX platex_htm9 ON sdss_dr14.platex (htm9) WITH (fillfactor=100);
-    CREATE INDEX platex_ring256 ON sdss_dr14.platex (ring256) WITH (fillfactor=100);
-    CREATE INDEX platex_nest4096 ON sdss_dr14.platex (nest4096) WITH (fillfactor=100);
-    CREATE INDEX platex_random_id ON sdss_dr14.platex (random_id) WITH (fillfactor=100);
-    GRANT SELECT ON sdss_dr14.platex TO dlquery;
+    CREATE INDEX platex_q3c_ang2ipix ON sdss_dr14_new.platex (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CLUSTER platex_q3c_ang2ipix ON sdss_dr14_new.platex;
+    -- CREATE INDEX platex_glon_q3c_ang2ipix ON sdss_dr14_new.platex (q3c_ang2ipix(glon, glat)) WITH (fillfactor=100);
+    -- CREATE INDEX platex_elon_q3c_ang2ipix ON sdss_dr14_new.platex (q3c_ang2ipix(elon, elat)) WITH (fillfactor=100);
+    ALTER TABLE sdss_dr14_new.platex ADD PRIMARY KEY (plateid);
+    CREATE UNIQUE INDEX platex_uint64_plateid ON sdss_dr14_new.platex (sdss_dr14_new.uint64(plateid)) WITH (fillfactor=100);
+    CREATE INDEX platex_ra ON sdss_dr14_new.platex (ra) WITH (fillfactor=100);
+    CREATE INDEX platex_dec ON sdss_dr14_new.platex (dec) WITH (fillfactor=100);
+    CREATE INDEX platex_htm9 ON sdss_dr14_new.platex (htm9) WITH (fillfactor=100);
+    CREATE INDEX platex_ring256 ON sdss_dr14_new.platex (ring256) WITH (fillfactor=100);
+    CREATE INDEX platex_nest4096 ON sdss_dr14_new.platex (nest4096) WITH (fillfactor=100);
+    CREATE INDEX platex_random_id ON sdss_dr14_new.platex (random_id) WITH (fillfactor=100);
+    GRANT SELECT ON sdss_dr14_new.platex TO dlquery;
     --
     -- specobjall
     --
-    CREATE INDEX specobjall_q3c_ang2ipix ON sdss_dr14.specobjall (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
-    CLUSTER specobjall_q3c_ang2ipix ON sdss_dr14.specobjall;
-    ALTER TABLE sdss_dr14.specobjall ADD PRIMARY KEY (specobjid);
-    CREATE UNIQUE INDEX specobjall_uint64_specobjid ON sdss_dr14.specobjall (sdss_dr14.uint64(specobjid)) WITH (fillfactor=100);
-    CREATE INDEX specobjall_uint64_plateid ON sdss_dr14.specobjall (sdss_dr14.uint64(plateid)) WITH (fillfactor=100);
-    CREATE INDEX specobjall_ra ON sdss_dr14.specobjall (ra) WITH (fillfactor=100);
-    CREATE INDEX specobjall_dec ON sdss_dr14.specobjall (dec) WITH (fillfactor=100);
-    CREATE INDEX specobjall_htm9 ON sdss_dr14.specobjall (htm9) WITH (fillfactor=100);
-    CREATE INDEX specobjall_ring256 ON sdss_dr14.specobjall (ring256) WITH (fillfactor=100);
-    CREATE INDEX specobjall_nest4096 ON sdss_dr14.specobjall (nest4096) WITH (fillfactor=100);
-    CREATE INDEX specobjall_random_id ON sdss_dr14.specobjall (random_id) WITH (fillfactor=100);
-    ALTER TABLE sdss_dr14.specobjall ADD CONSTRAINT specobjall_platex_fk FOREIGN KEY (plateid) REFERENCES sdss_dr14.platex (plateid);
-    CREATE VIEW sdss_dr14.specobj AS SELECT s.* FROM sdss_dr14.specobjall AS s WHERE s.scienceprimary = 1;
-    CREATE VIEW sdss_dr14.seguespecobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%';
-    CREATE VIEW sdss_dr14.segue1specobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%' AND p.programname NOT LIKE 'segue2%';
-    CREATE VIEW sdss_dr14.segue2specobjall AS SELECT s.* FROM sdss_dr14.specobjall AS s JOIN sdss_dr14.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'segue2%';
-    GRANT SELECT ON sdss_dr14.specobjall TO dlquery;
-    GRANT SELECT ON sdss_dr14.specobj TO dlquery;
-    GRANT SELECT ON sdss_dr14.seguespecobjall TO dlquery;
-    GRANT SELECT ON sdss_dr14.segue1specobjall TO dlquery;
-    GRANT SELECT ON sdss_dr14.segue2specobjall TO dlquery;
+    CREATE INDEX specobjall_q3c_ang2ipix ON sdss_dr14_new.specobjall (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CLUSTER specobjall_q3c_ang2ipix ON sdss_dr14_new.specobjall;
+    ALTER TABLE sdss_dr14_new.specobjall ADD PRIMARY KEY (specobjid);
+    CREATE UNIQUE INDEX specobjall_uint64_specobjid ON sdss_dr14_new.specobjall (sdss_dr14_new.uint64(specobjid)) WITH (fillfactor=100);
+    CREATE INDEX specobjall_uint64_plateid ON sdss_dr14_new.specobjall (sdss_dr14_new.uint64(plateid)) WITH (fillfactor=100);
+    CREATE INDEX specobjall_ra ON sdss_dr14_new.specobjall (ra) WITH (fillfactor=100);
+    CREATE INDEX specobjall_dec ON sdss_dr14_new.specobjall (dec) WITH (fillfactor=100);
+    CREATE INDEX specobjall_htm9 ON sdss_dr14_new.specobjall (htm9) WITH (fillfactor=100);
+    CREATE INDEX specobjall_ring256 ON sdss_dr14_new.specobjall (ring256) WITH (fillfactor=100);
+    CREATE INDEX specobjall_nest4096 ON sdss_dr14_new.specobjall (nest4096) WITH (fillfactor=100);
+    CREATE INDEX specobjall_random_id ON sdss_dr14_new.specobjall (random_id) WITH (fillfactor=100);
+    ALTER TABLE sdss_dr14_new.specobjall ADD CONSTRAINT specobjall_platex_fk FOREIGN KEY (plateid) REFERENCES sdss_dr14_new.platex (plateid);
+    CREATE VIEW sdss_dr14_new.specobj AS SELECT s.* FROM sdss_dr14_new.specobjall AS s WHERE s.scienceprimary = 1;
+    CREATE VIEW sdss_dr14_new.seguespecobjall AS SELECT s.* FROM sdss_dr14_new.specobjall AS s JOIN sdss_dr14_new.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%';
+    CREATE VIEW sdss_dr14_new.segue1specobjall AS SELECT s.* FROM sdss_dr14_new.specobjall AS s JOIN sdss_dr14_new.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%' AND p.programname NOT LIKE 'segue2%';
+    CREATE VIEW sdss_dr14_new.segue2specobjall AS SELECT s.* FROM sdss_dr14_new.specobjall AS s JOIN sdss_dr14_new.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'segue2%';
+    GRANT SELECT ON sdss_dr14_new.specobjall TO dlquery;
+    GRANT SELECT ON sdss_dr14_new.specobj TO dlquery;
+    GRANT SELECT ON sdss_dr14_new.seguespecobjall TO dlquery;
+    GRANT SELECT ON sdss_dr14_new.segue1specobjall TO dlquery;
+    GRANT SELECT ON sdss_dr14_new.segue2specobjall TO dlquery;
     --
     -- photoplate
     --
-    CREATE INDEX photoplate_q3c_ang2ipix ON sdss_dr14.photoplate (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
-    CLUSTER photoplate_q3c_ang2ipix ON sdss_dr14.photoplate;
-    ALTER TABLE sdss_dr14.photoplate ADD PRIMARY KEY (objid);
-    CREATE INDEX photoplate_ra ON sdss_dr14.photoplate (ra) WITH (fillfactor=100);
-    CREATE INDEX photoplate_dec ON sdss_dr14.photoplate (dec) WITH (fillfactor=100);
-    CREATE INDEX photoplate_htm9 ON sdss_dr14.photoplate (htm9) WITH (fillfactor=100);
-    CREATE INDEX photoplate_ring256 ON sdss_dr14.photoplate (ring256) WITH (fillfactor=100);
-    CREATE INDEX photoplate_nest4096 ON sdss_dr14.photoplate (nest4096) WITH (fillfactor=100);
-    CREATE INDEX photoplate_random_id ON sdss_dr14.photoplate (random_id) WITH (fillfactor=100);
-    UPDATE sdss_dr14.photoplate SET dered_u = u - extinction_u;
-    UPDATE sdss_dr14.photoplate SET dered_g = g - extinction_g;
-    UPDATE sdss_dr14.photoplate SET dered_r = r - extinction_r;
-    UPDATE sdss_dr14.photoplate SET dered_i = i - extinction_i;
-    UPDATE sdss_dr14.photoplate SET dered_z = z - extinction_z;
-    GRANT SELECT ON sdss_dr14.photoplate TO dlquery;
+    CREATE INDEX photoplate_q3c_ang2ipix ON sdss_dr14_new.photoplate (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CLUSTER photoplate_q3c_ang2ipix ON sdss_dr14_new.photoplate;
+    ALTER TABLE sdss_dr14_new.photoplate ADD PRIMARY KEY (objid);
+    CREATE INDEX photoplate_ra ON sdss_dr14_new.photoplate (ra) WITH (fillfactor=100);
+    CREATE INDEX photoplate_dec ON sdss_dr14_new.photoplate (dec) WITH (fillfactor=100);
+    CREATE INDEX photoplate_htm9 ON sdss_dr14_new.photoplate (htm9) WITH (fillfactor=100);
+    CREATE INDEX photoplate_ring256 ON sdss_dr14_new.photoplate (ring256) WITH (fillfactor=100);
+    CREATE INDEX photoplate_nest4096 ON sdss_dr14_new.photoplate (nest4096) WITH (fillfactor=100);
+    CREATE INDEX photoplate_random_id ON sdss_dr14_new.photoplate (random_id) WITH (fillfactor=100);
+    UPDATE sdss_dr14_new.photoplate SET dered_u = u - extinction_u;
+    UPDATE sdss_dr14_new.photoplate SET dered_g = g - extinction_g;
+    UPDATE sdss_dr14_new.photoplate SET dered_r = r - extinction_r;
+    UPDATE sdss_dr14_new.photoplate SET dered_i = i - extinction_i;
+    UPDATE sdss_dr14_new.photoplate SET dered_z = z - extinction_z;
+    GRANT SELECT ON sdss_dr14_new.photoplate TO dlquery;
+    --
+    -- dr14q
+    --
+    CREATE INDEX dr14q_q3c_ang2ipix ON sdss_dr14_new.dr14q (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CLUSTER dr14q_q3c_ang2ipix ON sdss_dr14_new.dr14q;
+    ALTER TABLE sdss_dr14_new.dr14q ADD PRIMARY KEY (specobjid);
+    CREATE UNIQUE INDEX dr14q_uint64_specobjid ON sdss_dr14_new.dr14q (sdss_dr14_new.uint64(specobjid)) WITH (fillfactor=100);
+    UPDATE sdss_dr14_new.dr14q SET disk_only = TRUE WHERE specobjid IN
+        (SELECT d.specobjid FROM sdss_dr14_new.dr14q AS d LEFT JOIN sdss_dr14_new.specobjall AS s ON d.specobjid = s.specobjid WHERE s.specobjid IS NULL);
+    CREATE INDEX dr14q_ra ON sdss_dr14_new.dr14q (ra) WITH (fillfactor=100);
+    CREATE INDEX dr14q_dec ON sdss_dr14_new.dr14q (dec) WITH (fillfactor=100);
+    CREATE INDEX dr14q_htm9 ON sdss_dr14_new.dr14q (htm9) WITH (fillfactor=100);
+    CREATE INDEX dr14q_ring256 ON sdss_dr14_new.dr14q (ring256) WITH (fillfactor=100);
+    CREATE INDEX dr14q_nest4096 ON sdss_dr14_new.dr14q (nest4096) WITH (fillfactor=100);
+    CREATE INDEX dr14q_random_id ON sdss_dr14_new.dr14q (random_id) WITH (fillfactor=100);
+    GRANT SELECT ON sdss_dr14_new.dr14q TO dlquery;
+    --
+    -- dr14q_duplicates
+    --
+    COPY sdss_dr14_new.dr14q_duplicates FROM '/net/dl2/data/sdss_dr14/dr14q_duplicates.csv' DELIMITER ',' CSV HEADER;
+    ALTER TABLE sdss_dr14_new.dr14q_duplicates ADD CONSTRAINT dr14q_duplicates_primary_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
+    -- ALTER TABLE sdss_dr14_new.dr14q_duplicates ADD CONSTRAINT dr14q_duplicates_specobjall_fk FOREIGN KEY (dupspecobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
+    UPDATE sdss_dr14_new.dr14q_duplicates SET disk_only = TRUE WHERE dupspecobjid IN
+        (SELECT d.dupspecobjid FROM sdss_dr14_new.dr14q_duplicates AS d LEFT JOIN sdss_dr14_new.specobjall AS s ON d.dupspecobjid = s.specobjid WHERE s.specobjid IS NULL);
+    GRANT SELECT ON sdss_dr14_new.dr14q_duplicates TO dlquery;
+    --
+    -- sdssebossfirefly
+    --
+    COPY sdss_dr14_new.sdssebossfirefly FROM '/net/dl2/data/sdss_dr14/sdss_dr14_new.sdssebossfirefly.csv' DELIMITER ',' CSV HEADER;
+    CREATE INDEX sdssebossfirefly_q3c_ang2ipix ON sdss_dr14_new.sdssebossfirefly (q3c_ang2ipix(plug_ra, plug_dec)) WITH (fillfactor=100);
+    CLUSTER sdssebossfirefly_q3c_ang2ipix ON sdss_dr14_new.sdssebossfirefly;
+    ALTER TABLE sdss_dr14_new.sdssebossfirefly ADD PRIMARY KEY (specobjid);
+    CREATE UNIQUE INDEX sdssebossfirefly_uint64_specobjid ON sdss_dr14_new.sdssebossfirefly (sdss_dr14_new.uint64(specobjid)) WITH (fillfactor=100);
+    ALTER TABLE sdss_dr14_new.sdssebossfirefly ADD CONSTRAINT sdssebossfirefly_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
+    CREATE INDEX sdssebossfirefly_plug_ra ON sdss_dr14_new.sdssebossfirefly (plug_ra) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_plug_dec ON sdss_dr14_new.sdssebossfirefly (plug_dec) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_htm9 ON sdss_dr14_new.sdssebossfirefly (htm9) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_ring256 ON sdss_dr14_new.sdssebossfirefly (ring256) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_nest4096 ON sdss_dr14_new.sdssebossfirefly (nest4096) WITH (fillfactor=100);
+    CREATE INDEX sdssebossfirefly_random_id ON sdss_dr14_new.sdssebossfirefly (random_id) WITH (fillfactor=100);
+    GRANT SELECT ON sdss_dr14_new.sdssebossfirefly TO dlquery;
+    --
+    -- spiders_quasar
+    --
+    CREATE INDEX spiders_quasar_q3c_ang2ipix ON sdss_dr14_new.spiders_quasar (q3c_ang2ipix(ra, dec)) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_plug_q3c_ang2ipix ON sdss_dr14_new.spiders_quasar (q3c_ang2ipix(plug_ra, plug_dec)) WITH (fillfactor=100);
+    CLUSTER spiders_quasar_q3c_ang2ipix ON sdss_dr14_new.spiders_quasar;
+    -- ALTER TABLE sdss_dr14_new.spiders_quasar ADD PRIMARY KEY (specobjid);
+    ALTER TABLE sdss_dr14_new.spiders_quasar ADD CONSTRAINT spiders_quasar_specobjall_fk FOREIGN KEY (specobjid) REFERENCES sdss_dr14_new.specobjall (specobjid);
+    CREATE INDEX spiders_quasar_ra ON sdss_dr14_new.spiders_quasar (ra) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_dec ON sdss_dr14_new.spiders_quasar (dec) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_plug_ra ON sdss_dr14_new.spiders_quasar (plug_ra) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_plug_dec ON sdss_dr14_new.spiders_quasar (plug_dec) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_htm9 ON sdss_dr14_new.spiders_quasar (htm9) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_ring256 ON sdss_dr14_new.spiders_quasar (ring256) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_nest4096 ON sdss_dr14_new.spiders_quasar (nest4096) WITH (fillfactor=100);
+    CREATE INDEX spiders_quasar_random_id ON sdss_dr14_new.spiders_quasar (random_id) WITH (fillfactor=100);
+    GRANT SELECT ON sdss_dr14_new.spiders_quasar TO dlquery;
+
+
+
+TO DO
+-----
+
+* Need to figure out the best way to index glon, glat, elon, elat.  These
+  are marked in TapSchema as indexed but are not currently indexed.
 
 Files
 -----
@@ -170,3 +236,78 @@ Dealing with photoPlate Files
 #. Proceed with normal processing::
 
     sdss2dl -G -t photoplate -v photoPlate-dr14.uniq.fits photoObjAll.sql
+
+DR14Q
+~~~~~
+
+Problems
+^^^^^^^^
+
+The final version of the DR14 QSO catalog, ``v4_4`` has several problems:
+
+* Columns that are supposed to be integers in the set ``0, 1`` are actually
+  floating-point and include some values that are ``2`` or ``NaN``
+  (``GALEX_MATCHED``, ``UKIDSS_MATCHED``).
+* Columns that are supposed to be pointers to the photometric data are
+  complete garbage (``RUN_NUMBER``, ``RERUN_NUMBER``, ``COL_NUMBER``,
+  ``FIELD_NUMBER``, ``OBJ_ID``).
+* The duplicates columns, which are array-valued, contain spurious zero
+  values. For example::
+
+    >>> w = dr14q3['N_SPEC'] == 3
+    >>> dr14q3['PLATE_DUPLICATE'][w, :6]
+    array([[   0, 6110,    0, 6879,    0, 7595],
+           [   0, 6279,    0, 6880,    0, 7663],
+           [   0,  689,    0, 4220,    0, 7855],
+           ...,
+           [   0, 5025,    0, 5026,    0, 7581],
+           [   0, 6290,    0, 6308,    0, 6588],
+           [   0, 6117,    0, 6127,    0, 7598]], dtype=int32)
+
+* Not every duplicate is present in the specobjall table, although the
+  files still may be present on disk.
+* Not every "primary" entry in DR14Q is in the specobjall table either.
+
+Solutions
+^^^^^^^^^
+
+* Version ``v3_0`` seems to have good values of ``GALEX_MATCHED`` and
+  ``UKIDSS_MATCHED``.  *However*, in ``v3_0``, *all* values are zero.
+  Just forcibly convert to integer, coerce ``NaN`` to zero, and document.
+* Ignore the photometric information entirely.  That can be obtained by
+  matching to the ``specobj`` view.
+* Move duplicates to a separate "join" table which maps primary ``specObjID``
+  to duplicate ``specObjID``.  Not every duplicate will be included, unfortunately,
+  but the vast majority will.
+* Also include plate, mjd, fiber in duplicates.  Flag duplicates that may
+  only exist on disk.
+* Flag "primary" entries that only exist on disk.
+
+Notes
+^^^^^
+
+* Be careful when computing ``specObjID``, there are some SEGUE spectra.
+* Binary loading still doesn't work as of March 2019::
+
+    fits2db --sql=postgres --truncate -t sdss_dr14_new.dr14q sdss_dr14_new.dr14q.fits | psql tapdb datalab
+
+Firefly
+~~~~~~~
+
+* Remove ``--/U no unit`` from input SQL file.
+* For no obvious reason, these columns were left out of the original SQL definition file:
+  ``Chabrier_ELODIE_stellar_mass``, ``Chabrier_STELIB_stellar_mass``, ``Salpeter_STELIB_stellar_mass``.
+* ``fits2db`` might be choking on long column names plus ``double precision``::
+
+    COPY sdss_dr14_new.sdssebossfirefly (specobjid,bestobjid,plug_ra,plug_dec,sn_median_all,
+        chabrier_miles_age_lightw,chabrier_miles_age_lightw_up,chabrier_miles_age_lightw_low,
+        chabrier_miles_metallicity_lightdouble precision,chabrier_miles_metallicity_lightdouble precision,
+        chabrier_miles_metallicity_lightdouble precision,chabrier_miles_stellar_mass,
+        chabrier_miles_stellar_mass_up,chabrier_miles_stellar_mass_low,chabrier_miles_spm_ebv,
+        chabrier_miles_ncomponentsssp,chabrier_miles_c ...
+
+
+SPIDERS
+~~~~~~~
+
+* Need to add units to input SQL file.
