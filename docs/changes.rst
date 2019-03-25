@@ -2,7 +2,7 @@
 Digestor Change Log
 ===================
 
-0.3.0 (unreleased)
+0.3.0 (2019-03-25)
 ------------------
 
 * Support for SDSS DR14 VACs (PR `#7`_).
