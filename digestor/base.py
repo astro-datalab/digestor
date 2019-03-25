@@ -60,9 +60,9 @@ class Digestor(object):
                  ecliptic=True, galactic=True):
         self.schema = schema
         self.table = table
-        self.tapSchema = self._initTapSchema(description, merge,
-                                             ecliptic=ecliptic,
-                                             galactic=galactic)
+        self.ecliptic = ecliptic
+        self.galactic = galactic
+        self.tapSchema = self._initTapSchema(description, merge)
         self.mapping = dict()
         self.FITS = dict()
         self._tableIndexCache = dict()
@@ -109,8 +109,7 @@ class Digestor(object):
         """
         return logging.getLogger(self.rootLogger + '.' + method)
 
-    def _initTapSchema(self, description='', merge=None,
-                       ecliptic=True, galactic=True):
+    def _initTapSchema(self, description='', merge=None):
         """Create a dictionary compatible with TapSchema.
 
         Parameters
@@ -119,12 +118,6 @@ class Digestor(object):
             A short description of `schema`.
         merge : :class:`str`, optional
             Name of a JSON file containing existing TapSchema metadata.
-        ecliptic : :class:`bool`, optional
-            If ``False``, *don't* add ecliptic coordinates (probably because
-            they already exist).
-        galactic : :class:`bool`, optional
-            If ``False``, *don't* add galactic coordinates (probably because
-            they already exist).
 
         Returns
         -------
@@ -147,8 +140,7 @@ class Digestor(object):
                                    'table_type': 'table',
                                    'utype': '',
                                    'description': ''}]
-            metadata['columns'] = self._dlColumns(ecliptic=ecliptic,
-                                                  galactic=galactic)
+            metadata['columns'] = self._dlColumns()
             metadata['keys'] = [{"key_id": "",
                                  "from_table": "",
                                  "target_table": "",
@@ -171,24 +163,13 @@ class Digestor(object):
                                        'utype': '',
                                        'description': ''})
             try:
-                metadata['columns'] += self._dlColumns(ecliptic=ecliptic,
-                                                       galactic=galactic)
+                metadata['columns'] += self._dlColumns()
             except KeyError:
-                metadata['columns'] = self._dlColumns(ecliptic=ecliptic,
-                                                      galactic=galactic)
+                metadata['columns'] = self._dlColumns()
         return metadata
 
-    def _dlColumns(self, ecliptic=True, galactic=True):
+    def _dlColumns(self):
         """Add SQL column definitions of Data Lab-added columns.
-
-        Parameters
-        ----------
-        ecliptic : :class:`bool`, optional
-            If ``False``, *don't* add ecliptic coordinates (probably because
-            they already exist).
-        galactic : :class:`bool`, optional
-            If ``False``, *don't* add galactic coordinates (probably because
-            they already exist).
 
         Returns
         -------
@@ -209,7 +190,7 @@ class Digestor(object):
              self.tapColumn('random_id',
                             description="Random ID in the range 0.0 => 100.0",
                             datatype='real', indexed=1)]
-        if galactic:
+        if self.galactic:
             r += [self.tapColumn('glon',
                                  description="Galactic Longitude",
                                  datatype='double', unit='deg', indexed=1,
@@ -218,7 +199,7 @@ class Digestor(object):
                                  description="Galactic Latitude",
                                  datatype='double', unit='deg', indexed=1,
                                  ucd='pos.galactic.lat')]
-        if ecliptic:
+        if self.ecliptic:
             r += [self.tapColumn('elon',
                                  description="Ecliptic Longitude",
                                  datatype='double', unit='deg', indexed=1,
@@ -419,8 +400,7 @@ class Digestor(object):
             self._custom_stilts_command += stilts
         return
 
-    def addDLColumns(self, filename, ra='ra', overwrite=False,
-                     ecliptic=True, galactic=True):
+    def addDLColumns(self, filename, ra='ra', overwrite=False):
         """Add DL columns to FITS file prior to column reorganization.
 
         Parameters
@@ -431,12 +411,6 @@ class Digestor(object):
             Look for Right Ascension in this column (default 'ra').
         overwrite : :class:`bool`, optional
             If ``True``, remove any existing file.
-        ecliptic : :class:`bool`, optional
-            If ``False``, *don't* add ecliptic coordinates (probably because
-            they already exist).
-        galactic : :class:`bool`, optional
-            If ``False``, *don't* add galactic coordinates (probably because
-            they already exist).
 
         Returns
         -------
@@ -461,9 +435,9 @@ class Digestor(object):
         command = ['stilts', 'tpipe', 'in={0}'.format(filename)]
         command += self._custom_stilts_command
         command += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
-        if ecliptic:
+        if self.ecliptic:
             command.append(self._stilts_ecliptic.format(ra=fra, dec=fdec))
-        if galactic:
+        if self.galactic:
             command.append(self._stilts_galactic.format(ra=fra, dec=fdec))
         command += ['ofmt=fits-basic', 'out={0}'.format(out)]
         log.debug(' '.join(command))

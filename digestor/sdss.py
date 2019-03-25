@@ -454,7 +454,10 @@ class SDSS(Digestor):
                 if (fbasetype, col['datatype']) in safe_conversion:
                     limit = safe_conversion[(fbasetype, col['datatype'])]
                     if fbasetype == 'A':
-                        old[fcol].fill_value = b'0'
+                        try:
+                            old[fcol].fill_value = b'0'
+                        except AttributeError:  # This can happen during testing.
+                            pass
                         log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
                         width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
                         blank = ' '*width
@@ -610,9 +613,7 @@ def main():
     sdss.customSTILTS(options.config)
     try:
         dlfits = sdss.addDLColumns(options.fits, ra=options.ra,
-                                   overwrite=(not options.keep),
-                                   ecliptic=options.ecliptic,
-                                   galactic=options.galactic)
+                                   overwrite=(not options.keep))
     except ValueError as e:
         log.error(str(e))
         return 1
