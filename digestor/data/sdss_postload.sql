@@ -14,3 +14,4 @@ CREATE INDEX {table}_ring256 ON {schema}.{table} (ring256) WITH (fillfactor=100)
 CREATE INDEX {table}_nest4096 ON {schema}.{table} (nest4096) WITH (fillfactor=100);
 CREATE INDEX {table}_random_id ON {schema}.{table} (random_id) WITH (fillfactor=100);
 GRANT SELECT ON {schema}.{table} TO dlquery;
+ANALYZE {schema}.{table};
