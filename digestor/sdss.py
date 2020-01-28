@@ -508,6 +508,38 @@ class SDSS(Digestor):
         new.write(out)
         return out
 
+    def writeSQL(self, filename):
+        """Write the CREATE TABLE statement to `filename`, along with any
+        SQL commands to pre-load.
+
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the SQL file.
+        """
+        with open(filename, 'w') as POST:
+            with open(resource_filename('digestor', 'data/sdss_preload.sql')) as pre:
+                POST.write(pre.read().format(schema=self.schema))
+            POST.write(self.createSQL())
+
+    def writePOSTSQL(self, filename, ra='ra', pkey='objid'):
+        """Write additional SQL commands needed after loading the table itself.
+
+        Parameters
+        ----------
+        filename : :class:`str`
+            Name of the SQL file.
+        ra : :class:`str`, optional
+            Look for Right Ascension in this column (default 'ra').
+        pkey : :class:`str`, optional
+            Name of the PRIMARY KEY column (default 'objid').
+        """
+        with open(filename, 'w') as POST:
+            with open(resource_filename('digestor', 'data/sdss_postload.sql')) as p:
+                POST.write(p.read().format(schema=self.schema, table=self.table,
+                                           ra=ra, dec=ra.replace('ra', 'dec'),
+                                           pkey=pkey))
+
 
 def get_options():
     """Parse command-line options.
@@ -543,11 +575,14 @@ def get_options():
                         help='Merge metadata in FILE into final metadata output.')
     parser.add_argument('-o', '--output-sql', dest='output_sql', metavar='FILE',
                         help='Write table definition to FILE.')
+    parser.add_argument('-p', '--primary-key', dest='pkey', metavar='COLUMN',
+                        default='objid',
+                        help='COLUMN is primary key (default %(default)s).')
     parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
-                        help='Right Ascension is in COLUMN.')
+                        help='Right Ascension is in COLUMN (default %(default)s).')
     parser.add_argument('-s', '--schema', metavar='SCHEMA',
                         default='sdss_dr14_new',
-                        help='Define table with this schema.')
+                        help='Define table with this schema (default %(default)s).')
     parser.add_argument('-t', '--table', metavar='TABLE',
                         help='Set the table name.')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -641,9 +676,11 @@ def main():
         log.error(str(e))
         return 1
     #
-    # Write the SQL file.
+    # Write the SQL files.
     #
     sdss.writeSQL(options.output_sql)
+    sdss.writePOSTSQL(options.output_sql.replace('.sql', '_post.sql'),
+                      ra=options.ra, pkey=options.pkey)
     #
     # Write the JSON file.
     #

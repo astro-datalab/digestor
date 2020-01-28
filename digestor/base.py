@@ -443,12 +443,18 @@ class Digestor(object):
         log.debug(' '.join(command))
         proc = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
         o, e = proc.communicate()
-        if o:
-            log.debug('STILTS STDOUT = %s', o.decode('utf-8'))
-        if proc.returncode != 0 or e:
+        if proc.returncode:
             log.error('STILTS returncode = %d', proc.returncode)
-            log.error('STILTS STDERR = %s', e.decode('utf-8'))
+            if o:
+                log.error('STILTS STDOUT = %s', o.decode('utf-8'))
+            if e:
+                log.error('STILTS STDERR = %s', e.decode('utf-8'))
             raise ValueError("STILTS error detected!")
+        else:
+            if o:
+                log.info('STILTS STDOUT = %s', o.decode('utf-8'))
+            if e:
+                log.info('STILTS STDERR = %s', e.decode('utf-8'))
         return out
 
     def parseFITS(self, filename, hdu=1):

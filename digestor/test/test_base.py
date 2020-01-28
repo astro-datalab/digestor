@@ -180,7 +180,7 @@ class TestBase(DigestorCase):
         with mock.patch('subprocess.Popen') as proc:
             p = proc.return_value = mock.MagicMock()
             p.returncode = 0
-            p.communicate.return_value = ('', '')
+            p.communicate.return_value = (b'success', b'success')
             with mock.patch('os.path.exists') as e:
                 e.return_value = True
                 with mock.patch('os.remove') as rm:
@@ -198,9 +198,10 @@ class TestBase(DigestorCase):
                                      'out=specObj-dr14.stilts.fits'],
                                     stderr=-1, stdout=-1)
         self.assertEqual(out, 'specObj-dr14.stilts.fits')
+        self.assertLog(-1, 'STILTS STDERR = success')
         with mock.patch('subprocess.Popen') as proc:
             p = proc.return_value = mock.MagicMock()
-            p.returncode = 0
+            p.returncode = 1
             p.communicate.return_value = (b'fail', b'foobar')
             with mock.patch('os.path.exists') as e:
                 e.return_value = True
