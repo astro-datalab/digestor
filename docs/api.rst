@@ -10,3 +10,6 @@ Digestor API
 
 .. automodule:: digestor.sdss
     :members:
+
+.. automodule:: digestor.view
+    :members:
