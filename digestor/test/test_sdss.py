@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 """Test digestor.sdss.
 """
+import os
 import unittest
 import unittest.mock as mock
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import numpy as np
 
@@ -451,6 +452,28 @@ class TestSDSS(DigestorCase):
                     out = self.sdss.processFITS(overwrite=True)
             rm.assert_called_with(out)
             ex.assert_called_with(out)
+
+    def test_writeSQL(self):
+        """Test writing SQL preload file.
+        """
+        with TemporaryDirectory() as d:
+            f = os.path.join(d, 'foo.sql')
+            self.sdss.writeSQL(f)
+            with open(f) as ff:
+                l = ff.readlines()
+        self.assertEqual(l[3], 'CREATE SCHEMA IF NOT EXISTS sdss;\n')
+
+
+    def test_writePOSTSQL(self):
+        """Test writing SQL postload file.
+        """
+        with TemporaryDirectory() as d:
+            f = os.path.join(d, 'foo.sql')
+            self.sdss.writePOSTSQL(f, ra='plug_ra', pkey='foo_id')
+            with open(f) as ff:
+                l = ff.readlines()
+        self.assertEqual(l[4], 'CREATE INDEX spectra_q3c_ang2ipix ON sdss.spectra (q3c_ang2ipix(plug_ra, plug_dec)) WITH (fillfactor=100);\n')
+        self.assertEqual(l[8], 'ALTER TABLE sdss.spectra ADD PRIMARY KEY (foo_id);\n')
 
 
 def test_suite():
