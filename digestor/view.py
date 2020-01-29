@@ -73,15 +73,24 @@ def main():
     options = get_options()
     with open(options.meta) as j:
         meta = json.load(j)
+    #
+    # Find schema name.
+    #
     if options.schema is None:
         schema = meta['schemas'][0]['schema_name']
     else:
         schema = options.schema
+    #
+    # Find table metadata.
+    #
     try:
         table_meta = [t for t in meta['tables'] if t['schema_name'] == schema and t['table_name'] == options.table][0]
     except IndexError:
         print("ERROR: could not find {0}.{1} in the list of tables!".format(schema, options.table))
         return 1
+    #
+    # Add view metadata.
+    #
     view_meta = table_meta.copy()
     view_meta['table_name'] = options.view
     view_meta['table_type'] = 'view'
@@ -89,5 +98,24 @@ def main():
         view_meta['description'] = 'VIEW of {0}.{1}.'.format(schema, options.table)
     else:
         view_meta['description'] = options.description
-    print(view_meta)
+    meta['tables'].append(view_meta)
+    #
+    # Find columns associated with table.
+    #
+    column_meta = [c for c in meta['columns'] if c['table_name'] == options.table]
+    view_column_meta = list()
+    for c in column_meta:
+        cm = c.copy()
+        cm['table_name'] = options.view
+        view_column_meta.append(cm)
+    meta['columns'] += view_column_meta
+    #
+    # Write output.
+    #
+    if options.output is None:
+        outfile = options.meta
+    else:
+        outfile = options.output
+    with open(outfile, 'w') as j:
+        json.dump(meta, j, indent=4)
     return 0
