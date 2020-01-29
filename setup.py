@@ -59,7 +59,8 @@ setup_keywords['test_suite'] = '{name}.test.{name}_test_suite'.format(**setup_ke
 #
 # Autogenerate command-line scripts.
 #
-setup_keywords['entry_points'] = {'console_scripts': ['sdss2dl = digestor.sdss:main', ]}
+setup_keywords['entry_points'] = {'console_scripts': ['sdss2dl = digestor.sdss:main',
+                                                      'add_view_metadata = digestor.view:main']}
 #
 # Add internal data directories.
 #

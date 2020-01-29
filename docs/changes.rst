@@ -5,8 +5,10 @@ Digestor Change Log
 0.3.1 (unreleased)
 ------------------
 
+* Add column descriptions for simple views to metadata files (PR `#10`_).
 * Fix a variety of outstanding bugs (PR `#9`_).
 
+.. _`#10`: https://github.com/noaodatalab/digestor/pull/10
 .. _`#9`: https://github.com/noaodatalab/digestor/pull/9
 
 0.3.0 (2019-03-25)
