@@ -168,7 +168,7 @@ sdss_dr16:
                 size: 32
             dec:
                 indexed: 1
-                ucd: pos.eq.dec
+                ucd: pos.eq.dec;meta.main
             ha:
                 ucd: pos.eq.ha
             mjddesign:
@@ -180,7 +180,7 @@ sdss_dr16:
                 indexed: 1
                 ucd: meta.id;instr
             ra:
-                ucd: pos.eq.ra
+                ucd: pos.eq.ra;meta.main
                 indexed: 1
             theta:
                 ucd: phys.angSize;instr.setup
@@ -196,12 +196,12 @@ sdss_dr16:
                 ucd: pos.cartesian.z
             dec:
                 indexed: 1
-                ucd: pos.eq.dec
+                ucd: pos.eq.dec;meta.main
             fluxobjid:
                 ucd: meta.id;src
             ra:
                 indexed: 1
-                ucd: pos.eq.ra
+                ucd: pos.eq.ra;meta.main
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
@@ -212,3 +212,46 @@ sdss_dr16:
                 # This obvious integer is stored as a real number in the FITS file.
                 #
                 datatype: real
+    photoplate:
+        STILTS:
+            #
+            # Add (prepend) these custom STILTS commands.
+            #
+            - cmd=select skyversion==2
+            - cmd=sort parseLong(objid)
+            - cmd=uniq objid
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec;meta.main
+            objid:
+                indexed: 1
+                ucd: meta.id;src
+            parentid:
+                #
+                # Original SQL definition has smallint.
+                #
+                datatype: bigint
+                ucd: meta.id.parent;src
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra;meta.main
+        mapping:
+            #
+            # Additional FITS to SQL column mappings that are not described
+            # in the input SQL file.
+            #
+            glon: L
+            glat: B
+        NOFITS:
+            #
+            # Instructions on how to deal with columns that are NOT defined
+            # in the FITS file, and that are not dropped or deferred by default.
+            #
+            insidemask: drop
+            specobjid: drop
+            dered_u: defer
+            dered_g: defer
+            dered_r: defer
+            dered_i: defer
+            dered_z: defer
