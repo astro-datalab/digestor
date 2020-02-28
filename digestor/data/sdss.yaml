@@ -184,3 +184,31 @@ sdss_dr16:
                 indexed: 1
             theta:
                 ucd: phys.angSize;instr.setup
+    specobjall:
+        columns:
+            bestobjid:
+                ucd: meta.id;src
+            cx:
+                ucd: pos.cartesian.x
+            cy:
+                ucd: pos.cartesian.y
+            cz:
+                ucd: pos.cartesian.z
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            fluxobjid:
+                ucd: meta.id;src
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+            targetobjid:
+                ucd: meta.id;src
+            veldispnpix:
+                #
+                # This obvious integer is stored as a real number in the FITS file.
+                #
+                datatype: real

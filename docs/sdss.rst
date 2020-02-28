@@ -102,6 +102,10 @@ Example post-load SQL code::
     CREATE UNIQUE INDEX platex_uint64_plateid ON sdss_dr16.platex (sdss_dr16.uint64(plateid)) WITH (fillfactor=100);
     CREATE INDEX platex_ra ON sdss_dr16.platex (ra) WITH (fillfactor=100);
     CREATE INDEX platex_dec ON sdss_dr16.platex (dec) WITH (fillfactor=100);
+    CREATE INDEX platex_elon ON sdss_dr16.platex (elon) WITH (fillfactor=100);
+    CREATE INDEX platex_elat ON sdss_dr16.platex (elat) WITH (fillfactor=100);
+    CREATE INDEX platex_glon ON sdss_dr16.platex (glon) WITH (fillfactor=100);
+    CREATE INDEX platex_glat ON sdss_dr16.platex (glat) WITH (fillfactor=100);
     CREATE INDEX platex_htm9 ON sdss_dr16.platex (htm9) WITH (fillfactor=100);
     CREATE INDEX platex_ring256 ON sdss_dr16.platex (ring256) WITH (fillfactor=100);
     CREATE INDEX platex_nest4096 ON sdss_dr16.platex (nest4096) WITH (fillfactor=100);
@@ -117,6 +121,10 @@ Example post-load SQL code::
     CREATE INDEX specobjall_uint64_plateid ON sdss_dr16.specobjall (sdss_dr16.uint64(plateid)) WITH (fillfactor=100);
     CREATE INDEX specobjall_ra ON sdss_dr16.specobjall (ra) WITH (fillfactor=100);
     CREATE INDEX specobjall_dec ON sdss_dr16.specobjall (dec) WITH (fillfactor=100);
+    CREATE INDEX specobjall_elon ON sdss_dr16.specobjall (elon) WITH (fillfactor=100);
+    CREATE INDEX specobjall_elat ON sdss_dr16.specobjall (elat) WITH (fillfactor=100);
+    CREATE INDEX specobjall_glon ON sdss_dr16.specobjall (glon) WITH (fillfactor=100);
+    CREATE INDEX specobjall_glat ON sdss_dr16.specobjall (glat) WITH (fillfactor=100);
     CREATE INDEX specobjall_htm9 ON sdss_dr16.specobjall (htm9) WITH (fillfactor=100);
     CREATE INDEX specobjall_ring256 ON sdss_dr16.specobjall (ring256) WITH (fillfactor=100);
     CREATE INDEX specobjall_nest4096 ON sdss_dr16.specobjall (nest4096) WITH (fillfactor=100);
