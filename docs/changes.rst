@@ -2,9 +2,10 @@
 Digestor Change Log
 ===================
 
-0.3.1 (unreleased)
+0.3.1 (2020-02-28)
 ------------------
 
+* Reference tag before proceeding with SDSS DR16 ingestion.
 * Add column descriptions for simple views to metadata files (PR `#10`_).
 * Fix a variety of outstanding bugs (PR `#9`_).
 
