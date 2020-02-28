@@ -235,15 +235,9 @@ Dealing with photoPlate Files
 
     stilts tcat in=photoPlate-dr14.fits in=photoPosPlate-dr14.fits out=photoPlate-dr14.concat.fits
 
-#. Remove blank and duplicate rows (add equivalent statements to sdss.yaml file)::
+#. Proceed with normal processing (galactic coordinates are already included)::
 
-    stilts tpipe in=photoPlate-dr14.concat.fits cmd='select skyversion==2' \
-        cmd='sort parseLong(objid)' cmd='uniq objid' \
-        ofmt=fits-basic out=photoPlate-dr14.uniq.fits
-
-#. Proceed with normal processing::
-
-    sdss2dl -G -t photoplate -v photoPlate-dr14.uniq.fits photoObjAll.sql
+    sdss2dl -G -t photoplate -v photoPlate-dr14.concat.fits photoObjAll.sql
 
 DR14Q
 ~~~~~
