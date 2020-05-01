@@ -255,3 +255,14 @@ sdss_dr16:
             dered_r: defer
             dered_i: defer
             dered_z: defer
+    sdssebossfirefly:
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec;meta.main
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra;meta.main
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
