@@ -35,7 +35,7 @@ class TestSDSS(DigestorCase):
         self.assertEqual(self.options.sql, 'specobjall.sql')
         self.assertFalse(self.options.verbose)
         self.assertEqual(self.options.table, 'specobjall')
-        self.assertEqual(self.options.schema, 'sdss_dr14_new')
+        self.assertEqual(self.options.schema, 'sdss_dr14')
         self.assertIsNone(self.options.output_sql)
         self.assertIsNone(self.options.output_json)
         self.assertIsNone(self.options.merge_json)

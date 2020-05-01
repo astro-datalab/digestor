@@ -581,7 +581,7 @@ def get_options():
     parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
                         help='Right Ascension is in COLUMN (default %(default)s).')
     parser.add_argument('-s', '--schema', metavar='SCHEMA',
-                        default='sdss_dr14_new',
+                        default='sdss_dr14',
                         help='Define table with this schema (default %(default)s).')
     parser.add_argument('-t', '--table', metavar='TABLE',
                         help='Set the table name.')

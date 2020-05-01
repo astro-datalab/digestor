@@ -1,7 +1,7 @@
 #
 # DR14
 #
-sdss_dr14_new:
+sdss_dr14:
     platex:
         columns:
             #

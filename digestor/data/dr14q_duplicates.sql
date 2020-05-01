@@ -1,4 +1,4 @@
-CREATE TABLE sdss_dr14_new.dr14q_duplicates (
+CREATE TABLE sdss_dr14.dr14q_duplicates (
 -------------------------------------------------------------------------------
 --/H A join table linking the spectra in dr14q to other observations of the same object.
 --
