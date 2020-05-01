@@ -31,6 +31,44 @@ sdss_dr12:
                 indexed: 1
             theta:
                 ucd: phys.angSize;instr.setup
+    specobjall:
+        columns:
+            bestobjid:
+                ucd: meta.id;src
+            class_person:
+                datatype: smallint
+            cx:
+                ucd: pos.cartesian.x
+            cy:
+                ucd: pos.cartesian.y
+            cz:
+                ucd: pos.cartesian.z
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            dof:
+                datatype: integer
+            elodiedof:
+                datatype: integer
+            fluxobjid:
+                ucd: meta.id;src
+            npoly:
+                datatype: integer
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+            targetobjid:
+                ucd: meta.id;src
+            veldispnpix:
+                #
+                # This obvious integer is stored as a real number in the FITS file.
+                #
+                datatype: real
+            zwarning_noqso:
+                datatype: integer
 #
 # DR14
 #
