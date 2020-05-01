@@ -1,4 +1,37 @@
 #
+# DR12
+#
+sdss_dr12:
+    platex:
+        columns:
+            #
+            # Fix problems with the output SQL definition and TAP metadata.
+            #
+            dateobs:
+                #
+                # Original SQL definition file has size 12, which is too small.
+                # Consider converting this to timestamp.
+                #
+                size: 32
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            ha:
+                ucd: pos.eq.ha
+            mjddesign:
+                ucd: time.epoch;instr.setup
+                unit: days
+            nturnoff:
+                datatype: integer
+            plateid:
+                indexed: 1
+                ucd: meta.id;instr
+            ra:
+                ucd: pos.eq.ra
+                indexed: 1
+            theta:
+                ucd: phys.angSize;instr.setup
+#
 # DR14
 #
 sdss_dr14:
