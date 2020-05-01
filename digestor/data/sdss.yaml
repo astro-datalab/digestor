@@ -69,6 +69,49 @@ sdss_dr12:
                 datatype: real
             zwarning_noqso:
                 datatype: integer
+    photoplate:
+        STILTS:
+            #
+            # Add (prepend) these custom STILTS commands.
+            #
+            - cmd=select skyversion==2
+            - cmd=sort parseLong(objid)
+            - cmd=uniq objid
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            objid:
+                indexed: 1
+                ucd: meta.id;src
+            parentid:
+                #
+                # Original SQL definition has smallint.
+                #
+                datatype: bigint
+                ucd: meta.id.parent;src
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+        mapping:
+            #
+            # Additional FITS to SQL column mappings that are not described
+            # in the input SQL file.
+            #
+            glon: L
+            glat: B
+        NOFITS:
+            #
+            # Instructions on how to deal with columns that are NOT defined
+            # in the FITS file, and that are not dropped or deferred by default.
+            #
+            insidemask: drop
+            specobjid: drop
+            dered_u: defer
+            dered_g: defer
+            dered_r: defer
+            dered_i: defer
+            dered_z: defer
 #
 # DR14
 #
