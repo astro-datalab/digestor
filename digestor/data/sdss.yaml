@@ -32,6 +32,8 @@ sdss_dr12:
             theta:
                 ucd: phys.angSize;instr.setup
     specobjall:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)objid-(long)50000)<<24))";
         columns:
             bestobjid:
                 ucd: meta.id;src
@@ -299,6 +301,8 @@ sdss_dr16:
             theta:
                 ucd: phys.angSize;instr.setup
     specobjall:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)objid-(long)50000)<<24))";
         columns:
             bestobjid:
                 ucd: meta.id;src
@@ -370,6 +374,8 @@ sdss_dr16:
             dered_i: defer
             dered_z: defer
     sdssebossfirefly:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)objid-(long)50000)<<24))";
         columns:
             dec:
                 indexed: 1

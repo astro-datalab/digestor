@@ -7,6 +7,7 @@ CLUSTER {table}_q3c_ang2ipix ON {schema}.{table};
 -- CREATE INDEX {table}_glon_q3c_ang2ipix ON {schema}.{table} (q3c_ang2ipix(glon, glat)) WITH (fillfactor=100);
 -- CREATE INDEX {table}_elon_q3c_ang2ipix ON {schema}.{table} (q3c_ang2ipix(elon, elat)) WITH (fillfactor=100);
 ALTER TABLE {schema}.{table} ADD PRIMARY KEY ({pkey});
+CREATE UNIQUE INDEX {table}_sdss_joinid ON {schema}.{table} (sdss_joinid) WITH (fillfactor=100);
 CREATE INDEX {table}_ra ON {schema}.{table} ({ra}) WITH (fillfactor=100);
 CREATE INDEX {table}_dec ON {schema}.{table} ({dec}) WITH (fillfactor=100);
 CREATE INDEX {table}_elon ON {schema}.{table} (elon) WITH (fillfactor=100);
