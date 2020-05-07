@@ -40,6 +40,15 @@ class TestSDSS(DigestorCase):
         self.assertIsNone(self.options.output_json)
         self.assertIsNone(self.options.merge_json)
 
+    def test_sdss_joinid(self):
+        """Test sdss_joinid option.
+        """
+        self.assertFalse(self.sdss.join)
+        s = SDSS(self.schema, self.table,
+                 description=self.description, join=True)
+        self.assertTrue(s.join)
+        self.assertEqual(s.tapSchema['columns'][-1]['column_name'], 'sdss_joinid')
+
     def test_parse_sql(self):
         """Test parsing a whole SQL file.
         """

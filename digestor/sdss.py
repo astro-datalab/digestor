@@ -48,6 +48,8 @@ class SDSS(Digestor):
         if 'join' in kwargs:
             self.join = kwargs['join']
             del kwargs['join']
+        else:
+            self.join = False
         super().__init__(*args, **kwargs)
         self.NOFITS = dict()
         #
