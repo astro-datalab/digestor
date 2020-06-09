@@ -59,6 +59,9 @@ sdss_dr12:
             ra:
                 indexed: 1
                 ucd: pos.eq.ra
+            sdss_joinid:
+                indexed: 1
+                ucd: meta.id;src
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
@@ -114,6 +117,20 @@ sdss_dr12:
             dered_r: defer
             dered_i: defer
             dered_z: defer
+    dr12q:
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            sdss_joinid:
+                indexed: 1
+                ucd: meta.id;src
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
 #
 # DR14
 #
@@ -320,6 +337,9 @@ sdss_dr16:
             ra:
                 indexed: 1
                 ucd: pos.eq.ra;meta.main
+            sdss_joinid:
+                indexed: 1
+                ucd: meta.id;src
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
@@ -383,6 +403,9 @@ sdss_dr16:
             ra:
                 indexed: 1
                 ucd: pos.eq.ra;meta.main
+            sdss_joinid:
+                indexed: 1
+                ucd: meta.id;src
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
