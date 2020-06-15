@@ -102,16 +102,16 @@ CREATE TABLE dr12q (
     targetflux_z       real NOT NULL, --/U nanomaggies --/D Target flux in z band
     mi                 real NOT NULL, --/D Absolute magnitude in i band, Mi [z = 2], see DR12Q paper for cosmology
     dgmi               real NOT NULL, --/D Differential color delta(g-i)
-    sfd_ext_u          real NOT NULL, --/U mag --/D Galactic extinction in SDSS u band from from Schlegel et al. (1998) --/F gal_ext 0
-    sfd_ext_g          real NOT NULL, --/U mag --/D Galactic extinction in SDSS g band from from Schlegel et al. (1998) --/F gal_ext 1
-    sfd_ext_r          real NOT NULL, --/U mag --/D Galactic extinction in SDSS r band from from Schlegel et al. (1998) --/F gal_ext 2
-    sfd_ext_i          real NOT NULL, --/U mag --/D Galactic extinction in SDSS i band from from Schlegel et al. (1998) --/F gal_ext 3
-    sfd_ext_z          real NOT NULL, --/U mag --/D Galactic extinction in SDSS z band from from Schlegel et al. (1998) --/F gal_ext 4
-    extinction_u       real NOT NULL, --/U mag --/D Galactic extinction in SDSS u band from from Schlafly & Finkbeiner (2011) --/F gal_ext_recal 0
-    extinction_g       real NOT NULL, --/U mag --/D Galactic extinction in SDSS g band from from Schlafly & Finkbeiner (2011) --/F gal_ext_recal 1
-    extinction_r       real NOT NULL, --/U mag --/D Galactic extinction in SDSS r band from from Schlafly & Finkbeiner (2011) --/F gal_ext_recal 2
-    extinction_i       real NOT NULL, --/U mag --/D Galactic extinction in SDSS i band from from Schlafly & Finkbeiner (2011) --/F gal_ext_recal 3
-    extinction_z       real NOT NULL, --/U mag --/D Galactic extinction in SDSS z band from from Schlafly & Finkbeiner (2011) --/F gal_ext_recal 4
+    sfd_ext_u          real NOT NULL, --/U mag --/D Galactic extinction in SDSS u band from from Schlegel et al. (1998) --/F extinction 0
+    sfd_ext_g          real NOT NULL, --/U mag --/D Galactic extinction in SDSS g band from from Schlegel et al. (1998) --/F extinction 1
+    sfd_ext_r          real NOT NULL, --/U mag --/D Galactic extinction in SDSS r band from from Schlegel et al. (1998) --/F extinction 2
+    sfd_ext_i          real NOT NULL, --/U mag --/D Galactic extinction in SDSS i band from from Schlegel et al. (1998) --/F extinction 3
+    sfd_ext_z          real NOT NULL, --/U mag --/D Galactic extinction in SDSS z band from from Schlegel et al. (1998) --/F extinction 4
+    extinction_u       real NOT NULL, --/U mag --/D Galactic extinction in SDSS u band from from Schlafly & Finkbeiner (2011) --/F extinction_recal 0
+    extinction_g       real NOT NULL, --/U mag --/D Galactic extinction in SDSS g band from from Schlafly & Finkbeiner (2011) --/F extinction_recal 1
+    extinction_r       real NOT NULL, --/U mag --/D Galactic extinction in SDSS r band from from Schlafly & Finkbeiner (2011) --/F extinction_recal 2
+    extinction_i       real NOT NULL, --/U mag --/D Galactic extinction in SDSS i band from from Schlafly & Finkbeiner (2011) --/F extinction_recal 3
+    extinction_z       real NOT NULL, --/U mag --/D Galactic extinction in SDSS z band from from Schlafly & Finkbeiner (2011) --/F extinction_recal 4
     hi_gal             real NOT NULL, --/U log(cm^-2) --/D log of Galactic HI column density
     var_matched        smallint NOT NULL, --/D Variability information flag
     var_chi2           real NOT NULL, --/D Reduced chi2 when the light curve is fitted with a constant
