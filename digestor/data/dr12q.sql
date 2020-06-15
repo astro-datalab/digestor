@@ -125,8 +125,8 @@ CREATE TABLE dr12q (
     xmm_sgl_flux_err   real NOT NULL, --/U ergs/cm2/s --/D Error on total X-ray flux from XMM-Newton --/F ERR_FLUX02_12KEV_SGL
     xmm_soft_flux      real NOT NULL, --/U ergs/cm2/s --/D Soft (0.2-2.0 keV) X-ray flux from XMM-Newton --/F FLUX02_2KEV
     xmm_soft_flux_err  real NOT NULL, --/U ergs/cm2/s --/D Error on soft X-ray flux from XMM-Newton --/F ERR_FLUX02_2KEV
-    xmm_hard_flux      real NOT NULL, --/U ergs/cm2/s --/D Hard (4.5-12.0 keV) X-ray flux from XMM-Newton --/F FLUX45_12KEV
-    xmm_hard_flux_err  real NOT NULL, --/U ergs/cm2/s --/D Error on hard X-ray flux from XMM-Newton --/F ERR_FLUX45_12KEV
+    xmm_hard_flux      real NOT NULL, --/U ergs/cm2/s --/D Hard (4.5-12.0 keV) X-ray flux from XMM-Newton --/F FLUX2_12KEV
+    xmm_hard_flux_err  real NOT NULL, --/U ergs/cm2/s --/D Error on hard X-ray flux from XMM-Newton --/F ERR_FLUX2_12KEV
     xmm_flux           real NOT NULL, --/U ergs/cm2/s --/D Total weighted average X-ray flux (0.2-12.0 keV) from XMM-Newton --/F FLUX02_12KEV
     xmm_flux_err       real NOT NULL, --/U ergs/cm2/s --/D Error on total weighted average X-ray flux from XMM-Newton --/F ERR_FLUX02_12KEV
     xmm_sgl_lum        real NOT NULL, --/U erg/s --/D Total X-ray luminosity (0.2-12.0 keV) from XMM-Newton using the longest exposure --/F LUM02_12KEV_SGL
