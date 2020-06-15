@@ -129,11 +129,11 @@ CREATE TABLE dr12q (
     xmm_hard_flux_err  real NOT NULL, --/U ergs/cm2/s --/D Error on hard X-ray flux from XMM-Newton --/F ERR_FLUX2_12KEV
     xmm_flux           real NOT NULL, --/U ergs/cm2/s --/D Total weighted average X-ray flux (0.2-12.0 keV) from XMM-Newton --/F FLUX02_12KEV
     xmm_flux_err       real NOT NULL, --/U ergs/cm2/s --/D Error on total weighted average X-ray flux from XMM-Newton --/F ERR_FLUX02_12KEV
-    xmm_sgl_lum        real NOT NULL, --/U erg/s --/D Total X-ray luminosity (0.2-12.0 keV) from XMM-Newton using the longest exposure --/F LUM02_12KEV_SGL
+    xmm_sgl_lum        real NOT NULL, --/U erg/s --/D Total X-ray luminosity (0.2-12.0 keV) from XMM-Newton using the longest exposure --/F LUM02_2KEV_SGL
     xmm_soft_lum       real NOT NULL, --/U erg/s --/D Soft (0.5-2.0 keV) X-ray luminosity from XMM-Newton --/F LUM05_2KEV
     xmm_hard_lum       real NOT NULL, --/U erg/s --/D Hard (2.0-12.0 keV) X-ray luminosity from XMM-Newton --/F LUM2_12KEV
-    xmm_luminosity     real NOT NULL, --/U erg/s --/D Total (0.2-12.0 keV) X-ray luminosity from XMM-Newton --/F LUM02_12KEV
-    xmm_lum_flag       smallint NOT NULL, --/D Flag for upper limit for hard X-ray flux --/F LUMX2_12_UPPER
+    xmm_luminosity     real NOT NULL, --/U erg/s --/D Total (0.2-12.0 keV) X-ray luminosity from XMM-Newton --/F LUM02_2KEV
+    xmm_lum_flag       smallint NOT NULL, --/D Flag for upper limit for hard X-ray flux --/F LUMX2_10_UPPER
     sdss2xmm_sep       real NOT NULL, --/U arcsec --/D SDSS-XMM-Newton separation
     galex_matched      smallint NOT NULL, --/D GALEX match flag
     fuv                real NOT NULL, --/U nanomaggies --/D FUV flux (GALEX)
