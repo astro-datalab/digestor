@@ -33,7 +33,7 @@ sdss_dr12:
                 ucd: phys.angSize;instr.setup
     specobjall:
         STILTS:
-            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)objid-(long)50000)<<24))";
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
         columns:
             bestobjid:
                 ucd: meta.id;src
@@ -131,6 +131,21 @@ sdss_dr12:
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
+    emissionlinesport:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
+        dec:
+            indexed: 1
+            ucd: pos.eq.dec
+        ra:
+            indexed: 1
+            ucd: pos.eq.ra
+        sdss_joinid:
+            indexed: 1
+            ucd: meta.id;src
+        specobjid:
+            indexed: 1
+            ucd: meta.id;src
 #
 # DR14
 #
@@ -319,7 +334,7 @@ sdss_dr16:
                 ucd: phys.angSize;instr.setup
     specobjall:
         STILTS:
-            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)objid-(long)50000)<<24))";
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
         columns:
             bestobjid:
                 ucd: meta.id;src
@@ -395,7 +410,7 @@ sdss_dr16:
             dered_z: defer
     sdssebossfirefly:
         STILTS:
-            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)objid-(long)50000)<<24))";
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
         columns:
             dec:
                 indexed: 1
