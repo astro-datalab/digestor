@@ -2,6 +2,13 @@
 Digestor Change Log
 ===================
 
+0.4.1 (unreleased)
+------------------
+
+* Planned changes:
+  - DR12 stellar mass tables
+  - DR16 spiders tables, etc.
+
 0.4.0 (2020-06-30)
 ------------------
 
