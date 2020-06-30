@@ -2,10 +2,15 @@
 Digestor Change Log
 ===================
 
-0.4.0 (unreleased)
+0.4.0 (2020-06-30)
 ------------------
 
-* Updates for SDSS DR16.
+* Updates for multiple data releases (PR `#12`_).
+  - Support loading DR12
+  - Support loading DR16
+  - Add ``sdss_joinid`` column to DR14
+
+.. _`#12`: https://github.com/noaodatalab/digestor/pull/12
 
 0.3.1 (2020-02-28)
 ------------------

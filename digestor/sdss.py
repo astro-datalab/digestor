@@ -45,8 +45,23 @@ class SDSS(Digestor):
     _flagre = re.compile(r'flags(|_[ugriz])$', re.I)
 
     def __init__(self, *args, **kwargs):
+        if 'join' in kwargs:
+            self.join = kwargs['join']
+            del kwargs['join']
+        else:
+            self.join = False
         super().__init__(*args, **kwargs)
         self.NOFITS = dict()
+        #
+        # sdss_joinid is SDSS-specific, so we don't want to initialize
+        # that in the superclass.
+        #
+        if self.join:
+            self.tapSchema['columns'] += [self.tapColumn('sdss_joinid',
+                                                         description="Unique ID based on PLATE, MJD, FIBERID for joining across data releases",
+                                                         datatype='bigint',
+                                                         indexed=1,
+                                                         ucd='meta.id;src'),]
 
     def parseSQL(self, filename):
         """Parse an entire SQL file.
@@ -565,6 +580,8 @@ def get_options():
                         help='Read data from FITS HDU N (default %(default)s).')
     parser.add_argument('-G', '--no-galactic', dest='galactic', action='store_false',
                         help='Do not add galactic coordinates.')
+    parser.add_argument('-J', '--no-join', dest='join', action='store_false',
+                        help='Do not add sdss_joinid column.')
     parser.add_argument('-j', '--output-json', dest='output_json', metavar='FILE',
                         help='Write table metadata to FILE.')
     parser.add_argument('-k', '--keep', action='store_true',
@@ -581,7 +598,7 @@ def get_options():
     parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
                         help='Right Ascension is in COLUMN (default %(default)s).')
     parser.add_argument('-s', '--schema', metavar='SCHEMA',
-                        default='sdss_dr14_new',
+                        default='sdss_dr14',
                         help='Define table with this schema (default %(default)s).')
     parser.add_argument('-t', '--table', metavar='TABLE',
                         help='Set the table name.')
@@ -625,7 +642,8 @@ def main():
                     description=options.description,
                     merge=options.merge_json,
                     ecliptic=options.ecliptic,
-                    galactic=options.galactic)
+                    galactic=options.galactic,
+                    join=options.join)
     except ValueError as e:
         #
         # ValueError indicates failure to process a merge file.

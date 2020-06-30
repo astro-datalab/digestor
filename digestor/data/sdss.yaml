@@ -1,4 +1,155 @@
-sdss_dr14_new:
+#
+# DR12
+#
+sdss_dr12:
+    platex:
+        columns:
+            #
+            # Fix problems with the output SQL definition and TAP metadata.
+            #
+            dateobs:
+                #
+                # Original SQL definition file has size 12, which is too small.
+                # Consider converting this to timestamp.
+                #
+                size: 32
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            ha:
+                ucd: pos.eq.ha
+            mjddesign:
+                ucd: time.epoch;instr.setup
+                unit: days
+            nturnoff:
+                datatype: integer
+            plateid:
+                indexed: 1
+                ucd: meta.id;instr
+            ra:
+                ucd: pos.eq.ra
+                indexed: 1
+            theta:
+                ucd: phys.angSize;instr.setup
+    specobjall:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
+        columns:
+            bestobjid:
+                ucd: meta.id;src
+            class_person:
+                datatype: smallint
+            cx:
+                ucd: pos.cartesian.x
+            cy:
+                ucd: pos.cartesian.y
+            cz:
+                ucd: pos.cartesian.z
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            dof:
+                datatype: integer
+            elodiedof:
+                datatype: integer
+            fluxobjid:
+                ucd: meta.id;src
+            npoly:
+                datatype: integer
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            sdss_joinid:
+                indexed: 1
+                ucd: meta.id;src
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+            targetobjid:
+                ucd: meta.id;src
+            veldispnpix:
+                #
+                # This obvious integer is stored as a real number in the FITS file.
+                #
+                datatype: real
+            zwarning_noqso:
+                datatype: integer
+    photoplate:
+        STILTS:
+            #
+            # Add (prepend) these custom STILTS commands.
+            #
+            - cmd=select skyversion==2
+            - cmd=sort parseLong(objid)
+            - cmd=uniq objid
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            objid:
+                indexed: 1
+                ucd: meta.id;src
+            parentid:
+                #
+                # Original SQL definition has smallint.
+                #
+                datatype: bigint
+                ucd: meta.id.parent;src
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+        mapping:
+            #
+            # Additional FITS to SQL column mappings that are not described
+            # in the input SQL file.
+            #
+            glon: L
+            glat: B
+        NOFITS:
+            #
+            # Instructions on how to deal with columns that are NOT defined
+            # in the FITS file, and that are not dropped or deferred by default.
+            #
+            insidemask: drop
+            specobjid: drop
+            dered_u: defer
+            dered_g: defer
+            dered_r: defer
+            dered_i: defer
+            dered_z: defer
+    dr12q:
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra
+            sdss_joinid:
+                indexed: 1
+                ucd: meta.id;src
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+    emissionlinesport:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
+        dec:
+            indexed: 1
+            ucd: pos.eq.dec
+        ra:
+            indexed: 1
+            ucd: pos.eq.ra
+        sdss_joinid:
+            indexed: 1
+            ucd: meta.id;src
+        specobjid:
+            indexed: 1
+            ucd: meta.id;src
+#
+# DR14
+#
+sdss_dr14:
     platex:
         columns:
             #
@@ -145,6 +296,131 @@ sdss_dr14_new:
             ra:
                 indexed: 1
                 ucd: pos.eq.dec
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+#
+# DR16
+#
+sdss_dr16:
+    platex:
+        columns:
+            #
+            # Fix problems with the output SQL definition and TAP metadata.
+            #
+            dateobs:
+                #
+                # Original SQL definition file has size 12, which is too small.
+                # Consider converting this to timestamp.
+                #
+                size: 32
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec;meta.main
+            ha:
+                ucd: pos.eq.ha
+            mjddesign:
+                ucd: time.epoch;instr.setup
+                unit: days
+            nturnoff:
+                datatype: integer
+            plateid:
+                indexed: 1
+                ucd: meta.id;instr
+            ra:
+                ucd: pos.eq.ra;meta.main
+                indexed: 1
+            theta:
+                ucd: phys.angSize;instr.setup
+    specobjall:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
+        columns:
+            bestobjid:
+                ucd: meta.id;src
+            cx:
+                ucd: pos.cartesian.x
+            cy:
+                ucd: pos.cartesian.y
+            cz:
+                ucd: pos.cartesian.z
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec;meta.main
+            fluxobjid:
+                ucd: meta.id;src
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra;meta.main
+            sdss_joinid:
+                indexed: 1
+                ucd: meta.id;src
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+            targetobjid:
+                ucd: meta.id;src
+            veldispnpix:
+                #
+                # This obvious integer is stored as a real number in the FITS file.
+                #
+                datatype: real
+    photoplate:
+        STILTS:
+            #
+            # Add (prepend) these custom STILTS commands.
+            #
+            - cmd=select skyversion==2
+            - cmd=sort parseLong(objid)
+            - cmd=uniq objid
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec;meta.main
+            objid:
+                indexed: 1
+                ucd: meta.id;src
+            parentid:
+                #
+                # Original SQL definition has smallint.
+                #
+                datatype: bigint
+                ucd: meta.id.parent;src
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra;meta.main
+        mapping:
+            #
+            # Additional FITS to SQL column mappings that are not described
+            # in the input SQL file.
+            #
+            glon: L
+            glat: B
+        NOFITS:
+            #
+            # Instructions on how to deal with columns that are NOT defined
+            # in the FITS file, and that are not dropped or deferred by default.
+            #
+            insidemask: drop
+            specobjid: drop
+            dered_u: defer
+            dered_g: defer
+            dered_r: defer
+            dered_i: defer
+            dered_z: defer
+    sdssebossfirefly:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec;meta.main
+            ra:
+                indexed: 1
+                ucd: pos.eq.ra;meta.main
+            sdss_joinid:
+                indexed: 1
+                ucd: meta.id;src
             specobjid:
                 indexed: 1
                 ucd: meta.id;src

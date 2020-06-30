@@ -83,5 +83,28 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 --
+-- Create a SDSS "JOIN" ID that can be used across data releases.
 --
+CREATE OR REPLACE FUNCTION {schema}.sdss_joinid(plate smallint, fiber smallint, mjd integer) RETURNS bigint AS $$
+DECLARE
+    rmjd bigint;
+    mjd_offset CONSTANT bigint := 50000;
+BEGIN
+    rmjd := CAST(mjd AS bigint) - mjd_offset;
+    RETURN ((CAST(plate AS bigint) << 50) |
+            (CAST(fiber AS bigint) << 38) |
+            (rmjd << 24));
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
 --
+-- Create a SDSS "JOIN" ID that can be used across data releases.
+-- The constant run2dmask = ~(2**24 - 1) removes the bits corresponding to
+-- run2d from specobjid.
+--
+CREATE OR REPLACE FUNCTION {schema}.sdss_joinid(specobjid bigint) RETURNS bigint AS $$
+DECLARE
+    run2dmask CONSTANT bigint := -16777216;
+BEGIN
+    RETURN (specobjid & run2dmask);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
