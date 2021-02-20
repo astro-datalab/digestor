@@ -13,16 +13,16 @@ Introduction
 
 .. |Coveralls Status|
 
-.. |Actions Status| image:: https://github.com/desihub/desiutil/workflows/CI/badge.svg
-    :target: https://github.com/desihub/desiutil/actions
+.. |Actions Status| image:: https://github.com/noaodatalab/digestor/workflows/CI/badge.svg
+    :target: https://github.com/noaodatalab/digestor/actions
     :alt: GitHub Actions CI Status
 
-.. .. |Coveralls Status| image:: https://coveralls.io/repos/desihub/desiutil/badge.svg
-..     :target: https://coveralls.io/github/desihub/desiutil
+.. .. |Coveralls Status| image:: https://coveralls.io/repos/noaodatalab/digestor/badge.svg
+..     :target: https://coveralls.io/github/noaodatalab/digestor
 ..     :alt: Test Coverage Status
 
-.. |Documentation Status| image:: https://readthedocs.org/projects/desiutil/badge/?version=latest
-    :target: https://desiutil.readthedocs.io/en/latest/
+.. |Documentation Status| image:: https://readthedocs.org/projects/digestor/badge/?version=latest
+    :target: https://digestor.readthedocs.io/en/latest/
     :alt: Documentation Status
 
 Scripts and metadata for loading survey data into the `Data Lab`_ database.
