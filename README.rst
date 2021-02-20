@@ -9,9 +9,9 @@ digestor
 Introduction
 ------------
 
-|Actions Status|
+|Actions Status| |Documentation Status|
 
-.. |Coveralls Status| |Documentation Status|
+.. |Coveralls Status|
 
 .. |Actions Status| image:: https://github.com/desihub/desiutil/workflows/CI/badge.svg
     :target: https://github.com/desihub/desiutil/actions
@@ -21,9 +21,9 @@ Introduction
 ..     :target: https://coveralls.io/github/desihub/desiutil
 ..     :alt: Test Coverage Status
 
-.. .. |Documentation Status| image:: https://readthedocs.org/projects/desiutil/badge/?version=latest
-..     :target: https://desiutil.readthedocs.io/en/latest/
-..     :alt: Documentation Status
+.. |Documentation Status| image:: https://readthedocs.org/projects/desiutil/badge/?version=latest
+    :target: https://desiutil.readthedocs.io/en/latest/
+    :alt: Documentation Status
 
 Scripts and metadata for loading survey data into the `Data Lab`_ database.
 
