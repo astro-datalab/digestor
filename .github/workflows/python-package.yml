@@ -34,43 +34,41 @@ jobs:
               run: |
                 python -m pip install --upgrade pip wheel
                 python -m pip install pytest pyyaml
-#                 if [ -f requirements.txt ]; then pip install -r requirements.txt; pip install .; fi
-                pip install -U "astropy${{ matrix.astropy-version }}"
+                python -m pip install "astropy${{ matrix.astropy-version }}"
             - name: Run the test
               run: pytest
 
-    coverage:
-        name: Test coverage
-        runs-on: ${{ matrix.os }}
-        strategy:
-            fail-fast: false
-            matrix:
-                os: [ubuntu-latest]
-                python-version: [3.8]
-                astropy-version: ['<4.1']
-
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
-              with:
-                fetch-depth: 0
-            - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
-              with:
-                python-version: ${{ matrix.python-version }}
-            - name: Install Python dependencies
-              run: |
-                python -m pip install --upgrade pip wheel
-                python -m pip install pytest pytest-cov coveralls
-                if [ -f requirements.txt ]; then pip install -r requirements.txt; pip install .; fi
-                pip install -U "astropy${{ matrix.astropy-version }}"
-            - name: Run the test with coverage
-              run: pytest --cov
-            - name: Coveralls
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-              run: coveralls
+    # coverage:
+    #     name: Test coverage
+    #     runs-on: ${{ matrix.os }}
+    #     strategy:
+    #         fail-fast: false
+    #         matrix:
+    #             os: [ubuntu-latest]
+    #             python-version: [3.8]
+    #             astropy-version: ['<4.1']
+    #
+    #     steps:
+    #         - name: Checkout code
+    #           uses: actions/checkout@v2
+    #           with:
+    #             fetch-depth: 0
+    #         - name: Set up Python ${{ matrix.python-version }}
+    #           uses: actions/setup-python@v2
+    #           with:
+    #             python-version: ${{ matrix.python-version }}
+    #         - name: Install Python dependencies
+    #           run: |
+    #             python -m pip install --upgrade pip wheel
+    #             python -m pip install pytest pyyaml pytest-cov coveralls
+    #             pip install -U "astropy${{ matrix.astropy-version }}"
+    #         - name: Run the test with coverage
+    #           run: pytest --cov
+    #         - name: Coveralls
+    #           env:
+    #             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #             COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+    #           run: coveralls
 
     docs:
         name: Doc test
