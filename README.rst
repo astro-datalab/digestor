@@ -9,6 +9,22 @@ digestor
 Introduction
 ------------
 
+|Actions Status|
+
+.. |Coveralls Status| |Documentation Status|
+
+.. |Actions Status| image:: https://github.com/desihub/desiutil/workflows/CI/badge.svg
+    :target: https://github.com/desihub/desiutil/actions
+    :alt: GitHub Actions CI Status
+
+.. .. |Coveralls Status| image:: https://coveralls.io/repos/desihub/desiutil/badge.svg
+..     :target: https://coveralls.io/github/desihub/desiutil
+..     :alt: Test Coverage Status
+
+.. .. |Documentation Status| image:: https://readthedocs.org/projects/desiutil/badge/?version=latest
+..     :target: https://desiutil.readthedocs.io/en/latest/
+..     :alt: Documentation Status
+
 Scripts and metadata for loading survey data into the `Data Lab`_ database.
 
 The initial focus of this package is loading SDSS_ data, but there is

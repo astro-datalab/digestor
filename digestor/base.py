@@ -229,7 +229,7 @@ class Digestor(object):
         if os.path.exists(filename):
             log.debug("Opening %s.", filename)
             with open(filename) as f:
-                self._yamlCache[filename] = yaml.load(f)
+                self._yamlCache[filename] = yaml.safe_load(f)
             return self._yamlCache[filename]
         return None
 
