@@ -472,7 +472,6 @@ class TestSDSS(DigestorCase):
                 l = ff.readlines()
         self.assertEqual(l[3], 'CREATE SCHEMA IF NOT EXISTS sdss;\n')
 
-
     def test_writePOSTSQL(self):
         """Test writing SQL postload file.
         """
