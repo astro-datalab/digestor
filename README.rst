@@ -9,17 +9,15 @@ digestor
 Introduction
 ------------
 
-|Actions Status| |Documentation Status|
-
-.. |Coveralls Status|
+|Actions Status| |Coveralls Status| |Documentation Status|
 
 .. |Actions Status| image:: https://github.com/noaodatalab/digestor/workflows/CI/badge.svg
     :target: https://github.com/noaodatalab/digestor/actions
     :alt: GitHub Actions CI Status
 
-.. .. |Coveralls Status| image:: https://coveralls.io/repos/noaodatalab/digestor/badge.svg
-..     :target: https://coveralls.io/github/noaodatalab/digestor
-..     :alt: Test Coverage Status
+.. |Coveralls Status| image:: https://coveralls.io/repos/noaodatalab/digestor/badge.svg
+    :target: https://coveralls.io/github/noaodatalab/digestor
+    :alt: Test Coverage Status
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/digestor/badge/?version=latest
     :target: https://digestor.readthedocs.io/en/latest/
