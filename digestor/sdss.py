@@ -61,7 +61,7 @@ class SDSS(Digestor):
                                                          description="Unique ID based on PLATE, MJD, FIBERID for joining across data releases",
                                                          datatype='bigint',
                                                          indexed=1,
-                                                         ucd='meta.id;src'),]
+                                                         ucd='meta.id;src'), ]
 
     def parseSQL(self, filename):
         """Parse an entire SQL file.
