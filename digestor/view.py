@@ -12,6 +12,10 @@ import sys
 from argparse import ArgumentParser
 
 
+def _uncovered_function():
+    raise ValueError("This is a test!")
+
+
 def get_options():
     """Parse command-line options.
 

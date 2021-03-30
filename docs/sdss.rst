@@ -110,6 +110,7 @@ Example post-load SQL code::
     CREATE INDEX platex_ring256 ON sdss_dr16.platex (ring256) WITH (fillfactor=100);
     CREATE INDEX platex_nest4096 ON sdss_dr16.platex (nest4096) WITH (fillfactor=100);
     CREATE INDEX platex_random_id ON sdss_dr16.platex (random_id) WITH (fillfactor=100);
+    CREATE INDEX platex_programname ON sdss_dr16.platex (programname) WITH (fillfactor=100);
     GRANT SELECT ON sdss_dr16.platex TO dlquery;
     --
     -- specobjall
@@ -118,6 +119,7 @@ Example post-load SQL code::
     CLUSTER specobjall_q3c_ang2ipix ON sdss_dr16.specobjall;
     ALTER TABLE sdss_dr16.specobjall ADD PRIMARY KEY (specobjid);
     CREATE UNIQUE INDEX specobjall_uint64_specobjid ON sdss_dr16.specobjall (sdss_dr16.uint64(specobjid)) WITH (fillfactor=100);
+    CREATE INDEX specobjall_plateid ON sdss_dr16.specobjall (plateid) WITH (fillfactor=100);
     CREATE INDEX specobjall_uint64_plateid ON sdss_dr16.specobjall (sdss_dr16.uint64(plateid)) WITH (fillfactor=100);
     CREATE INDEX specobjall_ra ON sdss_dr16.specobjall (ra) WITH (fillfactor=100);
     CREATE INDEX specobjall_dec ON sdss_dr16.specobjall (dec) WITH (fillfactor=100);
@@ -129,6 +131,7 @@ Example post-load SQL code::
     CREATE INDEX specobjall_ring256 ON sdss_dr16.specobjall (ring256) WITH (fillfactor=100);
     CREATE INDEX specobjall_nest4096 ON sdss_dr16.specobjall (nest4096) WITH (fillfactor=100);
     CREATE INDEX specobjall_random_id ON sdss_dr16.specobjall (random_id) WITH (fillfactor=100);
+    CREATE INDEX specobjall_scienceprimary ON sdss_dr16.specobjall (scienceprimary) WITH (fillfactor=100);
     ALTER TABLE sdss_dr16.specobjall ADD CONSTRAINT specobjall_platex_fk FOREIGN KEY (plateid) REFERENCES sdss_dr16.platex (plateid);
     CREATE VIEW sdss_dr16.specobj AS SELECT s.* FROM sdss_dr16.specobjall AS s WHERE s.scienceprimary = 1;
     CREATE VIEW sdss_dr16.seguespecobjall AS SELECT s.* FROM sdss_dr16.specobjall AS s JOIN sdss_dr16.platex AS p ON s.plateid = p.plateid WHERE p.programname LIKE 'seg%';
