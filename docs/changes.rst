@@ -2,15 +2,16 @@
 Digestor Change Log
 ===================
 
-0.4.1 (unreleased)
+0.5.0 (2021-09-10)
 ------------------
 
-* Migrate continuous integration to GitHub Actions (PR `#14`_).
+* Migrate continuous integration to GitHub Actions (PR `#14`_, `#15`_).
 * Planned changes:
   - DR12 stellar mass tables
   - DR16 spiders tables, etc.
 
 .. _`#14`: https://github.com/noaodatalab/digestor/pull/14
+.. _`#15`: https://github.com/noaodatalab/digestor/pull/15
 
 0.4.0 (2020-06-30)
 ------------------
