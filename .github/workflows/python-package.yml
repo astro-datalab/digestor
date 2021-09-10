@@ -65,6 +65,9 @@ jobs:
             - name: Run the test with coverage
               run: pytest --cov
             - name: Coveralls
+              # uses: coverallsapp/github-action@v1.1.2
+              # with:
+              #     github-token: ${{ secrets.GITHUB_TOKEN }}
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
