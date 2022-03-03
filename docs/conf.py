@@ -53,8 +53,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Digestor'
-copyright = '2018, NOAO Data Lab Project'
-author = 'NOAO Data Lab Project'
+copyright = '2018-2022, NOIRLAb Data Lab Project'
+author = 'NOIRLab Data Lab Project'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -171,7 +171,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'Digestor.tex', 'Digestor Documentation',
-     'NOAO Data Lab Project', 'manual'),
+     'NOIRLab Data Lab Project', 'manual'),
 ]
 
 

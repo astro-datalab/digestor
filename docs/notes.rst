@@ -16,8 +16,8 @@ General Data Lab Database Loading Notes
   ``explodeall`` creates 1-based columns, not 0-based columns.
 * :command:`stilts` can load the database directly, but slowly.
 * Look for scripts called ``zz*`` or ``_zz*`` in ``/dl2/data``.
-* `fits2db <https://github.com/noao-datalab/fits2db>`_.
-* `TapSchema <http://gitlab.noao.edu/weaver/TapSchema>`_ has the Data Lab
+* `fits2db <https://github.com/astro-datalab/fits2db>`_.
+* `TapSchema <https://github.com/astro-datalab/TapSchema>`_ has the Data Lab
   table definitions.
 * Treat ``varchar(N)`` columns the same as ``text`` when ordering.
 * ``random_id`` is added by :command:`fits2db --rid=random_id`.

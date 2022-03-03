@@ -19,10 +19,10 @@ from setuptools import setup, find_packages
 setup_keywords = dict()
 setup_keywords['name'] = 'digestor'
 setup_keywords['description'] = 'Scripts and metadata for loading survey data into the Data Lab database.'
-setup_keywords['author'] = "NSF's OIR Lab Data Lab Project"
-setup_keywords['author_email'] = 'datalab@noao.edu'
+setup_keywords['author'] = "NSF's NOIRLab Data Lab Project"
+setup_keywords['author_email'] = 'datalab@noirlab.edu'
 setup_keywords['license'] = 'MIT'
-setup_keywords['url'] = 'https://github.com/noaodatalab/digestor'
+setup_keywords['url'] = 'https://github.com/astro-datalab/digestor'
 # setup_keywords['version'] = '0.2.0.dev82'
 #
 # Get version from __init__.py.
