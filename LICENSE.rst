@@ -1,4 +1,4 @@
-Copyright (c) 2018, Association of Universities for Research in Astronomy Inc.
+Copyright (c) 2018-2022, Association of Universities for Research in Astronomy Inc.
 All rights reserved.
 
 The MIT License (MIT)

@@ -3,7 +3,7 @@ digestor
 ========
 
 .. image:: digestor.jpg
-    :target: https://github.com/noaodatalab/digestor
+    :target: https://github.com/astro-datalab/digestor
     :alt: Digestor
 
 Introduction
@@ -11,12 +11,12 @@ Introduction
 
 |Actions Status| |Coveralls Status| |Documentation Status|
 
-.. |Actions Status| image:: https://github.com/noaodatalab/digestor/workflows/CI/badge.svg
-    :target: https://github.com/noaodatalab/digestor/actions
+.. |Actions Status| image:: https://github.com/astro-datalab/digestor/workflows/CI/badge.svg
+    :target: https://github.com/astro-datalab/digestor/actions
     :alt: GitHub Actions CI Status
 
-.. |Coveralls Status| image:: https://coveralls.io/repos/noaodatalab/digestor/badge.svg
-    :target: https://coveralls.io/github/noaodatalab/digestor
+.. |Coveralls Status| image:: https://coveralls.io/repos/astro-datalab/digestor/badge.svg
+    :target: https://coveralls.io/github/astro-datalab/digestor
     :alt: Test Coverage Status
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/digestor/badge/?version=latest
@@ -28,7 +28,7 @@ Scripts and metadata for loading survey data into the `Data Lab`_ database.
 The initial focus of this package is loading SDSS_ data, but there is
 enough generic functionality to apply to any survey.
 
-.. _`Data Lab`: https://datalab.noao.edu/
+.. _`Data Lab`: https://datalab.noirlab.edu/
 .. _SDSS: https://www.sdss.org/
 
 License
