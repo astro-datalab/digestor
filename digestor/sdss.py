@@ -538,7 +538,7 @@ class SDSS(Digestor):
         template = self.env.get_template('sdss_preload.sql')
         with open(filename, 'w') as POST:
             POST.write(template.render(schema=self.schema))
-            POST.write('\n--\n--\n--\n')
+            POST.write('\n--\n-- Create {0.schema}.{0.table}\n--\n'.format(self))
             POST.write(self.createSQL())
 
     def writePOSTSQL(self, filename, ra='ra', pkey='objid'):
