@@ -561,9 +561,15 @@ sdss_dr17:
             - cmd=sort parseLong(objid)
             - cmd=uniq objid
         columns:
+            b:
+                indexed: 1
+                ucd: pos.galactic.lat
             dec:
                 indexed: 1
                 ucd: pos.eq.dec;meta.main
+            l:
+                indexed: 1
+                ucd: pos.galactic.lon
             objid:
                 indexed: 1
                 ucd: meta.id;src

@@ -556,7 +556,7 @@ class SDSS(Digestor):
         with open(filename, 'w') as POST:
             POST.write(template.render(schema=self.schema, table=self.table,
                                        ra=ra, dec=ra.replace('ra', 'dec'),
-                                       pkey=pkey,
+                                       pkey=pkey, join=self.join,
                                        elon='elon', elat='elat',
                                        glon='glon', glat='glat'))
 
