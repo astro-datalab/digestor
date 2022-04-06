@@ -15,6 +15,7 @@ from argparse import ArgumentParser
 
 from pkg_resources import resource_filename
 # from pytz import utc
+from jinja2 import Environment, PackageLoader, select_autoescape
 import numpy as np
 from astropy.table import Table
 
@@ -52,6 +53,8 @@ class SDSS(Digestor):
             self.join = False
         super().__init__(*args, **kwargs)
         self.NOFITS = dict()
+        self.env = Environment(loader=PackageLoader('digestor'),
+                               autoescape=select_autoescape())
         #
         # sdss_joinid is SDSS-specific, so we don't want to initialize
         # that in the superclass.
@@ -532,9 +535,9 @@ class SDSS(Digestor):
         filename : :class:`str`
             Name of the SQL file.
         """
+        template = self.env.get_template('sdss_preload.sql')
         with open(filename, 'w') as POST:
-            with open(resource_filename('digestor', 'data/sdss_preload.sql')) as pre:
-                POST.write(pre.read().format(schema=self.schema))
+            POST.write(template.render(schema=self.schema))
             POST.write(self.createSQL())
 
     def writePOSTSQL(self, filename, ra='ra', pkey='objid'):
