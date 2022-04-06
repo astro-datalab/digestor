@@ -552,11 +552,13 @@ class SDSS(Digestor):
         pkey : :class:`str`, optional
             Name of the PRIMARY KEY column (default 'objid').
         """
+        template = self.env.get_template('sdss_postload.sql')
         with open(filename, 'w') as POST:
-            with open(resource_filename('digestor', 'data/sdss_postload.sql')) as p:
-                POST.write(p.read().format(schema=self.schema, table=self.table,
-                                           ra=ra, dec=ra.replace('ra', 'dec'),
-                                           pkey=pkey))
+            POST.write(template.render(schema=self.schema, table=self.table,
+                                       ra=ra, dec=ra.replace('ra', 'dec'),
+                                       pkey=pkey,
+                                       elon='elon', elat='elat',
+                                       glon='glon', glat='glat'))
 
 
 def get_options():
