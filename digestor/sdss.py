@@ -54,7 +54,8 @@ class SDSS(Digestor):
         super().__init__(*args, **kwargs)
         self.NOFITS = dict()
         self.env = Environment(loader=PackageLoader('digestor'),
-                               autoescape=select_autoescape())
+                               autoescape=select_autoescape(),
+                               trim_blocks=True)
         #
         # sdss_joinid is SDSS-specific, so we don't want to initialize
         # that in the superclass.
