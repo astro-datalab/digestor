@@ -402,7 +402,7 @@ class SDSS(Digestor):
         np_map = {'bigint': np.int64,
                   'integer': np.int32,
                   'smallint': np.int16,
-                  'boolean': np.bool,
+                  'boolean': bool,
                   'double': np.float64,
                   'real': np.float32}
         safe_conversion = {('J', 'smallint'): 2**15,
