@@ -35,12 +35,12 @@ CREATE INDEX {{table}}_htm9 ON {{schema}}.{{table}} (htm9) WITH (fillfactor=100)
 CREATE INDEX {{table}}_ring256 ON {{schema}}.{{table}} (ring256) WITH (fillfactor=100);
 CREATE INDEX {{table}}_nest4096 ON {{schema}}.{{table}} (nest4096) WITH (fillfactor=100);
 CREATE INDEX {{table}}_random_id ON {{schema}}.{{table}} (random_id) WITH (fillfactor=100);
-{%- if table == 'platex' -%}
+{% if table == 'platex' -%}
 --
 -- Index column used to create a view.
 --
 CREATE INDEX {{table}}_programname ON {{schema}}.{{table}} (programname) WITH (fillfactor=100);
-{%- endif %}
+{% endif -%}
 {%- if table == 'photoplate' -%}
 UPDATE {{schema}}.{{table}} SET dered_u = u - extinction_u;
 UPDATE {{schema}}.{{table}} SET dered_g = g - extinction_g;
