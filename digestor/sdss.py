@@ -542,25 +542,20 @@ class SDSS(Digestor):
             POST.write('\n--\n-- Create {0.schema}.{0.table}\n--\n'.format(self))
             POST.write(self.createSQL())
 
-    def writePOSTSQL(self, filename, ra='ra', pkey='objid'):
+    def writePOSTSQL(self, filename, pkey='objid'):
         """Write additional SQL commands needed after loading the table itself.
 
         Parameters
         ----------
         filename : :class:`str`
             Name of the SQL file.
-        ra : :class:`str`, optional
-            Look for Right Ascension in this column (default 'ra').
         pkey : :class:`str`, optional
             Name of the PRIMARY KEY column (default 'objid').
         """
         template = self.env.get_template('sdss_postload.sql')
         with open(filename, 'w') as POST:
             POST.write(template.render(schema=self.schema, table=self.table,
-                                       ra=ra, dec=ra.replace('ra', 'dec'),
-                                       pkey=pkey, join=self.join,
-                                       elon='elon', elat='elat',
-                                       glon='glon', glat='glat'))
+                                       pkey=pkey, join=self.join))
 
 
 def get_options():
@@ -711,7 +706,7 @@ def main():
     #
     sdss.writeSQL(options.output_sql)
     sdss.writePOSTSQL(options.output_sql.replace('.sql', '_post.sql'),
-                      ra=options.ra, pkey=options.pkey)
+                      pkey=options.pkey)
     #
     # Write the JSON file.
     #

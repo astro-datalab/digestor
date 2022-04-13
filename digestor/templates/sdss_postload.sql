@@ -1,11 +1,11 @@
 --
--- This file is intended to be processed by the Jinja2 template engine, and
--- executed *after* the table data has been loaded
+-- This file is intended to be processed by the Jinja2 template engine,
+-- and executed *after* the table data has been loaded.
 --
-CREATE INDEX {{table}}_q3c_ang2ipix ON {{schema}}.{{table}} (q3c_ang2ipix({{ra}}, {{dec}})) WITH (fillfactor=100);
+CREATE INDEX {{table}}_q3c_ang2ipix ON {{schema}}.{{table}} (q3c_ang2ipix(ra, "dec")) WITH (fillfactor=100);
 CLUSTER {{table}}_q3c_ang2ipix ON {{schema}}.{{table}};
--- CREATE INDEX {{table}}_{{glon}}_q3c_ang2ipix ON {{schema}}.{{table}} (q3c_ang2ipix({{glon}}, {{glat}})) WITH (fillfactor=100);
--- CREATE INDEX {{table}}_{{elon}}_q3c_ang2ipix ON {{schema}}.{{table}} (q3c_ang2ipix({{elon}}, {{elat}})) WITH (fillfactor=100);
+-- CREATE INDEX {{table}}_glon_q3c_ang2ipix ON {{schema}}.{{table}} (q3c_ang2ipix(glon, glat)) WITH (fillfactor=100);
+-- CREATE INDEX {{table}}_elon_q3c_ang2ipix ON {{schema}}.{{table}} (q3c_ang2ipix(elon, elat)) WITH (fillfactor=100);
 ALTER TABLE {{schema}}.{{table}} ADD PRIMARY KEY ({{pkey}});
 CREATE UNIQUE INDEX {{table}}_uint64_{{pkey}} ON {{schema}}.{{table}} ({{schema}}.uint64({{pkey}})) WITH (fillfactor=100);
 {% if join %}
@@ -20,17 +20,12 @@ CREATE INDEX {{table}}_scienceprimary ON {{schema}}.{{table}} (scienceprimary) W
 ALTER TABLE {{schema}}.{{table}} ADD CONSTRAINT {{table}}_platex_fk FOREIGN KEY (plateid) REFERENCES {{schema}}.platex (plateid);
 CREATE INDEX {{table}}_uint64_plateid ON {{schema}}.{{table}} ({{schema}}.uint64(plateid)) WITH (fillfactor=100);
 {% endif %}
-CREATE INDEX {{table}}_{{ra}} ON {{schema}}.{{table}} ({{ra}}) WITH (fillfactor=100);
-CREATE INDEX {{table}}_{{dec}} ON {{schema}}.{{table}} ({{dec}}) WITH (fillfactor=100);
-{% if table == 'photoplate' %}
-CREATE INDEX {{table}}_l ON {{schema}}.{{table}} (l) WITH (fillfactor=100);
-CREATE INDEX {{table}}_b ON {{schema}}.{{table}} (b) WITH (fillfactor=100);
-{% else %}
-CREATE INDEX {{table}}_{{elon}} ON {{schema}}.{{table}} ({{elon}}) WITH (fillfactor=100);
-CREATE INDEX {{table}}_{{elat}} ON {{schema}}.{{table}} ({{elat}}) WITH (fillfactor=100);
-{% endif %}
-CREATE INDEX {{table}}_{{glon}} ON {{schema}}.{{table}} ({{glon}}) WITH (fillfactor=100);
-CREATE INDEX {{table}}_{{glat}} ON {{schema}}.{{table}} ({{glat}}) WITH (fillfactor=100);
+CREATE INDEX {{table}}_ra ON {{schema}}.{{table}} (ra) WITH (fillfactor=100);
+CREATE INDEX {{table}}_dec ON {{schema}}.{{table}} ("dec") WITH (fillfactor=100);
+CREATE INDEX {{table}}_elon ON {{schema}}.{{table}} (elon) WITH (fillfactor=100);
+CREATE INDEX {{table}}_elat ON {{schema}}.{{table}} (elat) WITH (fillfactor=100);
+CREATE INDEX {{table}}_glon ON {{schema}}.{{table}} (glon) WITH (fillfactor=100);
+CREATE INDEX {{table}}_glat ON {{schema}}.{{table}} (glat) WITH (fillfactor=100);
 CREATE INDEX {{table}}_htm9 ON {{schema}}.{{table}} (htm9) WITH (fillfactor=100);
 CREATE INDEX {{table}}_ring256 ON {{schema}}.{{table}} (ring256) WITH (fillfactor=100);
 CREATE INDEX {{table}}_nest4096 ON {{schema}}.{{table}} (nest4096) WITH (fillfactor=100);
