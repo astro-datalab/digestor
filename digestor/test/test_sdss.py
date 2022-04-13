@@ -714,10 +714,10 @@ class TestSDSS(DigestorCase):
         """
         with TemporaryDirectory() as d:
             f = os.path.join(d, 'foo.sql')
-            self.sdss.writePOSTSQL(f, ra='plug_ra', pkey='foo_id')
+            self.sdss.writePOSTSQL(f, pkey='foo_id')
             with open(f) as ff:
                 l = ff.readlines()
-        self.assertEqual(l[4], 'CREATE INDEX spectra_q3c_ang2ipix ON sdss.spectra (q3c_ang2ipix(plug_ra, plug_dec)) WITH (fillfactor=100);\n')
+        self.assertEqual(l[4], 'CREATE INDEX spectra_q3c_ang2ipix ON sdss.spectra (q3c_ang2ipix(ra, "dec")) WITH (fillfactor=100);\n')
         self.assertEqual(l[8], 'ALTER TABLE sdss.spectra ADD PRIMARY KEY (foo_id);\n')
 
 
