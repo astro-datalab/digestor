@@ -24,8 +24,13 @@ CREATE INDEX {{table}}_ra ON {{schema}}.{{table}} (ra) WITH (fillfactor=100);
 CREATE INDEX {{table}}_dec ON {{schema}}.{{table}} ("dec") WITH (fillfactor=100);
 CREATE INDEX {{table}}_elon ON {{schema}}.{{table}} (elon) WITH (fillfactor=100);
 CREATE INDEX {{table}}_elat ON {{schema}}.{{table}} (elat) WITH (fillfactor=100);
+{% if table == 'photoplate' %}
+CREATE INDEX {{table}}_l ON {{schema}}.{{table}} (l) WITH (fillfactor=100);
+CREATE INDEX {{table}}_b ON {{schema}}.{{table}} (b) WITH (fillfactor=100);
+{% else %}
 CREATE INDEX {{table}}_glon ON {{schema}}.{{table}} (glon) WITH (fillfactor=100);
 CREATE INDEX {{table}}_glat ON {{schema}}.{{table}} (glat) WITH (fillfactor=100);
+{% endif %}
 CREATE INDEX {{table}}_htm9 ON {{schema}}.{{table}} (htm9) WITH (fillfactor=100);
 CREATE INDEX {{table}}_ring256 ON {{schema}}.{{table}} (ring256) WITH (fillfactor=100);
 CREATE INDEX {{table}}_nest4096 ON {{schema}}.{{table}} (nest4096) WITH (fillfactor=100);
