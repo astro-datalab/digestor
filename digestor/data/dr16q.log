@@ -7,7 +7,7 @@ DEBUG:digestor.sdss.main:661: options.output_json = 'sdss_dr16.dr16q.json'
 DEBUG:digestor.sdss.main:662: options.log = 'dr16q.log'
 DEBUG:digestor.base.Digestor._getYAML:230: Opening /dl2/data/sdss_dr16vac_load/digestor/digestor/data/sdss.yaml.
 INFO:digestor.base.Digestor.addDLColumns:431: Removing existing file: dr16q_datalab.stilts.fits.
-DEBUG:digestor.base.Digestor.addDLColumns:443: stilts tpipe in=dr16q_datalab.fits cmd=addcol htm9 (int)htmIndex(9,ra,dec) cmd=addcol ring256 (int)healpixRingIndex(8,ra,dec) cmd=addcol nest4096 (int)healpixNestIndex(12,ra,dec) cmd=addskycoords -inunit deg -outunit deg icrs ecliptic ra dec elon elat cmd=addskycoords -inunit deg -outunit deg icrs galactic ra dec glon glat ofmt=fits-basic out=dr16q_datalab.stilts.fits
+DEBUG:digestor.base.Digestor.addDLColumns:443: stilts tpipe in=dr16q_datalab.fits cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))"; cmd=addcol htm9 (int)htmIndex(9,ra,dec) cmd=addcol ring256 (int)healpixRingIndex(8,ra,dec) cmd=addcol nest4096 (int)healpixNestIndex(12,ra,dec) cmd=addskycoords -inunit deg -outunit deg icrs ecliptic ra dec elon elat cmd=addskycoords -inunit deg -outunit deg icrs galactic ra dec glon glat ofmt=fits-basic out=dr16q_datalab.stilts.fits
 DEBUG:digestor.sdss.SDSS.parseLine:99: self.tapSchema['tables'][8]['description'] += 'The DR16 QSO Catalog (v4)'
 DEBUG:digestor.sdss.SDSS.parseLine:102: self.tapSchema['tables'][8]['long_description'] += 'DR16Q is the final quasar catalog of SDSS-IV, associated with the sixteenth'
 DEBUG:digestor.sdss.SDSS.parseLine:102: self.tapSchema['tables'][8]['long_description'] += 'data release. The catalog is documented in more detail at the DR16Q VAC algorithm'
@@ -743,4 +743,34 @@ DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: glon -> SQL: glon
 DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: glat -> SQL: glat
 DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: elon -> SQL: elon
 DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: elat -> SQL: elat
-ERROR:digestor.sdss.SDSS.mapColumns:291: Could not find a FITS column corresponding to sdss_joinid!
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: sdss_joinid -> SQL: sdss_joinid
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: SPECOBJID -> SQL: specobjid
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: SDSS_NAME -> SQL: sdss_name
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: RA -> SQL: ra
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: DEC -> SQL: dec
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: RUN2D -> SQL: run2d
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: PLATE -> SQL: plate
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: MJD -> SQL: mjd
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: FIBERID -> SQL: fiberid
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: AUTOCLASS_PQN -> SQL: autoclass_pqn
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: AUTOCLASS_DR14Q -> SQL: autoclass_dr14q
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: IS_QSO_QN -> SQL: is_qso_qn
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z_QN -> SQL: z_qn
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: RANDOM_SELECT -> SQL: random_select
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z_10K -> SQL: z_10k
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z_CONF_10K -> SQL: z_conf_10k
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: PIPE_CORR_10K -> SQL: pipe_corr_10k
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: IS_QSO_10K -> SQL: is_qso_10k
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: THING_ID -> SQL: thing_id
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z_VI -> SQL: z_vi
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z_CONF -> SQL: z_conf
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: CLASS_PERSON -> SQL: class_person
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z_DR12Q -> SQL: z_dr12q
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: IS_QSO_DR12Q -> SQL: is_qso_dr12q
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z_DR7Q_SCH -> SQL: z_dr7q_sch
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: IS_QSO_DR7Q -> SQL: is_qso_dr7q
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z_DR6Q_HW -> SQL: z_dr6q_hw
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z_DR7Q_HW -> SQL: z_dr7q_hw
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: IS_QSO_FINAL -> SQL: is_qso_final
+DEBUG:digestor.sdss.SDSS.mapColumns:270: FITS: Z -> SQL: z
+ERROR:digestor.sdss.SDSS.mapColumns:264: Could not find a FITS column corresponding to source_z!
