@@ -95,11 +95,31 @@ YFOCAL						float NOT NULL, --/D  Hole y-axis position in focal plane, in mm
 CHUNK				        varchar(14) NOT NULL, --/D Name of tiling chunk (from platelist product)
 TILE				        smallint NOT NULL, --/D   Tile number
 PLATESN2				    float NOT NULL, --/D  Overall (S/N)2 measure for plate, minimum of all 4 cameras
-PSFFLUX				        float NOT NULL, --/D Flux in u, g, r, i, z bands
-PSFFLUX_IVAR			    float NOT NULL, --/D  Inverse variance of u, g, r, i, z fluxes
-PSFMAG						float NOT NULL, --/D  PSF magnitudes in u, g, r, i, z bands
-PSFMAGERR				    float NOT NULL, --/D  Error of PSF magnitudes in u, g, r, i, z bands
-EXTINCTION				    float NOT NULL, --/D  Galactic extinction in u, g, r, i, z bands
+PSFFLUX_U				        float NOT NULL, --/D Flux in u, g, r, i, z bands
+PSFFLUX_G				        float NOT NULL, --/D Flux in u, g, r, i, z bands
+PSFFLUX_R				        float NOT NULL, --/D Flux in u, g, r, i, z bands
+PSFFLUX_I				        float NOT NULL, --/D Flux in u, g, r, i, z bands
+PSFFLUX_Z				        float NOT NULL, --/D Flux in u, g, r, i, z bands
+PSFFLUX_IVAR_U			    float NOT NULL, --/D  Inverse variance of u, g, r, i, z fluxes
+PSFFLUX_IVAR_G			    float NOT NULL, --/D  Inverse variance of u, g, r, i, z fluxes
+PSFFLUX_IVAR_R			    float NOT NULL, --/D  Inverse variance of u, g, r, i, z fluxes
+PSFFLUX_IVAR_I			    float NOT NULL, --/D  Inverse variance of u, g, r, i, z fluxes
+PSFFLUX_IVAR_Z			    float NOT NULL, --/D  Inverse variance of u, g, r, i, z fluxes
+PSFMAG_U						float NOT NULL, --/D  PSF magnitudes in u, g, r, i, z bands
+PSFMAG_G						float NOT NULL, --/D  PSF magnitudes in u, g, r, i, z bands
+PSFMAG_R						float NOT NULL, --/D  PSF magnitudes in u, g, r, i, z bands
+PSFMAG_I						float NOT NULL, --/D  PSF magnitudes in u, g, r, i, z bands
+PSFMAG_Z						float NOT NULL, --/D  PSF magnitudes in u, g, r, i, z bands
+PSFMAGERR_U				    float NOT NULL, --/D  Error of PSF magnitudes in u, g, r, i, z bands
+PSFMAGERR_G				    float NOT NULL, --/D  Error of PSF magnitudes in u, g, r, i, z bands
+PSFMAGERR_R				    float NOT NULL, --/D  Error of PSF magnitudes in u, g, r, i, z bands
+PSFMAGERR_I				    float NOT NULL, --/D  Error of PSF magnitudes in u, g, r, i, z bands
+PSFMAGERR_Z				    float NOT NULL, --/D  Error of PSF magnitudes in u, g, r, i, z bands
+EXTINCTION_U				    float NOT NULL, --/D  Galactic extinction in u, g, r, i, z bands
+EXTINCTION_G				    float NOT NULL, --/D  Galactic extinction in u, g, r, i, z bands
+EXTINCTION_R				    float NOT NULL, --/D  Galactic extinction in u, g, r, i, z bands
+EXTINCTION_I				    float NOT NULL, --/D  Galactic extinction in u, g, r, i, z bands
+EXTINCTION_Z				    float NOT NULL, --/D  Galactic extinction in u, g, r, i, z bands
 M_I				            float NOT NULL, --/D		 Absolute i-band magnitude, H0 = 67.6 km s-1 Mpc-1, OMEGAM = 0.31, OMEGAL = 0.69, OMEGAR		=		9.11x10-5. K-corrections taken from Table 4 of Richards et al. (2006). Z_PCA used for redshifts
 SN_MEDIAN_ALL			    float NOT NULL, --/D  Median S/N value of all good spectroscopic pixels
 GALEX_MATCHED			    integer NOT NULL, --/D   Matching flag for GALEX
