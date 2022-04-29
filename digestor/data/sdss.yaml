@@ -461,8 +461,8 @@ sdss_dr16:
                 indexed: 1
                 ucd: meta.id;src
     dr16q:
-        STILTS:
-            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
+        #STILTS:
+        #    - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
         columns:
             dec:
                 indexed: 1
@@ -470,9 +470,6 @@ sdss_dr16:
             ra:
                 indexed: 1
                 ucd: pos.eq.ra;meta.main
-            sdss_joinid:
-                indexed: 1
-                ucd: meta.id;src
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
