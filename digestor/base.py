@@ -32,6 +32,10 @@ class Digestor(object):
         A short description of `schema`.
     merge : :class:`str`, optional
         Name of a JSON file containing existing TapSchema metadata.
+    pixels : :class:`bool`, optional
+        If ``False``, *don't* HTM and HEALPix columns.
+    random : :class:`bool`, optional
+        If ``False``, *don't* add a ``random_id`` column.
     ecliptic : :class:`bool`, optional
         If ``False``, *don't* add ecliptic coordinates (probably because
         they already exist).
@@ -57,9 +61,11 @@ class Digestor(object):
     _stilts_galactic = 'cmd=addskycoords -inunit deg -outunit deg icrs galactic {ra} {dec} glon glat'
 
     def __init__(self, schema, table, description=None, merge=None,
-                 ecliptic=True, galactic=True):
+                 pixels=True, random=True, ecliptic=True, galactic=True):
         self.schema = schema
         self.table = table
+        self.pixels = pixels
+        self.random = random
         self.ecliptic = ecliptic
         self.galactic = galactic
         self.tapSchema = self._initTapSchema(description, merge)
@@ -176,20 +182,23 @@ class Digestor(object):
         :class:`list`
             A list suitable for appending to an existing list of columns.
         """
-        r = [self.tapColumn('htm9',
-                            description="HTM index (order 9 => ~10 arcmin size)",
-                            datatype='integer', indexed=1, ucd='pos.HTM'),
-             self.tapColumn('ring256',
-                            description="HEALPIX index (Nsides 256, Ring scheme => ~14 arcmin size)",
-                            datatype='integer', indexed=1,
-                            ucd='pos.healpix'),
-             self.tapColumn('nest4096',
-                            description="HEALPIX index (Nsides 4096, Nest scheme => ~52 arcsec size",
-                            datatype='integer', indexed=1,
-                            ucd='pos.healpix'),
-             self.tapColumn('random_id',
-                            description="Random ID in the range 0.0 => 100.0",
-                            datatype='real', indexed=1)]
+        r = list()
+        if self.pixels:
+            r += [self.tapColumn('htm9',
+                                 description="HTM index (order 9 => ~10 arcmin size)",
+                                 datatype='integer', indexed=1, ucd='pos.HTM'),
+                  self.tapColumn('ring256',
+                                 description="HEALPIX index (Nsides 256, Ring scheme => ~14 arcmin size)",
+                                 datatype='integer', indexed=1,
+                                 ucd='pos.healpix'),
+                  self.tapColumn('nest4096',
+                                 description="HEALPIX index (Nsides 4096, Nest scheme => ~52 arcsec size",
+                                 datatype='integer', indexed=1,
+                                 ucd='pos.healpix')]
+        if self.random:
+            r += [self.tapColumn('random_id',
+                                 description="Random ID in the range 0.0 => 100.0",
+                                 datatype='real', indexed=1)]
         if self.galactic:
             r += [self.tapColumn('glon',
                                  description="Galactic Longitude",
@@ -434,7 +443,8 @@ class Digestor(object):
         fdec = ra.lower().replace('ra', 'dec')
         command = ['stilts', 'tpipe', 'in={0}'.format(filename)]
         command += self._custom_stilts_command
-        command += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
+        if self.pixels:
+            command += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
         if self.ecliptic:
             command.append(self._stilts_ecliptic.format(ra=fra, dec=fdec))
         if self.galactic:

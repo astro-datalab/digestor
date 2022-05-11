@@ -273,7 +273,7 @@ class SDSS(Digestor):
                     if sc in self.mapping:
                         break
             if sc not in self.mapping:
-                if sc == 'random_id':
+                if self.random and sc == 'random_id':
                     log.info("Skipping %s which will be added by FITS2DB.",
                              sc)
                 elif sc in self.NOFITS:
@@ -412,7 +412,7 @@ class SDSS(Digestor):
         old = Table.read(self._inputFITS, hdu=hdu)
         new = Table()
         for col in columns:
-            if col['column_name'] == 'random_id':
+            if self.random and col['column_name'] == 'random_id':
                 log.info("Creating %s column using numpy.random.random().",
                          col['column_name'])
                 stime = int(time.time())
@@ -595,8 +595,12 @@ def get_options():
     parser.add_argument('-p', '--primary-key', dest='pkey', metavar='COLUMN',
                         default='objid',
                         help='COLUMN is primary key (default %(default)s).')
+    parser.add_argument('-P', '--no-pixels', dest='pixels', action='store_false',
+                        help='Do not add HTM & HEALPix columns.')
     parser.add_argument('-r', '--ra', dest='ra', metavar='COLUMN', default='ra',
                         help='Right Ascension is in COLUMN (default %(default)s).')
+    parser.add_argument('-R', '--no-random', dest='random', action='store_false',
+                        help='Do not add a random_id column.')
     parser.add_argument('-s', '--schema', metavar='SCHEMA',
                         default='sdss_dr14',
                         help='Define table with this schema (default %(default)s).')
@@ -641,6 +645,8 @@ def main():
         sdss = SDSS(options.schema, options.table,
                     description=options.description,
                     merge=options.merge_json,
+                    pixels=options.pixels,
+                    random=options.random,
                     ecliptic=options.ecliptic,
                     galactic=options.galactic,
                     join=options.join)

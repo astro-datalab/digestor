@@ -216,6 +216,105 @@ class TestSDSS(DigestorCase):
                          'elon': 'e_lon', 'elat': 'e_lat'}
         self.assertDictEqual(self.sdss.mapping, final_mapping)
         self.assertLog(-1, 'FITS column FOOBAR will be dropped from SQL!')
+
+    def test_map_columns_no_random(self):
+        """Test turning off random column.
+        """
+        self.sdss.random = False
+        del self.sdss.tapSchema['columns'][3]
+        self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
+                                            "column_name": "mag_u",
+                                            "description": "u Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "mag_g",
+                                            "description": "g Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "magivar_u",
+                                            "description": "u ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "magivar_g",
+                                            "description": "g ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "no_fits_keep",
+                                            "description": "keeper",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "no_fits_drop",
+                                            "description": "dropper",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0}]
+        self.sdss.mapping = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
+                             'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]'}
+        self.sdss.FITS = {'e_lon': 'D', 'e_lat': 'D',
+                          'g_lon': 'D', 'g_lat': 'D',
+                          'HTM9': 'J', 'ring256': 'J',
+                          'nest4096': 'J', 'MAG': '2E',
+                          'MAG_IVAR': '2E',
+                          'FOOBAR': '16A'}
+        self.sdss.NOFITS = {'no_fits_keep': 'defer', 'no_fits_drop': 'drop'}
+        self.sdss.mapColumns()
+        final_mapping = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
+                         'magivar_u': 'MAG_IVAR[0]', 'magivar_g': 'MAG_IVAR[1]',
+                         'htm9': 'HTM9', 'ring256': 'ring256', 'nest4096': 'nest4096',
+                         'glon': 'g_lon', 'glat': 'g_lat',
+                         'elon': 'e_lon', 'elat': 'e_lat'}
+        self.assertDictEqual(self.sdss.mapping, final_mapping)
+        self.assertNotIn('random_id', self.sdss.colNames)
+
+    def test_map_columns_missing_fits_array_column(self):
+        """Test mapColumns with a missing, array-valued column.
+        """
+        self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
+                                            "column_name": "mag_u",
+                                            "description": "u Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "mag_g",
+                                            "description": "g Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "magivar_u",
+                                            "description": "u ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "magivar_g",
+                                            "description": "g ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "no_fits_keep",
+                                            "description": "keeper",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "no_fits_drop",
+                                            "description": "dropper",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0}]
         self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
                                             "column_name": "flux_u",
                                             "description": "u flux",
@@ -231,9 +330,78 @@ class TestSDSS(DigestorCase):
         self.sdss.mapping = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
                              'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
                              'flux_u': 'FLUX[0]', 'flux_g': 'FLUX[1]'}
+        self.sdss.FITS = {'e_lon': 'D', 'e_lat': 'D',
+                          'g_lon': 'D', 'g_lat': 'D',
+                          'HTM9': 'J', 'ring256': 'J',
+                          'nest4096': 'J', 'MAG': '2E',
+                          'MAG_IVAR': '2E',
+                          'FOOBAR': '16A'}
+        self.sdss.NOFITS = {'no_fits_keep': 'defer', 'no_fits_drop': 'drop'}
         with self.assertRaises(KeyError) as e:
             self.sdss.mapColumns()
         self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to flux_u!')
+
+    def test_map_columns_missing_fits_column(self):
+        """Test mapColumns with a missing column.
+        """
+        self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
+                                            "column_name": "mag_u",
+                                            "description": "u Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "mag_g",
+                                            "description": "g Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "magivar_u",
+                                            "description": "u ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "magivar_g",
+                                            "description": "g ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "no_fits_keep",
+                                            "description": "keeper",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "no_fits_drop",
+                                            "description": "dropper",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0}]
+        self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
+                                            "column_name": "flux_u",
+                                            "description": "u flux",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "flux_g",
+                                            "description": "g flux",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0}]
+        self.sdss.mapping = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
+                             'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
+                             'flux_u': 'FLUX[0]', 'flux_g': 'FLUX[1]'}
+        self.sdss.FITS = {'e_lon': 'D', 'e_lat': 'D',
+                          'g_lon': 'D', 'g_lat': 'D',
+                          'HTM9': 'J', 'ring256': 'J',
+                          'nest4096': 'J', 'MAG': '2E',
+                          'MAG_IVAR': '2E',
+                          'FOOBAR': '16A'}
+        self.sdss.NOFITS = {'no_fits_keep': 'defer', 'no_fits_drop': 'drop'}
         self.sdss.FITS['FLUX'] = '2E'
         self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
                                             "column_name": "z",
@@ -247,6 +415,75 @@ class TestSDSS(DigestorCase):
         with self.assertRaises(KeyError) as e:
             self.sdss.mapColumns()
         self.assertEqual(e.exception.args[0], 'Could not find a FITS column corresponding to z!')
+
+    def test_map_columns_missing_nofits_instruction(self):
+        """Test a missing NOFITS instruction.
+        """
+        self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
+                                            "column_name": "mag_u",
+                                            "description": "u Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "mag_g",
+                                            "description": "g Magnitude",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "magivar_u",
+                                            "description": "u ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "magivar_g",
+                                            "description": "g ivar",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "no_fits_keep",
+                                            "description": "keeper",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "no_fits_drop",
+                                            "description": "dropper",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0}]
+        self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
+                                            "column_name": "flux_u",
+                                            "description": "u flux",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
+                                            "column_name": "flux_g",
+                                            "description": "g flux",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0}]
+        self.sdss.FITS = {'e_lon': 'D', 'e_lat': 'D',
+                          'g_lon': 'D', 'g_lat': 'D',
+                          'HTM9': 'J', 'ring256': 'J',
+                          'nest4096': 'J', 'MAG': '2E',
+                          'MAG_IVAR': '2E',
+                          'FOOBAR': '16A'}
+        self.sdss.NOFITS = {'no_fits_keep': 'defer', 'no_fits_drop': 'drop'}
+        self.sdss.FITS['FLUX'] = '2E'
+        self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
+                                            "column_name": "z",
+                                            "description": "z",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "real", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0}]
+        self.sdss.mapping = {'mag_u': 'MAG[0]', 'mag_g': 'MAG[1]',
+                             'magivar_u': 'MAGIVAR[0]', 'magivar_g': 'MAGIVAR[1]',
+                             'flux_u': 'FLUX[0]', 'flux_g': 'FLUX[1]'}
         self.sdss.tapSchema['columns'] += [{"table_name": "{0.table}".format(self),
                                             "column_name": "no_fits_error",
                                             "description": "error",
