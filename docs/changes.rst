@@ -2,10 +2,15 @@
 Digestor Change Log
 ===================
 
-0.5.1 (unreleased)
+0.6.0 (unreleased)
 ------------------
 
-* No changes yet.
+* Add support for ``sdss_dr16.dr16q`` and ``sdss_dr16.elg_classifier``;
+  allow "pixel" columns to be turned off (PR `#19`_).
+* Add support for ``sdss_dr17`` core tables; allow more fine-grained
+  configuration of indexes with template-based post-load SQL files (PR TBD).
+
+.. _`#19`: https://github.com/astro-datalab/digestor/pull/19
 
 0.5.0 (2021-09-10)
 ------------------
