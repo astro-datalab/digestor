@@ -7,4 +7,4 @@ digestor
 Scripts and metadata for loading survey data into the Data Lab database.
 """
 
-__version__ = '0.6.0'
+__version__ = '0.6.1.dev268'
