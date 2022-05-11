@@ -473,3 +473,10 @@ sdss_dr16:
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
+    elg_classifier:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
+        columns:
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src

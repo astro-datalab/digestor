@@ -12,7 +12,7 @@ CREATE  TABLE dr16q (
 --/T  https://data.sdss.org/sas/dr16/eboss/qso/DR16Q/DR16Q_v4.fits
 -------------------------------------------------------------------------------
 
-specobjid              bigint NOT NULL, --/D Unique database ID based on PLATE, MJD, FIBERID, RUN2D --/K ID_CATALOG
+SPECOBJID              bigint NOT NULL, --/D Unique database ID based on PLATE, MJD, FIBERID, RUN2D --/K ID_CATALOG
 SDSS_NAME              varchar(18) NOT NULL, --/D SDSS-DR16 designation (hhmmss.ss±ddmmss.s, J2000)
 RA                     float NOT NULL, --/U deg --/D Right ascension in decimal degrees (J2000)
 DEC                    float NOT NULL, --/U deg --/D Declination in decimal degrees (J2000)
@@ -29,7 +29,7 @@ Z_10K                  float NOT NULL, --/D Redshift from visual inspection in r
 Z_CONF_10K             int NOT NULL, --/D Confidence rating for visual inspection redshift in random set
 PIPE_CORR_10K          int NOT NULL, --/D Binary flag indicating if the automated pipeline classification and redshift were correct in the random set
 IS_QSO_10K             int NOT NULL, --/D Binary flag for random set quasar identification
-THING_ID               int NOT NULL, --/D SDSS identifier
+THING_ID               bigint NOT NULL, --/D SDSS identifier
 Z_VI                   float NOT NULL, --/D Visual inspection redshift
 Z_CONF                 int NOT NULL, --/D Confidence rating for visual inspection redshift
 CLASS_PERSON           int NOT NULL, --/D Object classification from visual inspection
@@ -41,7 +41,7 @@ Z_DR6Q_HW              float NOT NULL, --/D Redshift taken from DR6-based Hewett
 Z_DR7Q_HW              float NOT NULL, --/D Redshift using Hewett and Wild (2010) updates for DR7Q sources from the Shen et al. (2011) catalog
 IS_QSO_FINAL           int NOT NULL, --/D Flag indicating quasars to be included in final catalog
 Z                      float NOT NULL, --/D Best available redshift taken from Z_VI, Z_PIPE, Z_DR12Q, Z_DR7Q_SCH, Z_DR6Q_HW, and Z_10K
-SOURCE_Z               varchar(12) NOT NULL, --/D Origin of the reported redshift in Z
+ZSOURCE                varchar(12) NOT NULL, --/D Origin of the reported redshift in Z --/F SOURCE_Z
 Z_PIPE                 float NOT NULL, --/D SDSS automated pipeline redshift
 ZWARNING               int NOT NULL, --/D Quality flag on the pipeline redshift estimate
 OBJID                  varchar(19) NOT NULL, --/D SDSS object identification number
@@ -67,21 +67,21 @@ Z_LYA                  float NOT NULL, --/D PCA line redshift for LyAlpha from r
 ZWARN_LYA              bigint NOT NULL, --/D Warning flag for LyAlpha redshift
 DELTACHI2_LYA          float NOT NULL, --/D Delta Chi^2 for LyAlpha line redshift vs. cubic continuum fit
 Z_LYAWG                float NOT NULL, --/D PCA systemic redshift from redvsblue with a masked LyAlpha emission line and forest
-Z_DLA_1                float NOT NULL, --/D Redshift for damped LyAlpha features
-Z_DLA_2                float NOT NULL, --/D Redshift for damped LyAlpha features
-Z_DLA_3                float NOT NULL, --/D Redshift for damped LyAlpha features
-Z_DLA_4                float NOT NULL, --/D Redshift for damped LyAlpha features
-Z_DLA_5                float NOT NULL, --/D Redshift for damped LyAlpha features
-NHI_DLA_1              float NOT NULL, --/D Absorber column density for damped LyAlpha features
-NHI_DLA_2              float NOT NULL, --/D Absorber column density for damped LyAlpha features
-NHI_DLA_3              float NOT NULL, --/D Absorber column density for damped LyAlpha features
-NHI_DLA_4              float NOT NULL, --/D Absorber column density for damped LyAlpha features
-NHI_DLA_5              float NOT NULL, --/D Absorber column density for damped LyAlpha features
-CONF_DLA_1             float NOT NULL, --/D Confidence of detection for damped LyAlpha features
-CONF_DLA_2             float NOT NULL, --/D Confidence of detection for damped LyAlpha features
-CONF_DLA_3             float NOT NULL, --/D Confidence of detection for damped LyAlpha features
-CONF_DLA_4             float NOT NULL, --/D Confidence of detection for damped LyAlpha features
-CONF_DLA_5             float NOT NULL, --/D Confidence of detection for damped LyAlpha features
+Z_DLA_1                float NOT NULL, --/D Redshift for damped LyAlpha features --/F Z_DLA 0
+Z_DLA_2                float NOT NULL, --/D Redshift for damped LyAlpha features --/F Z_DLA 1
+Z_DLA_3                float NOT NULL, --/D Redshift for damped LyAlpha features --/F Z_DLA 2
+Z_DLA_4                float NOT NULL, --/D Redshift for damped LyAlpha features --/F Z_DLA 3
+Z_DLA_5                float NOT NULL, --/D Redshift for damped LyAlpha features --/F Z_DLA 4
+NHI_DLA_1              float NOT NULL, --/D Absorber column density for damped LyAlpha features --/F NHI_DLA 0
+NHI_DLA_2              float NOT NULL, --/D Absorber column density for damped LyAlpha features --/F NHI_DLA 1
+NHI_DLA_3              float NOT NULL, --/D Absorber column density for damped LyAlpha features --/F NHI_DLA 2
+NHI_DLA_4              float NOT NULL, --/D Absorber column density for damped LyAlpha features --/F NHI_DLA 3
+NHI_DLA_5              float NOT NULL, --/D Absorber column density for damped LyAlpha features --/F NHI_DLA 4
+CONF_DLA_1             float NOT NULL, --/D Confidence of detection for damped LyAlpha features --/F CONF_DLA 0
+CONF_DLA_2             float NOT NULL, --/D Confidence of detection for damped LyAlpha features --/F CONF_DLA 1
+CONF_DLA_3             float NOT NULL, --/D Confidence of detection for damped LyAlpha features --/F CONF_DLA 2
+CONF_DLA_4             float NOT NULL, --/D Confidence of detection for damped LyAlpha features --/F CONF_DLA 3
+CONF_DLA_5             float NOT NULL, --/D Confidence of detection for damped LyAlpha features --/F CONF_DLA 4
 BAL_PROB               float NOT NULL, --/D BAL probability
 BI_CIV                 float NOT NULL, --/U km/s --/D BALnicity index for C IV Lambda1549 region
 ERR_BI_CIV             float NOT NULL, --/U km/s --/D Uncertainty of BI for C IV Lambda1549 region
@@ -132,7 +132,7 @@ EXTINCTION_G           float NOT NULL, --/U mag --/D Galactic extinction in u, g
 EXTINCTION_R           float NOT NULL, --/U mag --/D Galactic extinction in u, g, r, i, z bands
 EXTINCTION_I           float NOT NULL, --/U mag --/D Galactic extinction in u, g, r, i, z bands
 EXTINCTION_Z           float NOT NULL, --/U mag --/D Galactic extinction in u, g, r, i, z bands
-M_I                    float NOT NULL, --/D Absolute i-band magnitude, H0 = 67.6 km s-1 Mpc-1, OMEGAM = 0.31, OMEGAL = 0.69, OMEGAR         =         9.11x10-5. K-corrections taken from Table 4 of Richards et al. (2006). Z_PCA used for redshifts
+MI                    float NOT NULL, --/D Absolute i-band magnitude, H0 = 67.6 km s-1 Mpc-1, OMEGAM = 0.31, OMEGAL = 0.69, OMEGAR = 9.11x10-5. K-corrections taken from Table 4 of Richards et al. (2006). Z_PCA used for redshifts --/F M_I
 SN_MEDIAN_ALL          float NOT NULL, --/D Median S/N value of all good spectroscopic pixels
 GALEX_MATCHED          int NOT NULL, --/D Matching flag for GALEX
 FUV                    float NOT NULL, --/U nanomaggies --/D FUV flux from GALEX
@@ -185,11 +185,11 @@ KMAG_ERR               float NOT NULL, --/U mag --/D 2MASS Error in Ks-band magn
 KSNR                   float NOT NULL, --/D 2MASS Ks-band S/N
 KRDFLAG                smallint NOT NULL, --/D 2MASS Ks-band photometry flag
 SDSS2MASS_SEP          float NOT NULL, --/U arcsec --/D SDSS-2MASS separation in arcsec
-2RXS_ID                varchar(21) NOT NULL, --/D ROSAT ID
-2RXS_RA                float NOT NULL, --/D Right ascension of the ROSAT source in decimal degrees (J2000)
-2RXS_DEC               float NOT NULL, --/D Declination of the ROSAT source in decimal degrees (J2000)
-2RXS_SRC_FLUX          float NOT NULL, --/D ROSAT source flux in 0.5-2.0 keV band in erg s-1 cm-2 (G = 2.4, dered)
-2RXS_SRC_FLUX_ERR      float NOT NULL, --/D ROSAT source flux error in 0.5-2.0 keV band in erg s-1 cm-2 (G = 2.4, dered)
+ROSAT_ID                varchar(21) NOT NULL, --/D ROSAT ID --/F 2RXS_ID
+ROSAT_RA                float NOT NULL, --/D Right ascension of the ROSAT source in decimal degrees (J2000) --/F 2RXS_RA
+ROSAT_DEC               float NOT NULL, --/D Declination of the ROSAT source in decimal degrees (J2000) --/F 2RXS_DEC
+ROSAT_SRC_FLUX          float NOT NULL, --/D ROSAT source flux in 0.5-2.0 keV band in erg s-1 cm-2 (G = 2.4, dered) --/F 2RXS_SRC_FLUX
+ROSAT_SRC_FLUX_ERR      float NOT NULL, --/D ROSAT source flux error in 0.5-2.0 keV band in erg s-1 cm-2 (G = 2.4, dered) --/F 2RXS_SRC_FLUX_ERR
 SDSS2ROSAT_SEP         float NOT NULL, --/U arcsec --/D SDSS-ROSAT separation in arcsec
 XMM_SRC_ID             bigint NOT NULL, --/D XMM source ID
 XMM_RA                 float NOT NULL, --/D Right ascension for XMM source in decimal degrees (J2000)
