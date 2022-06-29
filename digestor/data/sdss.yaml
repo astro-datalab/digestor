@@ -487,10 +487,10 @@ sdss_dr16:
             dec:
                 indexed: 1
                 ucd: pos.eq.dec
-            plug_dec:
+            dr16_plugdec:
                 indexed: 1
                 ucd: pos.eq.dec
-            plug_ra:
+            dr16_plugra:
                 indexed: 1
                 ucd: pos.eq.ra
             ra:
@@ -499,3 +499,4 @@ sdss_dr16:
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
+    spiders_cluster:
