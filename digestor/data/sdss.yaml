@@ -479,6 +479,26 @@ sdss_dr16:
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
+    spiders_quasar:
+        STILTS:
+            - cmd=addcol -ucd meta.id -after specobjid sdss_joinid "(((long)plate<<50)|((long)fiberid<<38)|(((long)mjd-(long)50000)<<24))";
+        columns:
+            dec:
+                indexed: 1
+                ucd: pos.eq.dec
+            dr16_plugdec:
+                indexed: 1
+                ucd: pos.eq.dec
+            dr16_plugra:
+                indexed: 1
+                ucd: pos.eq.ra
+            ra:
+                indexed: 1
+                ucd: pos.eq.dec
+            specobjid:
+                indexed: 1
+                ucd: meta.id;src
+    # spiders_cluster:
 #
 # DR17
 #
