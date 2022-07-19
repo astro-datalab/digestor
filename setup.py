@@ -64,7 +64,7 @@ setup_keywords['entry_points'] = {'console_scripts': ['sdss2dl = digestor.sdss:m
 #
 # Add internal data directories.
 #
-setup_keywords['package_data'] = {'digestor': ['data/*'], }
+setup_keywords['package_data'] = {'digestor': ['data/*', 'templates/*'], }
 #                                   'digestor.test': ['t/*']}
 #
 # Run setup command.
