@@ -54,10 +54,16 @@ sdss_dr12:
                 datatype: integer
             elodiedof:
                 datatype: integer
+            fiberid:
+                indexed: 1
             fluxobjid:
                 ucd: meta.id;src
+            mjd:
+                indexed: 1
             npoly:
                 datatype: integer
+            plate:
+                indexed: 1
             plateid:
                 indexed: 1
                 ucd: meta.id;instr
@@ -207,10 +213,16 @@ sdss_dr14:
                 datatype: integer
             elodiedof:
                 datatype: integer
+            fiberid:
+                indexed: 1
             fluxobjid:
                 ucd: meta.id;src
+            mjd:
+                indexed: 1
             npoly:
                 datatype: integer
+            plate:
+                indexed: 1
             plateid:
                 indexed: 1
                 ucd: meta.id;instr
@@ -219,6 +231,9 @@ sdss_dr14:
                 ucd: pos.eq.ra
             scienceprimary:
                 indexed: 1
+            sdss_joinid:
+                indexed: 1
+                ucd: meta.id;src
             specobjid:
                 indexed: 1
                 ucd: meta.id;src
@@ -363,8 +378,14 @@ sdss_dr16:
             dec:
                 indexed: 1
                 ucd: pos.eq.dec;meta.main
+            fiberid:
+                indexed: 1
             fluxobjid:
                 ucd: meta.id;src
+            mjd:
+                indexed: 1
+            plate:
+                indexed: 1
             plateid:
                 indexed: 1
                 ucd: meta.id;instr
@@ -549,8 +570,14 @@ sdss_dr17:
             dec:
                 indexed: 1
                 ucd: pos.eq.dec;meta.main
+            fiberid:
+                indexed: 1
             fluxobjid:
                 ucd: meta.id;src
+            mjd:
+                indexed: 1
+            plate:
+                indexed: 1
             plateid:
                 indexed: 1
                 ucd: meta.id;instr
