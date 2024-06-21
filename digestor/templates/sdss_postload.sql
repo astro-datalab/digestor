@@ -19,6 +19,9 @@ CREATE INDEX {{table}}_plateid ON {{schema}}.{{table}} (plateid) WITH (fillfacto
 CREATE INDEX {{table}}_scienceprimary ON {{schema}}.{{table}} (scienceprimary) WITH (fillfactor=100);
 ALTER TABLE {{schema}}.{{table}} ADD CONSTRAINT {{table}}_platex_fk FOREIGN KEY (plateid) REFERENCES {{schema}}.platex (plateid);
 CREATE INDEX {{table}}_uint64_plateid ON {{schema}}.{{table}} ({{schema}}.uint64(plateid)) WITH (fillfactor=100);
+CREATE INDEX {{table}}_plate ON {{schema}}.{{table}} (plate) WITH (fillfactor=100);
+CREATE INDEX {{table}}_mjd ON {{schema}}.{{table}} (mjd) WITH (fillfactor=100);
+CREATE INDEX {{table}}_fiberid ON {{schema}}.{{table}} (fiberid) WITH (fillfactor=100);
 {% endif %}
 CREATE INDEX {{table}}_ra ON {{schema}}.{{table}} (ra) WITH (fillfactor=100);
 CREATE INDEX {{table}}_dec ON {{schema}}.{{table}} ("dec") WITH (fillfactor=100);

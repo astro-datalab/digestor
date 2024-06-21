@@ -37,7 +37,9 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon']
+    'sphinx.ext.napoleon',
+    'sphinx.ext.todo',
+    'sphinx.ext.githubpages']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -53,7 +55,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Digestor'
-copyright = '2018-2022, NOIRLAb Data Lab Project'
+copyright = '2018-2024, NOIRLab Data Lab Project'
 author = 'NOIRLab Data Lab Project'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -72,7 +74,7 @@ release = package.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+# language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -81,9 +83,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
@@ -196,8 +195,26 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
+# -- Options for intersphinx extension ---------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#configuration
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+}
+
+# -- Options for todo extension ----------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#configuration
+
+todo_include_todos = True
 
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3/', None),
+    # 'numpy': ('https://numpy.org/doc/stable/', None),
+    # 'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
+    # 'matplotlib': ('https://matplotlib.org/', None),
+    'astropy': ('https://docs.astropy.org/en/stable/', None),
+    # 'h5py': ('https://docs.h5py.org/en/latest/', None)
+    }
