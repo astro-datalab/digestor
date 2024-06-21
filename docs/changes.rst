@@ -2,14 +2,16 @@
 Digestor Change Log
 ===================
 
-0.6.1 (unreleased)
+0.6.1 (2024-06-21)
 ------------------
 
 * Update DR16 notebook to work on DR16Q superset, various SPIDERS catalogs (PR `#21`_).
 * Other work on DR16Q and SPIDERS tables (PR `#22`_).
+* Add SDSS DR12 stellar mass tables (PR `#25`_).
 
 .. _`#21`: https://github.com/astro-datalab/digestor/pull/21
 .. _`#22`: https://github.com/astro-datalab/digestor/pull/22
+.. _`#25`: https://github.com/astro-datalab/digestor/pull/25
 
 0.6.0 (2022-05-11)
 ------------------
