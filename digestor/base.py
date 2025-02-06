@@ -159,7 +159,9 @@ class Digestor(object):
             with open(merge) as f:
                 metadata = json.load(f)
             if metadata['schemas'][0]['schema_name'] != self.schema:
-                raise ValueError("You are attempting to merge schema={0} into schema={1}!".format(self.schema, metadata['schemas'][0]['schema_name']))
+                raise ValueError(("You are attempting to merge schema={0} " +
+                                  "into schema={1}!").format(self.schema,
+                                                             metadata['schemas'][0]['schema_name']))
             for t in metadata['tables']:
                 if t['table_name'] == self.table:
                     raise ValueError("Table {0} is already defined!".format(self.stable))

@@ -10,11 +10,9 @@ import os
 import re
 import sys
 import time
-# from datetime import datetime
 from argparse import ArgumentParser
 
-from pkg_resources import resource_filename
-# from pytz import utc
+from importlib.resources import files
 from jinja2 import Environment, PackageLoader, select_autoescape
 import numpy as np
 from astropy.table import Table
@@ -92,9 +90,9 @@ class SDSS(Digestor):
         * Currently, the long description (``--/T``) is thrown out.
         """
         log = self.logName('sdss.SDSS.parseLine')
-        l = line.strip()
+        lstr = line.strip()
         for r in self._SQLre:
-            m = self._SQLre[r].match(l)
+            m = self._SQLre[r].match(lstr)
             if m is not None:
                 g = m.groups()
                 if r == 'comment':
@@ -424,7 +422,7 @@ class SDSS(Digestor):
                 np.random.seed(stime)
                 log.debug("new['%s'] = np.random.random((%d,)).astype(%s)",
                           col['column_name'], len(old), str(np_map[col['datatype']]))
-                new[col['column_name']] = 100.0*np.random.random((len(old),)).astype(np_map[col['datatype']])
+                new[col['column_name']] = 100.0 * np.random.random((len(old),)).astype(np_map[col['datatype']])
                 continue
             if col['column_name'] in self.NOFITS:
                 log.info("Creating placeholder column %s for post-processing.",
@@ -479,12 +477,12 @@ class SDSS(Digestor):
                             pass
                         log.debug("String to integer conversion required for %s -> %s.", fcol, col['column_name'])
                         width = int(str(old[fcol].dtype).split(old[fcol].dtype.kind)[1])
-                        blank = ' '*width
+                        blank = ' ' * width
                         w = np.nonzero(old[fcol] == blank)[0]
                         if len(w) > 0:
                             log.debug("old['%s'][old['%s'] == blank] = blank[0:%d] + '0'",
                                       fcol, fcol, width - 1)
-                            old[fcol][w] = blank[0:(width-1)] + '0'
+                            old[fcol][w] = blank[0:(width - 1)] + '0'
                         log.debug("test_old = old['%s'].astype(np.int64)", fcol)
                         try:
                             test_old = old[fcol].astype(np.int64)
@@ -496,7 +494,10 @@ class SDSS(Digestor):
                             lo = np.nonzero(uold < 2**63)[0]
                             test_old = np.zeros(uold.shape, dtype=np.int64)
                             test_old[lo] = uold[lo]
-                            test_old[hi] = (uold[hi] - 2**63).astype(np.int64) - 2**63
+                            #
+                            # The math might look weird, but it should avoid overflows.
+                            #
+                            test_old[hi] = (uold[hi] - 2**63).astype(np.int64) - np.int64(2**63 - 1) - 1
                     else:
                         if index is not None:
                             test_old = old[fcol][:, index]
@@ -569,7 +570,7 @@ def get_options():
     parser = ArgumentParser(description=__doc__.split("\n")[-2],
                             prog=os.path.basename(sys.argv[0]))
     parser.add_argument('-c', '--configuration', dest='config', metavar='FILE',
-                        default=resource_filename('digestor', 'data/sdss.yaml'),
+                        default=str(files('digestor') / 'data' / 'sdss.yaml'),
                         help='Read table-specific configuration from FILE.')
     parser.add_argument('-d', '--schema-description', dest='description',
                         metavar='TEXT',
@@ -628,7 +629,7 @@ def main():
         print("%s does not exist!" % options.fits, file=sys.stderr)
         return 1
     if not os.path.exists(options.sql):
-        p = resource_filename('digestor', 'data/' + options.sql)
+        p = str(files('digestor') / 'data' / options.sql)
         if os.path.exists(p):
             options.sql = p
         else:

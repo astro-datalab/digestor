@@ -327,7 +327,7 @@ class TestBase(DigestorCase):
                         'random_id': np.ones((5,), dtype=np.float32),
                         'mag': np.ones((5, 2), dtype=np.float32),
                         'magivar': np.ones((5, 2), dtype=np.float32),
-                        'foobar': np.array([' '*16]*5, dtype='U16'),
+                        'foobar': np.array([' ' * 16] * 5, dtype='U16'),
                         'flags': np.ones((5, 2), dtype=np.int32),
                         'unsafe': np.ones((5,), dtype=np.int64)}
         #
@@ -409,11 +409,3 @@ class TestBase(DigestorCase):
         """
         with NamedTemporaryFile('w+') as f:
             self.base.writeSQL(f.name)
-
-
-def test_suite():
-    """Allows testing of only this module with the command::
-
-        python setup.py test -m <modulename>
-    """
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)

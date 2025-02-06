@@ -536,6 +536,12 @@ class TestSDSS(DigestorCase):
                                             "datatype": "bigint", "size": 1,
                                             "principal": 0, "indexed": 0, "std": 0},
                                            {"table_name": "{0.table}".format(self),
+                                            "column_name": "bigobjid_bytes",
+                                            "description": "id",
+                                            "unit": "", "ucd": "", "utype": "",
+                                            "datatype": "bigint", "size": 1,
+                                            "principal": 0, "indexed": 0, "std": 0},
+                                           {"table_name": "{0.table}".format(self),
                                             "column_name": "smallid",
                                             "description": "id",
                                             "unit": "", "ucd": "", "utype": "",
@@ -600,6 +606,7 @@ class TestSDSS(DigestorCase):
                           'mag': '2E', 'magivar': '2E',
                           'objid': '16A',
                           'bigobjid': '20A',
+                          'bigobjid_bytes': '20A',
                           'smallid': '3A',
                           'foobar': '16A',
                           'small_bit': 'J',
@@ -631,10 +638,11 @@ class TestSDSS(DigestorCase):
                         'random_id': np.ones((5,), dtype=np.float32),
                         'mag': np.ones((5, 2), dtype=np.float32),
                         'magivar': np.ones((5, 2), dtype=np.float32),
-                        'objid': np.array([' '*15 + '1']*4 + [' '*16], dtype='U16'),
-                        'bigobjid': np.array(['9223372036854775808']*3 + ['18446744073709551615']*2, dtype='U20'),
-                        'smallid': np.array(['123']*3 + ['   ']*2, dtype='U3'),
-                        'foobar': np.array([' '*16]*5, dtype='U16'),
+                        'objid': np.array([' ' * 15 + '1'] * 4 + [' ' * 16], dtype='U16'),
+                        'bigobjid': np.array(['9223372036854775808'] * 3 +
+                                             ['18446744073709551615'] * 2, dtype='U20'),
+                        'smallid': np.array(['123'] * 3 + ['   '] * 2, dtype='U3'),
+                        'foobar': np.array([' ' * 16] * 5, dtype='U16'),
                         'small_bit': np.ones((5,), dtype=np.int32),
                         'small_bits': np.ones((5, 5), dtype=np.int32),
                         'objc_flags': np.ones((5,), dtype=np.int32),
@@ -643,6 +651,14 @@ class TestSDSS(DigestorCase):
                         'flags2': np.ones((5, 5), dtype=np.int32),
                         'unsafe': np.ones((5,), dtype=np.int64),
                         'unsafe2': np.ones((5,), dtype=np.int32) + 2**15}
+        #
+        # Set up a bytes array.
+        #
+        bigobjid_bytes = dummy_values['bigobjid'].astype('S20')
+        #
+        # Avoid conflict with other unsafe tests.
+        #
+        dummy_values['bigobjid_bytes'] = dummy_values['bigobjid']
         #
         # Raise an unsafe error.
         #
@@ -675,6 +691,7 @@ class TestSDSS(DigestorCase):
         #
         # Try again.
         #
+        dummy_values['bigobjid_bytes'] = bigobjid_bytes
         with mock.patch('digestor.sdss.Table') as T:
             t = T.read.return_value = mock.MagicMock()
             t.__getitem__.side_effect = lambda key: dummy_values[key.lower()]
@@ -706,8 +723,8 @@ class TestSDSS(DigestorCase):
             f = os.path.join(d, 'foo.sql')
             self.sdss.writeSQL(f)
             with open(f) as ff:
-                l = ff.readlines()
-        self.assertEqual(l[3], 'CREATE SCHEMA IF NOT EXISTS sdss;\n')
+                foo = ff.readlines()
+        self.assertEqual(foo[3], 'CREATE SCHEMA IF NOT EXISTS sdss;\n')
 
     def test_writePOSTSQL(self):
         """Test writing SQL postload file.
@@ -716,14 +733,6 @@ class TestSDSS(DigestorCase):
             f = os.path.join(d, 'foo.sql')
             self.sdss.writePOSTSQL(f, pkey='foo_id')
             with open(f) as ff:
-                l = ff.readlines()
-        self.assertEqual(l[4], 'CREATE INDEX spectra_q3c_ang2ipix ON sdss.spectra (q3c_ang2ipix(ra, "dec")) WITH (fillfactor=100);\n')
-        self.assertEqual(l[8], 'ALTER TABLE sdss.spectra ADD PRIMARY KEY (foo_id);\n')
-
-
-def test_suite():
-    """Allows testing of only this module with the command::
-
-        python setup.py test -m <modulename>
-    """
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)
+                foo = ff.readlines()
+        self.assertEqual(foo[4], 'CREATE INDEX spectra_q3c_ang2ipix ON sdss.spectra (q3c_ang2ipix(ra, "dec")) WITH (fillfactor=100);\n')
+        self.assertEqual(foo[8], 'ALTER TABLE sdss.spectra ADD PRIMARY KEY (foo_id);\n')
