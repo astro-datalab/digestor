@@ -64,3 +64,6 @@ distribute-*.tar.gz
 # Ignore ad hoc executable
 sdss2dl
 add_view_metadata
+
+# VS Code
+.vscode
