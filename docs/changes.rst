@@ -5,7 +5,10 @@ Digestor Change Log
 0.6.2 (unreleased)
 ------------------
 
-* No changes yet.
+* Extra care when converting strings to 64-bit integer;
+  package infrastructure updates (PR `#26`_).
+
+.. _`#26`: https://github.com/astro-datalab/digestor/pull/26
 
 0.6.1 (2024-06-21)
 ------------------
