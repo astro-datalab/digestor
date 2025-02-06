@@ -170,13 +170,31 @@ class TestBase(DigestorCase):
             self.base.customSTILTS(f.name)
             self.assertListEqual(self.base._custom_stilts_command, [])
 
-    def test_add_dl_columns(self):
-        """Test adding STILTS columns.
+    def test_add_dl_columns_no_overwrite(self):
+        """Test adding STILTS columns with no overwriting.
         """
+        self.base._custom_stilts_command = []
         with mock.patch('os.path.exists') as e:
             e.return_value = True
             out = self.base.addDLColumns('specObj-dr14.fits')
         self.assertEqual(out, 'specObj-dr14.stilts.fits')
+
+    def test_add_dl_columns_no_commands(self):
+        """Test adding STILTS columns with no STILTS commands.
+        """
+        self.base._custom_stilts_command = []
+        self.base.pixels = False
+        self.base.ecliptic = False
+        self.base.galactic = False
+        with mock.patch('shutil.copy') as c:
+            out = self.base.addDLColumns('specObj-dr14.fits')
+        self.assertEqual(out, 'specObj-dr14.stilts.fits')
+        c.assert_called_once_with('specObj-dr14.fits', 'specObj-dr14.stilts.fits')
+        self.assertLog(-1, "shutil.copy('specObj-dr14.fits', 'specObj-dr14.stilts.fits')")
+
+    def test_add_dl_columns(self):
+        """Test adding STILTS columns.
+        """
         with mock.patch('subprocess.Popen') as proc:
             p = proc.return_value = mock.MagicMock()
             p.returncode = 0

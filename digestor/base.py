@@ -7,8 +7,8 @@ digestor.base
 Base class containing common functionality.
 """
 import os
-import sys
 import re
+import shutil
 import json
 import logging
 import subprocess as sub
@@ -440,33 +440,41 @@ class Digestor(object):
             return out
         if os.path.exists(out):
             log.info("Removing existing file: %s.", out)
+            log.debug("os.remove('%s')", out)
             os.remove(out)
         fra = ra.lower()
         fdec = ra.lower().replace('ra', 'dec')
-        command = ['stilts', 'tpipe', 'in={0}'.format(filename)]
-        command += self._custom_stilts_command
+        command_prefix = ['stilts', 'tpipe', 'in={0}'.format(filename)]
+        command_suffix = ['ofmt=fits-basic', 'out={0}'.format(out)]
+        command_list = list()
+        command_list += self._custom_stilts_command
         if self.pixels:
-            command += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
+            command_list += [cmd.format(ra=fra, dec=fdec) for cmd in self._stilts_command]
         if self.ecliptic:
-            command.append(self._stilts_ecliptic.format(ra=fra, dec=fdec))
+            command_list.append(self._stilts_ecliptic.format(ra=fra, dec=fdec))
         if self.galactic:
-            command.append(self._stilts_galactic.format(ra=fra, dec=fdec))
-        command += ['ofmt=fits-basic', 'out={0}'.format(out)]
-        log.debug(' '.join(command))
-        proc = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
-        o, e = proc.communicate()
-        if proc.returncode:
-            log.error('STILTS returncode = %d', proc.returncode)
-            if o:
-                log.error('STILTS STDOUT = %s', o.decode('utf-8'))
-            if e:
-                log.error('STILTS STDERR = %s', e.decode('utf-8'))
-            raise ValueError("STILTS error detected!")
+            command_list.append(self._stilts_galactic.format(ra=fra, dec=fdec))
+        if len(command_list) > 0:
+            command = command_prefix + command_list + command_suffix
+            log.debug(' '.join(command))
+            proc = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
+            o, e = proc.communicate()
+            if proc.returncode:
+                log.error('STILTS returncode = %d', proc.returncode)
+                if o:
+                    log.error('STILTS STDOUT = %s', o.decode('utf-8'))
+                if e:
+                    log.error('STILTS STDERR = %s', e.decode('utf-8'))
+                raise ValueError("STILTS error detected!")
+            else:
+                if o:
+                    log.info('STILTS STDOUT = %s', o.decode('utf-8'))
+                if e:
+                    log.info('STILTS STDERR = %s', e.decode('utf-8'))
         else:
-            if o:
-                log.info('STILTS STDOUT = %s', o.decode('utf-8'))
-            if e:
-                log.info('STILTS STDERR = %s', e.decode('utf-8'))
+            log.info("No STILTS commands detected. Copying %s to %s.", filename, out)
+            log.debug("shutil.copy('%s', '%s')", filename, out)
+            shutil.copy(filename, out)
         return out
 
     def parseFITS(self, filename, hdu=1):
